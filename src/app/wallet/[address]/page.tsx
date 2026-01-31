@@ -50,6 +50,7 @@ export default function WalletDetailPage() {
   const address = (params.address as string).toLowerCase();
   const walletName = WALLET_NAMES[address] || '알 수 없는 지갑';
   const [timeFrame, setTimeFrame] = useState<TimeFrame>('daily');
+  const [visibleCount, setVisibleCount] = useState(20);
 
   const { data: history, isLoading: historyLoading } = useQuery({
     queryKey: ['wallet-history', address],
@@ -121,8 +122,9 @@ export default function WalletDetailPage() {
 
   // X축 간격 계산
   const xAxisInterval = useMemo(() => {
-    if (timeFrame === 'daily') return Math.floor(chartData.length / 6);
-    if (timeFrame === 'weekly') return 3;
+    if (timeFrame === 'daily') return Math.floor(chartData.length / 5);
+    if (timeFrame === 'weekly') return 7; // 8주마다 표시
+    if (timeFrame === 'monthly') return 1; // 2개월마다 표시
     return 0;
   }, [timeFrame, chartData.length]);
 
@@ -141,8 +143,8 @@ export default function WalletDetailPage() {
             href="/"
             className="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-3"
           >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="text-sm">돌아가기</span>
+            <ArrowLeft className="w-5 h-5" />
+            <span>돌아가기</span>
           </Link>
           <div>
             <h1 className="text-xl md:text-2xl font-bold text-white">{walletName}</h1>
@@ -187,8 +189,11 @@ export default function WalletDetailPage() {
           {(['daily', 'weekly', 'monthly'] as TimeFrame[]).map((tf) => (
             <button
               key={tf}
-              onClick={() => setTimeFrame(tf)}
-              className={`flex-1 md:flex-none px-3 md:px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              onClick={() => {
+                setTimeFrame(tf);
+                setVisibleCount(20);
+              }}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 timeFrame === tf
                   ? 'bg-emerald-500 text-white'
                   : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
@@ -208,17 +213,10 @@ export default function WalletDetailPage() {
           </Card>
         ) : chartData.length > 0 ? (
           <Card className="bg-slate-800/50 border-slate-700/50 p-4 md:p-6 mb-6">
-            <div className="flex items-center justify-between mb-3 md:mb-4">
-              <h2 className="text-base md:text-lg font-semibold text-white">Total Assets 그래프</h2>
-              <span className="text-xs md:text-sm text-slate-400">
-                {timeFrame === 'daily' && '매일 자정'}
-                {timeFrame === 'weekly' && '매주 월요일'}
-                {timeFrame === 'monthly' && '매월 1일'}
-              </span>
-            </div>
+            <h2 className="text-base md:text-lg font-semibold text-white mb-3 md:mb-4">Total Assets 그래프</h2>
             <div className="h-48 md:h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData} margin={{ top: 5, right: 5, left: -15, bottom: 5 }}>
+                <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                   <XAxis 
                     dataKey="date" 
@@ -254,8 +252,8 @@ export default function WalletDetailPage() {
                     dataKey="amount"
                     stroke="#34d399"
                     strokeWidth={2}
-                    dot={timeFrame !== 'daily' ? { fill: '#34d399', strokeWidth: 2, r: 3 } : false}
-                    activeDot={{ r: 5, fill: '#34d399' }}
+                    dot={false}
+                    activeDot={{ r: 5, fill: '#34d399', stroke: 'none' }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -275,38 +273,50 @@ export default function WalletDetailPage() {
               <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
             </div>
           ) : filteredHistory.length > 0 ? (
-            <div className="overflow-x-auto max-h-80 md:max-h-96 scrollbar-thin">
-              <table className="w-full">
-                <thead className="bg-slate-800 sticky top-0">
-                  <tr>
-                    <th className="text-left text-xs md:text-sm font-medium text-slate-400 px-3 md:px-4 py-2 md:py-3">날짜</th>
-                    <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-3 md:px-4 py-2 md:py-3">Total Assets</th>
-                    <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-3 md:px-4 py-2 md:py-3">변동</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredHistory.map((item, index) => {
-                    const prevItem = filteredHistory[index + 1];
-                    const change = calculateChange(item.total_assets, prevItem?.total_assets);
-                    const isPositive = change !== null && change >= 0;
-                    
-                    return (
-                      <tr key={item.recorded_at} className="border-t border-slate-700/50 hover:bg-slate-700/30">
-                        <td className="px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm text-white">{item.recorded_at}</td>
-                        <td className="px-3 md:px-4 py-2.5 md:py-3 text-right text-xs md:text-sm text-emerald-400 font-mono">
-                          {formatAssets(item.total_assets)}
-                        </td>
-                        <td className={`px-3 md:px-4 py-2.5 md:py-3 text-right text-xs md:text-sm font-medium ${
-                          change === null ? 'text-slate-500' : isPositive ? 'text-emerald-400' : 'text-rose-400'
-                        }`}>
-                          {change === null ? '-' : `${isPositive ? '+' : ''}${change.toFixed(2)}%`}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-slate-800">
+                    <tr>
+                      <th className="text-left text-sm md:text-base font-medium text-slate-400 px-4 py-3 md:py-4">날짜</th>
+                      <th className="text-right text-sm md:text-base font-medium text-slate-400 px-4 py-3 md:py-4">Total Assets</th>
+                      <th className="text-right text-sm md:text-base font-medium text-slate-400 px-4 py-3 md:py-4">변동</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredHistory.slice(0, visibleCount).map((item, index) => {
+                      const prevItem = filteredHistory[index + 1];
+                      const change = calculateChange(item.total_assets, prevItem?.total_assets);
+                      const isPositive = change !== null && change >= 0;
+                      
+                      return (
+                        <tr key={item.recorded_at} className="border-t border-slate-700/50 hover:bg-slate-700/30">
+                          <td className="px-4 py-4 text-sm md:text-base text-white">{item.recorded_at}</td>
+                          <td className="px-4 py-4 text-right text-sm md:text-base text-emerald-400 font-mono">
+                            {formatAssets(item.total_assets)}
+                          </td>
+                          <td className={`px-4 py-4 text-right text-sm md:text-base font-medium ${
+                            change === null ? 'text-slate-500' : isPositive ? 'text-emerald-400' : 'text-rose-400'
+                          }`}>
+                            {change === null ? '-' : `${isPositive ? '+' : ''}${change.toFixed(2)}%`}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              {visibleCount < filteredHistory.length && (
+                <div className="p-4 border-t border-slate-700">
+                  <button
+                    onClick={() => setVisibleCount((prev) => prev + 20)}
+                    className="w-full py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    더보기
+                  </button>
+                </div>
+              )}
+            </>
           ) : (
             <div className="text-center py-10 text-slate-400">
               <p>아직 기록된 데이터가 없습니다</p>

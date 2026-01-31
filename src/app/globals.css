@@ -68,6 +68,11 @@
   }
 }
 
+/* 클릭 시 테두리 제거 */
+*:focus {
+  outline: none;
+}
+
 /* 심플 스크롤바 */
 .scrollbar-thin::-webkit-scrollbar {
   width: 6px;

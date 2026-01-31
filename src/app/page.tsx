@@ -195,13 +195,25 @@ interface BuybackDetails {
   ai: string | null;
 }
 
+interface AquaFairPriceData {
+  fairPrice: number;
+  blueWhaleByback: number;
+  totalSupply: number;
+  burnedAmount: number;
+  circulation: number;
+  currentValue: number;
+}
+
 interface WalletCardProps {
   wallet: WalletInfo;
   totalAssets: string | null;
   fundDetails?: BuybackDetails; // 바이백/아돌 펀드 메인/AI 분리 표시용
+  aquaFairPrice?: AquaFairPriceData; // 아쿠아1 펀드 적정가격
 }
 
-function WalletCard({ wallet, totalAssets, fundDetails }: WalletCardProps) {
+function WalletCard({ wallet, totalAssets, fundDetails, aquaFairPrice }: WalletCardProps) {
+  const [showFormula, setShowFormula] = useState(false);
+  
   const formatAssets = (assets: string) => {
     // 소수점 제거: "$1,234.56" -> "$1,234"
     return assets.replace(/\.\d+/, '');
@@ -234,6 +246,34 @@ function WalletCard({ wallet, totalAssets, fundDetails }: WalletCardProps) {
             {fundDetails && (
               <div className="mt-2 text-sm text-slate-400">
                 메인 {fundDetails.main ? formatAssets(fundDetails.main) : '-'} | AI {fundDetails.ai ? formatAssets(fundDetails.ai) : '-'}
+              </div>
+            )}
+            
+            {/* 아쿠아1 적정가격 */}
+            {aquaFairPrice && (
+              <div className="mt-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-slate-400">적정가격:</span>
+                  <span className="text-sm font-medium text-cyan-400">
+                    ${aquaFairPrice.fairPrice.toFixed(4)} USDT
+                  </span>
+                  <button
+                    onClick={() => setShowFormula(!showFormula)}
+                    className="w-5 h-5 rounded-full bg-slate-600 hover:bg-slate-500 text-xs text-white flex items-center justify-center transition-colors"
+                  >
+                    !
+                  </button>
+                </div>
+                {showFormula && (
+                  <div className="mt-2 p-3 bg-slate-700/50 rounded-lg text-xs text-slate-300 space-y-1">
+                    <p className="text-slate-400 font-medium mb-2">산출 방식</p>
+                    <p>블웨바이백 = (총발행량 + 소각량) × 0.03</p>
+                    <p className="text-slate-400">= ({aquaFairPrice.totalSupply.toLocaleString()} + {aquaFairPrice.burnedAmount.toLocaleString()}) × 0.03 = {aquaFairPrice.blueWhaleByback.toLocaleString()}개</p>
+                    <p className="mt-2">적정가격 = (현재가치 - 블웨바이백) / 유통량</p>
+                    <p className="text-slate-400">= (${aquaFairPrice.currentValue.toLocaleString()} - {aquaFairPrice.blueWhaleByback.toLocaleString()}) / {aquaFairPrice.circulation.toLocaleString()}</p>
+                    <p className="text-cyan-400 font-medium">= ${aquaFairPrice.fairPrice.toFixed(4)} USDT</p>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -287,12 +327,11 @@ function HomeContent() {
     refetchInterval: 30 * 60 * 1000,
   });
 
-  // 토큰 소각 데이터 로드
+  // 토큰 소각 데이터 로드 (아쿠아1 적정가격 계산에도 필요)
   const { data: tokenData, isLoading: tokenLoading } = useQuery({
     queryKey: ['token-burn'],
     queryFn: fetchTokenBurnData,
-    staleTime: 60 * 60 * 1000, // 1시간 (자정에만 업데이트)
-    enabled: selectedTab === 'token',
+    staleTime: 60 * 60 * 1000, // 1시간
   });
 
   const parseAmount = (assets: string | null): number => {
@@ -389,6 +428,45 @@ function HomeContent() {
     return { main: mainAmount, ai: aiAmount };
   };
 
+  // 아쿠아1 적정가격 계산
+  const getAquaFairPrice = (): AquaFairPriceData | undefined => {
+    const aquaAddress = '0xD57423c54F188220862391A069a2942c725ee37B';
+    
+    // 지갑 데이터에서 현재가치 가져오기
+    if (!walletData?.results) return undefined;
+    const walletKey = Object.keys(walletData.results).find(
+      (k) => k.toLowerCase() === aquaAddress.toLowerCase()
+    );
+    const currentValueStr = walletKey ? walletData.results[walletKey] : null;
+    if (!currentValueStr) return undefined;
+    const currentValue = parseAmount(currentValueStr);
+    
+    // 토큰 데이터에서 AQUA1 소각량, 총발행량 가져오기
+    const aquaToken = tokenData?.tokens?.find(
+      (t: { token_name: string }) => t.token_name === 'AQUA1'
+    );
+    if (!aquaToken) return undefined;
+    
+    const totalSupply = aquaToken.total_supply || 207900;
+    const burnedAmount = aquaToken.burned_amount || 0;
+    const circulation = totalSupply - burnedAmount;
+    
+    // 블웨바이백 = (총발행량 + 소각량) × 0.03
+    const blueWhaleByback = (totalSupply + burnedAmount) * 0.03;
+    
+    // 적정가격 = (현재가치 - 블웨바이백) / 유통량
+    const fairPrice = (currentValue - blueWhaleByback) / circulation;
+    
+    return {
+      fairPrice: Math.max(0, fairPrice),
+      blueWhaleByback,
+      totalSupply,
+      burnedAmount,
+      circulation,
+      currentValue,
+    };
+  };
+
   const isLoading = selectedTab === 'wallet' ? walletLoading : tokenLoading;
 
   return (
@@ -454,6 +532,7 @@ function HomeContent() {
                   wallet.isAdolTotal ? getAdolDetails() : 
                   undefined
                 }
+                aquaFairPrice={wallet.name === 'Aqua1 펀드' ? getAquaFairPrice() : undefined}
               />
             ))}
           </div>

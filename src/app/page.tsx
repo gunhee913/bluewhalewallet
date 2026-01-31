@@ -1,168 +1,228 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
-import { CheckCircle, Github, Copy, Sparkles } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import { Card } from '@/components/ui/card';
+import { ExternalLink, Copy, Wallet, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import axios from 'axios';
+import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 
-const PACKAGE_NAME = '@easynext/cli';
-const CURRENT_VERSION = 'v0.1.35';
+const PUMPSPACE_BASE_URL = 'https://pumpspace.io/wallet/detail?account=';
 
-function latestVersion(packageName: string) {
-  return axios
-    .get('https://registry.npmjs.org/' + packageName + '/latest')
-    .then((res) => res.data.version);
+type Chain = 'avalanche' | 'kaia';
+
+interface WalletInfo {
+  name: string;
+  address: string;
+  chain: Chain;
 }
 
-export default function Home() {
+const WALLETS: WalletInfo[] = [
+  {
+    name: '바이백펀드',
+    address: '0x3654378aa2deb0860c2e5c7906471c8704c44c6f',
+    chain: 'avalanche',
+  },
+  {
+    name: '아돌펀드',
+    address: '0xEd1b254B6c3a6785e19ba83b728ECe4A6444f4d7',
+    chain: 'avalanche',
+  },
+  {
+    name: 'Aqua1 펀드',
+    address: '0xD57423c54F188220862391A069a2942c725ee37B',
+    chain: 'avalanche',
+  },
+  {
+    name: 'v3 수수료 펀드(40%)',
+    address: '0xfd48a5FFE5127896E93BAA8074CE98c5a999Ea97',
+    chain: 'avalanche',
+  },
+  {
+    name: 'v3 수수료 소각(60%)',
+    address: '0x000000000000000000000000000000000000dEaD',
+    chain: 'avalanche',
+  },
+];
+
+const CHAIN_CONFIG = {
+  avalanche: {
+    name: 'Avalanche',
+    color: 'bg-red-500/20 text-red-400 border-red-500/30',
+    activeColor: 'bg-red-500 text-white',
+  },
+  kaia: {
+    name: 'Kaia',
+    color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+    activeColor: 'bg-emerald-500 text-white',
+  },
+};
+
+async function fetchWalletData(address: string) {
+  const response = await fetch(`/api/wallet?address=${address}`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch wallet data');
+  }
+  return response.json();
+}
+
+function WalletCard({ wallet }: { wallet: WalletInfo }) {
   const { toast } = useToast();
-  const [latest, setLatest] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchLatestVersion = async () => {
-      try {
-        const version = await latestVersion(PACKAGE_NAME);
-        setLatest(`v${version}`);
-      } catch (error) {
-        console.error('Failed to fetch version info:', error);
-      }
-    };
-    fetchLatestVersion();
-  }, []);
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['wallet', wallet.address],
+    queryFn: () => fetchWalletData(wallet.address),
+    staleTime: 1000 * 60 * 5,
+  });
 
-  const handleCopyCommand = () => {
-    navigator.clipboard.writeText(`npm install -g ${PACKAGE_NAME}@latest`);
+  const handleCopyAddress = (address: string) => {
+    navigator.clipboard.writeText(address);
     toast({
-      description: 'Update command copied to clipboard',
+      description: '지갑 주소가 복사되었습니다',
     });
   };
 
-  const needsUpdate = latest && latest !== CURRENT_VERSION;
+  const formatAddress = (address: string) => {
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
 
   return (
-    <div className="flex min-h-screen relative overflow-hidden">
-      {/* Main Content */}
-      <div className="min-h-screen flex bg-gray-100">
-        <div className="flex flex-col p-5 md:p-8 space-y-4">
-          <h1 className="text-3xl md:text-5xl font-semibold tracking-tighter !leading-tight text-left">
-            Easiest way to start
-            <br /> Next.js project
-            <br /> with Cursor
-          </h1>
-
-          <p className="text-lg text-muted-foreground">
-            Get Pro-created Next.js bootstrap just in seconds
-          </p>
-
-          <div className="flex items-center gap-2">
-            <Button
-              asChild
-              size="lg"
-              variant="secondary"
-              className="gap-2 w-fit rounded-full px-4 py-2 border border-black"
-            >
-              <a href="https://github.com/easynextjs/easynext" target="_blank">
-                <Github className="w-4 h-4" />
-                GitHub
-              </a>
-            </Button>
-            <Button
-              asChild
-              size="lg"
-              variant="secondary"
-              className="gap-2 w-fit rounded-full px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white"
-            >
-              <a href="https://easynext.org/premium" target="_blank">
-                <Sparkles className="w-4 h-4" />
-                Premium
-              </a>
-            </Button>
-          </div>
-          <Section />
-        </div>
-      </div>
-
-      <div className="min-h-screen ml-16 flex-1 flex flex-col items-center justify-center space-y-4">
-        <div className="flex flex-col items-center space-y-2">
-          <p className="text-muted-foreground">
-            Current Version: {CURRENT_VERSION}
-          </p>
-          <p className="text-muted-foreground">
-            Latest Version:{' '}
-            <span className="font-bold">{latest || 'Loading...'}</span>
-          </p>
-        </div>
-
-        {needsUpdate && (
-          <div className="flex flex-col items-center space-y-2">
-            <p className="text-yellow-600">New version available!</p>
-            <p className="text-sm text-muted-foreground">
-              Copy and run the command below to update:
-            </p>
-            <div className="relative group">
-              <pre className="bg-gray-100 p-4 rounded-lg">
-                npm install -g {PACKAGE_NAME}@latest
-              </pre>
+    <Card className="bg-slate-800/50 border-slate-700/50 hover:bg-slate-800/80 transition-all duration-200 overflow-hidden group">
+      <div className="p-5">
+        <div className="flex items-center justify-between">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <h2 className="text-lg font-semibold text-white">{wallet.name}</h2>
+            </div>
+            <div className="flex items-center gap-2 mb-2">
+              <code className="text-sm text-emerald-400 font-mono">
+                {formatAddress(wallet.address)}
+              </code>
               <button
-                onClick={handleCopyCommand}
-                className="absolute top-2 right-2 p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={() => handleCopyAddress(wallet.address)}
+                className="p-1.5 text-slate-500 hover:text-white hover:bg-slate-700 rounded-md transition-colors"
+                title="주소 복사"
               >
-                <Copy className="w-4 h-4" />
+                <Copy className="w-3.5 h-3.5" />
               </button>
             </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-slate-400">Total Assets:</span>
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 text-emerald-400 animate-spin" />
+              ) : error ? (
+                <span className="text-sm text-red-400">불러오기 실패</span>
+              ) : data?.totalAssets ? (
+                <span className="text-lg font-bold text-emerald-400">
+                  {data.totalAssets}
+                </span>
+              ) : (
+                <span className="text-sm text-slate-500">-</span>
+              )}
+            </div>
+          </div>
+
+          <a
+            href={`${PUMPSPACE_BASE_URL}${wallet.address}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded-xl transition-all duration-200 group-hover:scale-105"
+          >
+            <span className="text-sm font-medium">PumpSpace</span>
+            <ExternalLink className="w-4 h-4" />
+          </a>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+export default function Home() {
+  const [selectedChain, setSelectedChain] = useState<Chain>('avalanche');
+
+  const filteredWallets = WALLETS.filter(
+    (wallet) => wallet.chain === selectedChain
+  );
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      {/* Header */}
+      <header className="border-b border-slate-700/50 backdrop-blur-sm">
+        <div className="max-w-4xl mx-auto px-6 py-5">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-emerald-500/20 rounded-xl">
+              <Wallet className="w-6 h-6 text-emerald-400" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-white tracking-tight">
+                BlueWhale Wallet
+              </h1>
+              <p className="text-sm text-slate-400">블루웨일 지갑 주소 한눈에 보기</p>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-4xl mx-auto px-6 py-10">
+        {/* Chain 선택 탭 */}
+        <div className="flex gap-6 mb-6 border-b border-slate-700">
+          <button
+            onClick={() => setSelectedChain('avalanche')}
+            className={`pb-3 text-sm font-medium transition-colors ${
+              selectedChain === 'avalanche'
+                ? 'text-white border-b-2 border-white'
+                : 'text-slate-500 hover:text-slate-300'
+            }`}
+          >
+            Avalanche
+          </button>
+          <button
+            onClick={() => setSelectedChain('kaia')}
+            className={`pb-3 text-sm font-medium transition-colors ${
+              selectedChain === 'kaia'
+                ? 'text-white border-b-2 border-white'
+                : 'text-slate-500 hover:text-slate-300'
+            }`}
+          >
+            Kaia
+          </button>
+        </div>
+
+        {/* 지갑 목록 */}
+        <div className="space-y-4">
+          {filteredWallets.map((wallet) => (
+            <WalletCard key={wallet.address} wallet={wallet} />
+          ))}
+        </div>
+
+        {/* Empty State */}
+        {filteredWallets.length === 0 && (
+          <div className="text-center py-20">
+            <Wallet className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+            <p className="text-slate-400">
+              {CHAIN_CONFIG[selectedChain].name}에 등록된 지갑이 없습니다
+            </p>
           </div>
         )}
-      </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="border-t border-slate-700/50 mt-auto">
+        <div className="max-w-4xl mx-auto px-6 py-4">
+          <p className="text-center text-sm text-slate-500">
+            Powered by{' '}
+            <a
+              href="https://pumpspace.io"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-emerald-400 hover:underline"
+            >
+              PumpSpace.io
+            </a>
+          </p>
+        </div>
+      </footer>
     </div>
-  );
-}
-
-function Section() {
-  const items = [
-    { href: 'https://nextjs.org/', label: 'Next.js' },
-    { href: 'https://ui.shadcn.com/', label: 'shadcn/ui' },
-    { href: 'https://tailwindcss.com/', label: 'Tailwind CSS' },
-    { href: 'https://www.framer.com/motion/', label: 'framer-motion' },
-    { href: 'https://zod.dev/', label: 'zod' },
-    { href: 'https://date-fns.org/', label: 'date-fns' },
-    { href: 'https://ts-pattern.dev/', label: 'ts-pattern' },
-    { href: 'https://es-toolkit.dev/', label: 'es-toolkit' },
-    { href: 'https://zustand.docs.pmnd.rs/', label: 'zustand' },
-    { href: 'https://supabase.com/', label: 'supabase' },
-    { href: 'https://react-hook-form.com/', label: 'react-hook-form' },
-  ];
-
-  return (
-    <div className="flex flex-col py-5 md:py-8 space-y-2 opacity-75">
-      <p className="font-semibold">What&apos;s Included</p>
-
-      <div className="flex flex-col space-y-1 text-muted-foreground">
-        {items.map((item) => (
-          <SectionItem key={item.href} href={item.href}>
-            {item.label}
-          </SectionItem>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function SectionItem({
-  children,
-  href,
-}: {
-  children: React.ReactNode;
-  href: string;
-}) {
-  return (
-    <a
-      href={href}
-      className="flex items-center gap-2 underline"
-      target="_blank"
-    >
-      <CheckCircle className="w-4 h-4" />
-      <p>{children}</p>
-    </a>
   );
 }

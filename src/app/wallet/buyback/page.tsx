@@ -18,14 +18,14 @@ import {
 // 바이백펀드 지갑 목록
 const BUYBACK_WALLETS = [
   { id: 'main', name: '메인', address: '0x3654378aa2deb0860c2e5c7906471c8704c44c6f' },
-  { id: 'sub1', name: '서브1', address: '0xDf3723f75a8B3E10Fe0093991C961d58A5549fDE' },
-  { id: 'sub2', name: '서브2', address: '0x8c29527976b07F6e9c5Fa7705a4997C3B9e7fdD4' },
-  { id: 'sub3', name: '서브3', address: '0xF7E18a70C31C5E8D89e00a5a5e81Fc44E607513B' },
-  { id: 'sub4', name: '서브4', address: '0x7c6d9059792C711229Ca7295eaa8916cF2a33776' },
-  { id: 'sub5', name: '서브5', address: '0x61CA700c0b004029Fc4A80C409C9829ABe79528D' },
-  { id: 'sub6', name: '서브6', address: '0xa617A017A09CFEc5d22598e92C252dfBF327fF91' },
-  { id: 'sub7', name: '서브7', address: '0x981086C666D3EB8A11f122B001B58346A6422B80' },
-  { id: 'sub8', name: '서브8', address: '0x5DEf16B5E663baEb75C44B30c273281aFD5Fd342' },
+  { id: 'ai1', name: 'AI(1)', address: '0xDf3723f75a8B3E10Fe0093991C961d58A5549fDE' },
+  { id: 'ai2', name: 'AI(2)', address: '0x8c29527976b07F6e9c5Fa7705a4997C3B9e7fdD4' },
+  { id: 'ai3', name: 'AI(3)', address: '0xF7E18a70C31C5E8D89e00a5a5e81Fc44E607513B' },
+  { id: 'ai4', name: 'AI(4)', address: '0x7c6d9059792C711229Ca7295eaa8916cF2a33776' },
+  { id: 'ai5', name: 'AI(5)', address: '0x61CA700c0b004029Fc4A80C409C9829ABe79528D' },
+  { id: 'ai6', name: 'AI(6)', address: '0xa617A017A09CFEc5d22598e92C252dfBF327fF91' },
+  { id: 'ai7', name: 'AI(7)', address: '0x981086C666D3EB8A11f122B001B58346A6422B80' },
+  { id: 'ai8', name: 'AI(8)', address: '0x5DEf16B5E663baEb75C44B30c273281aFD5Fd342' },
 ];
 
 interface HistoryItem {
@@ -34,7 +34,7 @@ interface HistoryItem {
 }
 
 type TimeFrame = 'daily' | 'weekly' | 'monthly';
-type TabType = 'total' | 'main' | 'sub1' | 'sub2' | 'sub3' | 'sub4' | 'sub5' | 'sub6' | 'sub7' | 'sub8';
+type TabType = 'total' | 'main' | 'ai1' | 'ai2' | 'ai3' | 'ai4' | 'ai5' | 'ai6' | 'ai7' | 'ai8';
 
 async function fetchWalletHistory(address: string): Promise<HistoryItem[]> {
   const response = await fetch(`/api/wallet/history?address=${address}&days=365`);
@@ -214,14 +214,14 @@ export default function BuybackAnalysisPage() {
   const tabs: { id: TabType; name: string }[] = [
     { id: 'total', name: '종합' },
     { id: 'main', name: '메인' },
-    { id: 'sub1', name: '서브1' },
-    { id: 'sub2', name: '서브2' },
-    { id: 'sub3', name: '서브3' },
-    { id: 'sub4', name: '서브4' },
-    { id: 'sub5', name: '서브5' },
-    { id: 'sub6', name: '서브6' },
-    { id: 'sub7', name: '서브7' },
-    { id: 'sub8', name: '서브8' },
+    { id: 'ai1', name: 'AI(1)' },
+    { id: 'ai2', name: 'AI(2)' },
+    { id: 'ai3', name: 'AI(3)' },
+    { id: 'ai4', name: 'AI(4)' },
+    { id: 'ai5', name: 'AI(5)' },
+    { id: 'ai6', name: 'AI(6)' },
+    { id: 'ai7', name: 'AI(7)' },
+    { id: 'ai8', name: 'AI(8)' },
   ];
 
   return (

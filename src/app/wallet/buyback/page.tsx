@@ -274,22 +274,41 @@ export default function BuybackAnalysisPage() {
               <p className="text-2xl md:text-3xl font-bold text-emerald-400">
                 {formatAssets(currentAssets)}
               </p>
+              {/* 지갑 주소 (종합 제외) */}
+              {selectedTab !== 'total' && selectedWallet && (
+                <code className="text-xs text-slate-500 font-mono mt-1 block">
+                  {selectedWallet.address.slice(0, 6)}...{selectedWallet.address.slice(-4)}
+                </code>
+              )}
             </div>
-            {filteredHistory.length >= 2 && (
-              <div className="text-right">
-                <p className="text-xs md:text-sm text-slate-400 mb-1">전일 대비</p>
-                {(() => {
-                  const change = calculateChange(filteredHistory[0]?.total_assets, filteredHistory[1]?.total_assets);
-                  if (change === null) return <p className="text-slate-500">-</p>;
-                  const isPositive = change >= 0;
-                  return (
-                    <span className={`text-lg md:text-xl font-bold ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
-                      {isPositive ? '+' : ''}{change.toFixed(2)}%
-                    </span>
-                  );
-                })()}
-              </div>
-            )}
+            <div className="flex flex-col items-end gap-2">
+              {/* PumpSpace 이동 버튼 (종합 제외) */}
+              {selectedTab !== 'total' && selectedWallet && (
+                <a
+                  href={`https://pumpspace.io/wallet/detail?account=${selectedWallet.address}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-md transition-all duration-200 text-sm font-medium"
+                >
+                  이동
+                </a>
+              )}
+              {filteredHistory.length >= 2 && (
+                <div className="text-right">
+                  <p className="text-xs md:text-sm text-slate-400 mb-1">전일 대비</p>
+                  {(() => {
+                    const change = calculateChange(filteredHistory[0]?.total_assets, filteredHistory[1]?.total_assets);
+                    if (change === null) return <p className="text-slate-500">-</p>;
+                    const isPositive = change >= 0;
+                    return (
+                      <span className={`text-lg md:text-xl font-bold ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        {isPositive ? '+' : ''}{change.toFixed(2)}%
+                      </span>
+                    );
+                  })()}
+                </div>
+              )}
+            </div>
           </div>
           
           {/* 종합 탭일 때 개별 지갑 현황 표시 */}

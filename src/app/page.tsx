@@ -177,12 +177,18 @@ function TokenCard({ name, burnData }: TokenCardProps) {
   );
 }
 
+interface BuybackDetails {
+  main: string | null;
+  ai: string | null;
+}
+
 interface WalletCardProps {
   wallet: WalletInfo;
   totalAssets: string | null;
+  buybackDetails?: BuybackDetails;
 }
 
-function WalletCard({ wallet, totalAssets }: WalletCardProps) {
+function WalletCard({ wallet, totalAssets, buybackDetails }: WalletCardProps) {
   const formatAddress = (address: string) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
@@ -210,6 +216,13 @@ function WalletCard({ wallet, totalAssets }: WalletCardProps) {
                 <span className="text-sm text-slate-500">-</span>
               )}
             </div>
+            
+            {/* 바이백펀드 요약 */}
+            {buybackDetails && (
+              <div className="mt-1 text-xs text-slate-500">
+                메인 {buybackDetails.main ? formatAssets(buybackDetails.main) : '-'} | AI {buybackDetails.ai ? formatAssets(buybackDetails.ai) : '-'}
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col gap-2">
@@ -300,6 +313,31 @@ function HomeContent() {
     return key ? walletData.results[key] : null;
   };
 
+  // 바이백펀드 메인/AI 금액 계산
+  const getBuybackDetails = (): BuybackDetails | undefined => {
+    if (!walletData?.results) return undefined;
+    
+    // 메인 금액
+    const mainKey = Object.keys(walletData.results).find(
+      (k) => k.toLowerCase() === BUYBACK_MAIN.toLowerCase()
+    );
+    const mainAmount = mainKey ? walletData.results[mainKey] : null;
+    
+    // AI 합계
+    let aiTotal = 0;
+    for (const addr of BUYBACK_AI_WALLETS) {
+      const key = Object.keys(walletData.results).find(
+        (k) => k.toLowerCase() === addr.toLowerCase()
+      );
+      if (key && walletData.results[key]) {
+        aiTotal += parseAmount(walletData.results[key]);
+      }
+    }
+    const aiAmount = aiTotal > 0 ? `$${aiTotal.toLocaleString()}` : null;
+    
+    return { main: mainAmount, ai: aiAmount };
+  };
+
   const isLoading = selectedTab === 'wallet' ? walletLoading : tokenLoading;
 
   return (
@@ -360,6 +398,7 @@ function HomeContent() {
                 key={wallet.address}
                 wallet={wallet}
                 totalAssets={getAssets(wallet.address, wallet.isBuybackTotal)}
+                buybackDetails={wallet.isBuybackTotal ? getBuybackDetails() : undefined}
               />
             ))}
           </div>

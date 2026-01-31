@@ -168,8 +168,8 @@ async function fetchSingleWallet(
   } catch (err) {
     console.error(`[${address}] Error:`, err);
     
-    // 재시도 (최대 1회)
-    if (retryCount < 1) {
+    // 재시도 (최대 2회)
+    if (retryCount < 2) {
       console.log(`[${address}] Retrying...`);
       await new Promise((r) => setTimeout(r, 3000));
       return fetchSingleWallet(address, browserlessToken, retryCount + 1);

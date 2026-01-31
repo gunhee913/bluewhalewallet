@@ -194,7 +194,9 @@ export async function GET() {
   
   // Supabase에 저장 (성공한 토큰만)
   const supabase = getSupabase();
-  const today = new Date().toISOString().split('T')[0];
+  // 한국 시간 기준 날짜 (UTC+9)
+  const koreaDate = new Date(Date.now() + 9 * 60 * 60 * 1000);
+  const today = koreaDate.toISOString().split('T')[0];
   
   // token_info 테이블에서 총 발행량 가져오기
   const { data: tokenInfoData } = await supabase

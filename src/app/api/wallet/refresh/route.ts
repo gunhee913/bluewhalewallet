@@ -255,7 +255,9 @@ async function handleRefresh(addresses: string[]) {
       }
       
       // 2. wallet_assets_history에도 저장 (매번 업데이트, 같은 날짜면 덮어쓰기)
-      const today = new Date().toISOString().split('T')[0];
+      // 한국 시간 기준 날짜 (UTC+9)
+      const koreaDate = new Date(Date.now() + 9 * 60 * 60 * 1000);
+      const today = koreaDate.toISOString().split('T')[0];
       const historyData = upsertData.map((item) => ({
         address: item.address,
         total_assets: item.total_assets,

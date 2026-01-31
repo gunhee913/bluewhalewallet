@@ -65,11 +65,11 @@ async function fetchTokenBurnData() {
 const TOKENS = [
   { name: 'sBWPM', totalSupply: 7000 },
   { name: 'sADOL', totalSupply: 70000 },
+  { name: 'AQUA1', totalSupply: 0 },
   { name: 'CLAM', totalSupply: 70000000 },
   { name: 'PEARL', totalSupply: 0 },
   { name: 'SHELL', totalSupply: 0 },
   { name: 'CORAL', totalSupply: 0 },
-  { name: 'AQUA1', totalSupply: 0 },
 ];
 
 interface TokenBurnData {

@@ -273,9 +273,9 @@ export default function TokenDetailPage() {
                   <thead className="bg-slate-800">
                     <tr>
                       <th className="text-left text-xs md:text-sm font-medium text-slate-400 px-3 py-3">날짜</th>
-                      <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-2 py-3">일소각량</th>
+                      <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-2 py-3">소각량</th>
                       <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-2 py-3">토큰가격</th>
-                      <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-2 py-3">일소각금</th>
+                      <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-2 py-3">소각금</th>
                       <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-2 py-3">누적소각량</th>
                       <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-2 py-3">총소각가치</th>
                       <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-3 py-3">소각률</th>

@@ -1,10 +1,12 @@
 'use client';
 
 import { Card } from '@/components/ui/card';
-import { ExternalLink, Copy, Wallet, Loader2 } from 'lucide-react';
+import { ExternalLink, Copy, Wallet, Loader2, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useMemo } from 'react';
+import { formatDistanceToNow } from 'date-fns';
+import { ko } from 'date-fns/locale';
 
 const PUMPSPACE_BASE_URL = 'https://pumpspace.io/wallet/detail?account=';
 
@@ -47,40 +49,41 @@ const WALLETS: WalletInfo[] = [
 const CHAIN_CONFIG = {
   avalanche: {
     name: 'Avalanche',
-    color: 'bg-red-500/20 text-red-400 border-red-500/30',
-    activeColor: 'bg-red-500 text-white',
   },
   kaia: {
     name: 'Kaia',
-    color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-    activeColor: 'bg-emerald-500 text-white',
   },
 };
 
-// 모든 지갑 데이터를 한번에 가져오기
-async function fetchAllWalletData(addresses: string[]) {
+// Supabase에서 캐시된 데이터 가져오기
+async function fetchCachedData(addresses: string[]) {
   const response = await fetch(`/api/wallet?addresses=${addresses.join(',')}`);
-  if (!response.ok) {
-    throw new Error('Failed to fetch wallet data');
-  }
+  if (!response.ok) throw new Error('Failed to fetch');
+  return response.json();
+}
+
+// 새로고침 (스크래핑)
+async function refreshData(addresses: string[]) {
+  const response = await fetch('/api/wallet/refresh', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ addresses }),
+  });
+  if (!response.ok) throw new Error('Failed to refresh');
   return response.json();
 }
 
 interface WalletCardProps {
   wallet: WalletInfo;
   totalAssets: string | null;
-  isLoading: boolean;
-  error: boolean;
 }
 
-function WalletCard({ wallet, totalAssets, isLoading, error }: WalletCardProps) {
+function WalletCard({ wallet, totalAssets }: WalletCardProps) {
   const { toast } = useToast();
 
   const handleCopyAddress = (address: string) => {
     navigator.clipboard.writeText(address);
-    toast({
-      description: '지갑 주소가 복사되었습니다',
-    });
+    toast({ description: '지갑 주소가 복사되었습니다' });
   };
 
   const formatAddress = (address: string) => {
@@ -92,9 +95,7 @@ function WalletCard({ wallet, totalAssets, isLoading, error }: WalletCardProps) 
       <div className="p-5">
         <div className="flex items-center justify-between">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <h2 className="text-lg font-semibold text-white">{wallet.name}</h2>
-            </div>
+            <h2 className="text-lg font-semibold text-white mb-1">{wallet.name}</h2>
             <div className="flex items-center gap-2 mb-2">
               <code className="text-sm text-emerald-400 font-mono">
                 {formatAddress(wallet.address)}
@@ -110,14 +111,8 @@ function WalletCard({ wallet, totalAssets, isLoading, error }: WalletCardProps) 
 
             <div className="flex items-center gap-2">
               <span className="text-sm text-slate-400">Total Assets:</span>
-              {isLoading ? (
-                <Loader2 className="w-4 h-4 text-emerald-400 animate-spin" />
-              ) : error ? (
-                <span className="text-sm text-red-400">불러오기 실패</span>
-              ) : totalAssets ? (
-                <span className="text-lg font-bold text-emerald-400">
-                  {totalAssets}
-                </span>
+              {totalAssets ? (
+                <span className="text-lg font-bold text-emerald-400">{totalAssets}</span>
               ) : (
                 <span className="text-sm text-slate-500">-</span>
               )}
@@ -141,52 +136,87 @@ function WalletCard({ wallet, totalAssets, isLoading, error }: WalletCardProps) 
 
 export default function Home() {
   const [selectedChain, setSelectedChain] = useState<Chain>('avalanche');
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  // 현재 체인에 해당하는 지갑들
   const filteredWallets = useMemo(
     () => WALLETS.filter((wallet) => wallet.chain === selectedChain),
     [selectedChain]
   );
 
-  // 현재 체인의 모든 지갑 주소
   const addresses = useMemo(
     () => filteredWallets.map((w) => w.address),
     [filteredWallets]
   );
 
-  // 한번에 모든 지갑 데이터 가져오기
-  const { data, isLoading, error } = useQuery({
+  // 캐시된 데이터 로드 (즉시)
+  const { data, isLoading } = useQuery({
     queryKey: ['wallets', selectedChain],
-    queryFn: () => fetchAllWalletData(addresses),
-    staleTime: 1000 * 60 * 5, // 5분 캐시
+    queryFn: () => fetchCachedData(addresses),
+    staleTime: Infinity, // 수동 새로고침만
     enabled: addresses.length > 0,
   });
 
-  // 각 지갑의 자산 정보 가져오기
+  // 새로고침 mutation
+  const refreshMutation = useMutation({
+    mutationFn: () => refreshData(addresses),
+    onSuccess: (result) => {
+      // 캐시 업데이트
+      queryClient.setQueryData(['wallets', selectedChain], {
+        success: true,
+        results: result.results,
+        lastUpdated: new Date().toISOString(),
+      });
+      toast({ description: '데이터가 업데이트되었습니다!' });
+    },
+    onError: () => {
+      toast({ description: '새로고침 실패. 잠시 후 다시 시도해주세요.', variant: 'destructive' });
+    },
+  });
+
   const getAssets = (address: string): string | null => {
     if (!data?.results) return null;
-    // 대소문자 무시하고 찾기
     const key = Object.keys(data.results).find(
       (k) => k.toLowerCase() === address.toLowerCase()
     );
     return key ? data.results[key] : null;
   };
 
+  const lastUpdated = data?.lastUpdated
+    ? formatDistanceToNow(new Date(data.lastUpdated), { addSuffix: true, locale: ko })
+    : null;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* Header */}
       <header className="border-b border-slate-700/50 backdrop-blur-sm">
         <div className="max-w-4xl mx-auto px-6 py-5">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-500/20 rounded-xl">
-              <Wallet className="w-6 h-6 text-emerald-400" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-emerald-500/20 rounded-xl">
+                <Wallet className="w-6 h-6 text-emerald-400" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-white tracking-tight">
+                  BlueWhale Wallet
+                </h1>
+                <p className="text-sm text-slate-400">블루웨일 지갑 주소 한눈에 보기</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl font-bold text-white tracking-tight">
-                BlueWhale Wallet
-              </h1>
-              <p className="text-sm text-slate-400">블루웨일 지갑 주소 한눈에 보기</p>
-            </div>
+
+            {/* 새로고침 버튼 */}
+            <button
+              onClick={() => refreshMutation.mutate()}
+              disabled={refreshMutation.isPending}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white rounded-lg transition-colors"
+            >
+              <RefreshCw
+                className={`w-4 h-4 ${refreshMutation.isPending ? 'animate-spin' : ''}`}
+              />
+              <span className="text-sm">
+                {refreshMutation.isPending ? '업데이트 중...' : '새로고침'}
+              </span>
+            </button>
           </div>
         </div>
       </header>
@@ -194,34 +224,43 @@ export default function Home() {
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-6 py-10">
         {/* Chain 선택 탭 */}
-        <div className="flex gap-6 mb-6 border-b border-slate-700">
-          <button
-            onClick={() => setSelectedChain('avalanche')}
-            className={`pb-3 text-sm font-medium transition-colors ${
-              selectedChain === 'avalanche'
-                ? 'text-white border-b-2 border-white'
-                : 'text-slate-500 hover:text-slate-300'
-            }`}
-          >
-            Avalanche
-          </button>
-          <button
-            onClick={() => setSelectedChain('kaia')}
-            className={`pb-3 text-sm font-medium transition-colors ${
-              selectedChain === 'kaia'
-                ? 'text-white border-b-2 border-white'
-                : 'text-slate-500 hover:text-slate-300'
-            }`}
-          >
-            Kaia
-          </button>
+        <div className="flex items-center justify-between mb-6 border-b border-slate-700">
+          <div className="flex gap-6">
+            <button
+              onClick={() => setSelectedChain('avalanche')}
+              className={`pb-3 text-sm font-medium transition-colors ${
+                selectedChain === 'avalanche'
+                  ? 'text-white border-b-2 border-white'
+                  : 'text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              Avalanche
+            </button>
+            <button
+              onClick={() => setSelectedChain('kaia')}
+              className={`pb-3 text-sm font-medium transition-colors ${
+                selectedChain === 'kaia'
+                  ? 'text-white border-b-2 border-white'
+                  : 'text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              Kaia
+            </button>
+          </div>
+
+          {/* 마지막 업데이트 시간 */}
+          {lastUpdated && (
+            <span className="text-xs text-slate-500 pb-3">
+              마지막 업데이트: {lastUpdated}
+            </span>
+          )}
         </div>
 
-        {/* 로딩 상태 표시 */}
+        {/* 로딩 */}
         {isLoading && (
           <div className="flex items-center gap-2 mb-4 text-slate-400">
             <Loader2 className="w-4 h-4 animate-spin" />
-            <span className="text-sm">모든 지갑 정보를 불러오는 중...</span>
+            <span className="text-sm">로딩 중...</span>
           </div>
         )}
 
@@ -232,8 +271,6 @@ export default function Home() {
               key={wallet.address}
               wallet={wallet}
               totalAssets={getAssets(wallet.address)}
-              isLoading={isLoading}
-              error={!!error}
             />
           ))}
         </div>

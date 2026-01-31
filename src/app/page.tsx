@@ -92,7 +92,7 @@ function WalletCard({ wallet, totalAssets }: WalletCardProps) {
         <div className="flex items-center justify-between">
           <div className="flex-1 min-w-0">
             <h2 className="text-lg font-semibold text-white mb-1">{wallet.name}</h2>
-            <code className="text-sm text-white font-mono mb-2 block">
+            <code className="text-sm text-slate-400 font-mono mb-2 block">
               {formatAddress(wallet.address)}
             </code>
 

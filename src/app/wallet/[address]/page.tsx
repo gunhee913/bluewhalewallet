@@ -55,7 +55,9 @@ export default function WalletDetailPage() {
 
   // 페이지 진입 시 스크롤 맨 위로
   useEffect(() => {
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
   }, []);
 
   const { data: history, isLoading: historyLoading } = useQuery({

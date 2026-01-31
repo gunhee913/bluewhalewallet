@@ -1,19 +1,17 @@
 'use client';
 
 import { Card } from '@/components/ui/card';
-import { Wallet, Loader2 } from 'lucide-react';
+import { Wallet, Loader2, Flame } from 'lucide-react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { useState, useMemo } from 'react';
 
 const PUMPSPACE_BASE_URL = 'https://pumpspace.io/wallet/detail?account=';
-
-type Chain = 'avalanche' | 'kaia';
+const BURN_ADDRESS = '0x000000000000000000000000000000000000dEaD';
 
 interface WalletInfo {
   name: string;
   address: string;
-  chain: Chain;
   hasAnalysis?: boolean;
 }
 
@@ -21,54 +19,145 @@ const WALLETS: WalletInfo[] = [
   {
     name: '바이백펀드',
     address: '0x3654378aa2deb0860c2e5c7906471c8704c44c6f',
-    chain: 'avalanche',
     hasAnalysis: true,
   },
   {
     name: '아돌펀드',
     address: '0xEd1b254B6c3a6785e19ba83b728ECe4A6444f4d7',
-    chain: 'avalanche',
     hasAnalysis: true,
   },
   {
     name: 'Aqua1 펀드',
     address: '0xD57423c54F188220862391A069a2942c725ee37B',
-    chain: 'avalanche',
     hasAnalysis: true,
   },
   {
     name: '팀 지갑',
     address: '0x525e7f0a5d3fd6169d6ec35288104d52bf3bb95f',
-    chain: 'avalanche',
     hasAnalysis: true,
   },
   {
     name: 'v3 수수료 펀드(40%)',
     address: '0xfd48a5FFE5127896E93BAA8074CE98c5a999Ea97',
-    chain: 'avalanche',
     hasAnalysis: true,
   },
   {
     name: '소각 지갑',
     address: '0x000000000000000000000000000000000000dEaD',
-    chain: 'avalanche',
   },
 ];
-
-const CHAIN_CONFIG = {
-  avalanche: {
-    name: 'Avalanche',
-  },
-  kaia: {
-    name: 'Kaia',
-  },
-};
 
 // Supabase에서 캐시된 데이터 가져오기
 async function fetchCachedData(addresses: string[]) {
   const response = await fetch(`/api/wallet?addresses=${addresses.join(',')}`);
   if (!response.ok) throw new Error('Failed to fetch');
   return response.json();
+}
+
+// 토큰 소각 데이터 가져오기
+async function fetchTokenBurnData() {
+  const response = await fetch('/api/token/burn');
+  if (!response.ok) throw new Error('Failed to fetch');
+  return response.json();
+}
+
+// 토큰 목록 (총 발행량 포함)
+const TOKENS = [
+  { name: 'sBWPM', totalSupply: 7000 },
+  { name: 'sADOL', totalSupply: 70000 },
+  { name: 'CLAM', totalSupply: 70000000 },
+];
+
+interface TokenBurnData {
+  burned_amount: number;
+  burned_value: string;
+}
+
+interface TokenCardProps {
+  name: string;
+  totalSupply: number;
+  burnData?: TokenBurnData;
+}
+
+// 토큰 이미지 매핑
+const TOKEN_IMAGES: Record<string, string> = {
+  'sBWPM': '/sBWPM.svg',
+  'sADOL': '/sADOL.svg',
+  'CLAM': '/CLAM.svg',
+  'PEARL': '/PEARL.svg',
+  'SHELL': '/SHELL.svg',
+  'CORAL': '/CORAL.png',
+};
+
+function TokenCard({ name, totalSupply, burnData }: TokenCardProps) {
+  const burnedAmount = burnData?.burned_amount || 0;
+  const remaining = totalSupply - burnedAmount;
+  const burnRate = totalSupply > 0 ? (burnedAmount / totalSupply) * 100 : 0;
+
+  const formatNumber = (num: number) => {
+    return num.toLocaleString();
+  };
+
+  const formatValue = (value?: string) => {
+    if (!value || value === '$0') return '-';
+    return value.replace(/\.\d+/, '');
+  };
+
+  const tokenImage = TOKEN_IMAGES[name];
+
+  return (
+    <Card className="bg-slate-800/50 border-slate-700/50 hover:bg-slate-800/80 transition-all duration-200 overflow-hidden">
+      <div className="p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            {tokenImage ? (
+              <img src={tokenImage} alt={name} className="w-8 h-8 rounded-full" />
+            ) : (
+              <Flame className="w-5 h-5 text-orange-400" />
+            )}
+            <h2 className="text-lg font-semibold text-white">{name}</h2>
+          </div>
+          <a
+            href={`${PUMPSPACE_BASE_URL}${BURN_ADDRESS}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-4 py-1.5 bg-rose-500 hover:bg-rose-600 text-white rounded-md transition-all duration-200 text-sm font-medium"
+          >
+            이동
+          </a>
+        </div>
+
+        <div className="space-y-3">
+          <div className="flex justify-between">
+            <span className="text-sm text-slate-400">총 발행량</span>
+            <span className="text-sm font-medium text-white">{formatNumber(totalSupply)} 개</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-sm text-slate-400">소각량</span>
+            <span className="text-sm font-medium text-orange-400">
+              {burnedAmount > 0 ? `${formatNumber(burnedAmount)} 개` : '-'}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-sm text-slate-400">소각 금액</span>
+            <span className="text-sm font-medium text-emerald-400">{formatValue(burnData?.burned_value)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-sm text-slate-400">남은 개수</span>
+            <span className="text-sm font-medium text-white">
+              {burnedAmount > 0 ? `${formatNumber(remaining)} 개` : '-'}
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-slate-400">소각률</span>
+            <span className="text-sm font-medium text-white">
+              {burnedAmount > 0 ? `${burnRate.toFixed(2)}%` : '-'}
+            </span>
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
 }
 
 interface WalletCardProps {
@@ -131,37 +220,42 @@ function WalletCard({ wallet, totalAssets }: WalletCardProps) {
 }
 
 export default function Home() {
-  const [selectedChain, setSelectedChain] = useState<Chain>('avalanche');
-
-  const filteredWallets = useMemo(
-    () => WALLETS.filter((wallet) => wallet.chain === selectedChain),
-    [selectedChain]
-  );
+  const [selectedTab, setSelectedTab] = useState<'wallet' | 'token'>('wallet');
 
   const addresses = useMemo(
-    () => filteredWallets.map((w) => w.address),
-    [filteredWallets]
+    () => WALLETS.map((w) => w.address),
+    []
   );
 
-  // 캐시된 데이터 로드 (30분마다 자동 업데이트됨)
-  const { data, isLoading } = useQuery({
-    queryKey: ['wallets', selectedChain],
+  // 지갑 데이터 로드
+  const { data: walletData, isLoading: walletLoading } = useQuery({
+    queryKey: ['wallets'],
     queryFn: () => fetchCachedData(addresses),
-    staleTime: 30 * 60 * 1000, // 30분
-    refetchInterval: 30 * 60 * 1000, // 30분마다 리페치
-    enabled: addresses.length > 0,
+    staleTime: 30 * 60 * 1000,
+    refetchInterval: 30 * 60 * 1000,
+    enabled: selectedTab === 'wallet',
+  });
+
+  // 토큰 소각 데이터 로드
+  const { data: tokenData, isLoading: tokenLoading } = useQuery({
+    queryKey: ['token-burn'],
+    queryFn: fetchTokenBurnData,
+    staleTime: 60 * 60 * 1000, // 1시간 (자정에만 업데이트)
+    enabled: selectedTab === 'token',
   });
 
   const getAssets = (address: string): string | null => {
-    if (!data?.results) return null;
-    const key = Object.keys(data.results).find(
+    if (!walletData?.results) return null;
+    const key = Object.keys(walletData.results).find(
       (k) => k.toLowerCase() === address.toLowerCase()
     );
-    return key ? data.results[key] : null;
+    return key ? walletData.results[key] : null;
   };
 
+  const isLoading = selectedTab === 'wallet' ? walletLoading : tokenLoading;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-x-hidden">
       {/* Header */}
       <header className="border-b border-slate-700/50 backdrop-blur-sm">
         <div className="max-w-4xl mx-auto px-6 py-5">
@@ -176,28 +270,28 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-6 py-10">
-        {/* Chain 선택 탭 */}
+        {/* 탭 선택 */}
         <div className="flex items-center justify-between mb-6 border-b border-slate-700">
           <div className="flex gap-6">
             <button
-              onClick={() => setSelectedChain('avalanche')}
+              onClick={() => setSelectedTab('wallet')}
               className={`pb-3 text-sm font-medium transition-colors ${
-                selectedChain === 'avalanche'
+                selectedTab === 'wallet'
                   ? 'text-white border-b-2 border-white'
                   : 'text-slate-500 hover:text-slate-300'
               }`}
             >
-              Avalanche
+              Wallet
             </button>
             <button
-              onClick={() => setSelectedChain('kaia')}
+              onClick={() => setSelectedTab('token')}
               className={`pb-3 text-sm font-medium transition-colors ${
-                selectedChain === 'kaia'
+                selectedTab === 'token'
                   ? 'text-white border-b-2 border-white'
                   : 'text-slate-500 hover:text-slate-300'
               }`}
             >
-              Kaia
+              Token
             </button>
           </div>
         </div>
@@ -210,24 +304,35 @@ export default function Home() {
           </div>
         )}
 
-        {/* 지갑 목록 */}
-        <div className="space-y-4">
-          {filteredWallets.map((wallet) => (
-            <WalletCard
-              key={wallet.address}
-              wallet={wallet}
-              totalAssets={getAssets(wallet.address)}
-            />
-          ))}
-        </div>
+        {/* Wallet 탭 */}
+        {selectedTab === 'wallet' && (
+          <div className="space-y-4">
+            {WALLETS.map((wallet) => (
+              <WalletCard
+                key={wallet.address}
+                wallet={wallet}
+                totalAssets={getAssets(wallet.address)}
+              />
+            ))}
+          </div>
+        )}
 
-        {/* Empty State */}
-        {filteredWallets.length === 0 && (
-          <div className="text-center py-20">
-            <Wallet className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-            <p className="text-slate-400">
-              {CHAIN_CONFIG[selectedChain].name}에 등록된 지갑이 없습니다
-            </p>
+        {/* Token 탭 - 소각 현황 */}
+        {selectedTab === 'token' && (
+          <div className="space-y-4">
+            {TOKENS.map((token) => {
+              const burnData = tokenData?.tokens?.find(
+                (t: { token_name: string }) => t.token_name === token.name
+              );
+              return (
+                <TokenCard
+                  key={token.name}
+                  name={token.name}
+                  totalSupply={token.totalSupply}
+                  burnData={burnData}
+                />
+              );
+            })}
           </div>
         )}
       </main>

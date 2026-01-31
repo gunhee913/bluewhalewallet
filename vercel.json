@@ -74,7 +74,7 @@
     },
     {
       "path": "/api/token/burn/save",
-      "schedule": "0 3,15 * * *"
+      "schedule": "0 0-14,15,22-23 * * *"
     }
   ]
 }

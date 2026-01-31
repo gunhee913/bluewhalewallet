@@ -352,9 +352,9 @@ export default function Home() {
                 PumpSpace.io
               </a>
             </span>
-            {walletData && walletData.length > 0 && walletData[0]?.updated_at && (
+            {walletData?.lastUpdated && (
               <span className="text-slate-600">
-                | 최근 업데이트: {new Date(walletData[0].updated_at).toLocaleString('ko-KR', { 
+                | 최근 업데이트: {new Date(walletData.lastUpdated).toLocaleString('ko-KR', { 
                   month: 'short', 
                   day: 'numeric', 
                   hour: '2-digit', 

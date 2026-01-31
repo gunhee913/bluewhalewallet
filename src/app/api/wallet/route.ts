@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import puppeteer from 'puppeteer-core';
+import puppeteer, { Page } from 'puppeteer-core';
 
 const PUMPSPACE_URL = 'https://pumpspace.io/wallet/detail?account=';
 
@@ -7,7 +7,7 @@ const PUMPSPACE_URL = 'https://pumpspace.io/wallet/detail?account=';
 export const maxDuration = 60;
 
 // 단일 페이지에서 Total Assets 추출
-async function extractTotalAssets(page: ReturnType<Awaited<ReturnType<typeof puppeteer.connect>>['newPage']>): Promise<string | null> {
+async function extractTotalAssets(page: Page): Promise<string | null> {
   return await page.evaluate(() => {
     const body = document.body.innerText;
     const lines = body.split('\n').map((l) => l.trim()).filter((l) => l);

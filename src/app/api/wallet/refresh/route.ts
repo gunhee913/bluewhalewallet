@@ -145,27 +145,9 @@ async function handleRefresh(addresses: string[]) {
 
   try {
     console.log('Connecting to Browserless...');
-    console.log('Token prefix:', browserlessToken.slice(0, 10));
-    
-    try {
-      browser = await puppeteer.connect({
-        browserWSEndpoint: `wss://chrome.browserless.io?token=${browserlessToken}&timeout=240000`,
-      });
-    } catch (connectErr: unknown) {
-      console.error('Browserless connect error:', connectErr);
-      let details = 'Unknown';
-      if (connectErr instanceof Error) {
-        details = connectErr.message;
-      } else if (connectErr && typeof connectErr === 'object') {
-        const err = connectErr as Record<string, unknown>;
-        details = (err.message as string) || 'ErrorEvent';
-      }
-      return NextResponse.json({
-        success: false,
-        error: 'Browserless connect failed',
-        details,
-      });
-    }
+    browser = await puppeteer.connect({
+      browserWSEndpoint: `wss://chrome.browserless.io?token=${browserlessToken}&timeout=240000`,
+    });
     console.log('Connected to Browserless');
 
     // 각 주소마다 새 페이지 생성 (detached frame 에러 방지)

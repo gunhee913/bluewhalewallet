@@ -4,6 +4,9 @@ import chromium from '@sparticuz/chromium';
 
 const PUMPSPACE_URL = 'https://pumpspace.io/wallet/detail?account=';
 
+// Pro 플랜 최대 60초
+export const maxDuration = 60;
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const address = searchParams.get('address');
@@ -15,7 +18,6 @@ export async function GET(request: NextRequest) {
   let browser = null;
 
   try {
-    // Vercel 서버리스 환경용 설정
     browser = await puppeteer.launch({
       args: chromium.args,
       defaultViewport: { width: 1280, height: 800 },
@@ -31,7 +33,7 @@ export async function GET(request: NextRequest) {
 
     await page.goto(`${PUMPSPACE_URL}${address}`, {
       waitUntil: 'networkidle0',
-      timeout: 60000,
+      timeout: 50000,
     });
 
     // 충분히 대기 (데이터 로딩)
@@ -41,7 +43,6 @@ export async function GET(request: NextRequest) {
     const result = await page.evaluate(() => {
       const body = document.body.innerText;
 
-      // Total Assets 찾기
       const lines = body
         .split('\n')
         .map((l) => l.trim())
@@ -50,24 +51,19 @@ export async function GET(request: NextRequest) {
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i].toLowerCase();
         if (line.includes('total') && line.includes('asset')) {
-          // 다음 몇 줄에서 금액 찾기 ($ 뒤에 공백 허용)
           for (let j = i; j < Math.min(i + 5, lines.length); j++) {
             const match = lines[j].match(/\$\s*[\d,]+(?:\.\d+)?/);
             if (match) {
-              // 공백 제거하고 반환
               return {
                 totalAssets: match[0].replace(/\s/g, ''),
-                foundAt: lines[j],
               };
             }
           }
         }
       }
 
-      // $ 패턴으로 전체 검색 (공백 허용)
       const allMatches = body.match(/\$\s*[\d,]+(?:\.\d+)?/g);
       if (allMatches && allMatches.length > 0) {
-        // 가장 큰 금액 찾기
         let max = 0;
         let maxStr = '';
         for (const m of allMatches) {
@@ -77,10 +73,10 @@ export async function GET(request: NextRequest) {
             maxStr = m.replace(/\s/g, '');
           }
         }
-        return { totalAssets: maxStr, foundAt: 'max value' };
+        return { totalAssets: maxStr };
       }
 
-      return { totalAssets: null, bodyPreview: body.slice(0, 500) };
+      return { totalAssets: null };
     });
 
     await browser.close();

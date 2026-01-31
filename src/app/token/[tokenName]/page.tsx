@@ -127,7 +127,7 @@ export default function TokenDetailPage() {
   }, [timeFrame, chartData.length]);
 
   const formatNumber = (num: number, withDecimal: boolean = false) => {
-    return num.toLocaleString(undefined, { maximumFractionDigits: withDecimal ? 4 : 0 });
+    return num.toLocaleString(undefined, { maximumFractionDigits: withDecimal ? 2 : 0 });
   };
 
   const showDecimal = tokenName === 'sBWPM' || tokenName === 'sADOL';

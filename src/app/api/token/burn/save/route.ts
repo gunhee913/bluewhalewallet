@@ -165,9 +165,13 @@ export async function GET() {
     });
   } catch (error) {
     console.error('[Token Burn Save] Error:', error);
+    const errorMessage = error instanceof Error 
+      ? `${error.name}: ${error.message}` 
+      : JSON.stringify(error);
     return NextResponse.json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined,
     });
   } finally {
     if (browser) {

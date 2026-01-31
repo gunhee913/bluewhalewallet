@@ -185,8 +185,8 @@ async function handleRefresh(addresses: string[]) {
         }
       }
       
-      // 다음 요청 전 1초 대기 (rate limit 방지)
-      await new Promise((r) => setTimeout(r, 1000));
+      // 다음 요청 전 10초 대기 (rate limit 방지)
+      await new Promise((r) => setTimeout(r, 10000));
     }
 
     // Supabase에 저장

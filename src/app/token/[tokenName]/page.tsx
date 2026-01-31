@@ -288,7 +288,7 @@ export default function TokenDetailPage() {
                         ? (item.burned_amount / totalSupply) * 100 
                         : 0;
                       
-                      const shortDate = item.recorded_at.replace(/^20/, '');
+                      const shortDate = item.recorded_at.replace(/^20/, '').replace(/-/g, '.');
                       
                       return (
                         <tr 

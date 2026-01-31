@@ -278,7 +278,7 @@ function HomeContent() {
             <h1 className="text-xl font-bold text-white tracking-tight">
               BlueWhale Analytics
             </h1>
-            <p className="text-sm text-slate-400">블루웨일 지갑 주소 한눈에 보기(Made.축산왕)</p>
+            <p className="text-sm text-slate-400">블루웨일 생태계 분석 한눈에 보기(Made.축산왕)</p>
           </div>
         </div>
       </header>

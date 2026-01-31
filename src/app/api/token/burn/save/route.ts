@@ -140,7 +140,7 @@ export async function GET() {
     console.log('[Token Burn Save] Step 1: Connecting to Browserless...');
     try {
       browser = await puppeteer.connect({
-        browserWSEndpoint: `wss://chrome.browserless.io?token=${browserlessToken}&timeout=240000`,
+        browserWSEndpoint: `wss://chrome.browserless.io?token=${browserlessToken}`,
       });
     } catch (connectErr: unknown) {
       console.error('[Token Burn Save] Connect error:', connectErr);

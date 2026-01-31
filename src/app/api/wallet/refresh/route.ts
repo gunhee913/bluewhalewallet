@@ -7,11 +7,17 @@ const PUMPSPACE_URL = 'https://pumpspace.io/wallet/detail?account=';
 // Vercel Pro 최대 60초
 export const maxDuration = 60;
 
-// Supabase 클라이언트
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+// Supabase 클라이언트 (lazy initialization)
+function getSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  
+  if (!url || !key) {
+    throw new Error('Supabase credentials not configured');
+  }
+  
+  return createClient(url, key);
+}
 
 // Total Assets 추출 (폴링으로 실제 금액이 나올 때까지 대기)
 async function extractTotalAssets(page: Page): Promise<string | null> {
@@ -132,6 +138,7 @@ async function handleRefresh(addresses: string[]) {
       updated_at: now,
     }));
 
+    const supabase = getSupabase();
     const { error: upsertError } = await supabase
       .from('wallet_assets')
       .upsert(upsertData, { onConflict: 'address' });

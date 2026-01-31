@@ -134,11 +134,20 @@ export async function GET() {
   let browser = null;
   
   try {
-    console.log('[Token Burn Save] Connecting to Browserless...');
-    browser = await puppeteer.connect({
-      browserWSEndpoint: `wss://chrome.browserless.io?token=${browserlessToken}&timeout=240000`,
-    });
-    console.log('[Token Burn Save] Connected!');
+    console.log('[Token Burn Save] Step 1: Connecting to Browserless...');
+    try {
+      browser = await puppeteer.connect({
+        browserWSEndpoint: `wss://chrome.browserless.io?token=${browserlessToken}&timeout=240000`,
+      });
+    } catch (connectErr) {
+      console.error('[Token Burn Save] Connect error:', connectErr);
+      return NextResponse.json({
+        success: false,
+        error: 'Browserless connect failed',
+        details: connectErr instanceof Error ? connectErr.message : String(connectErr),
+      });
+    }
+    console.log('[Token Burn Save] Step 2: Connected!');
     
     const page = await browser.newPage();
     await page.setViewport({ width: 1280, height: 720 });
@@ -189,11 +198,25 @@ export async function GET() {
       data: upsertData,
       extracted: burnData,
     });
-  } catch (error) {
+  } catch (error: unknown) {
+    console.error('[Token Burn Save] Error type:', typeof error);
     console.error('[Token Burn Save] Error:', error);
+    
+    let errorMsg = 'Unknown error';
+    if (error instanceof Error) {
+      errorMsg = `${error.name}: ${error.message}`;
+    } else if (error && typeof error === 'object') {
+      try {
+        errorMsg = JSON.stringify(error);
+      } catch {
+        errorMsg = String(error);
+      }
+    }
+    
     return NextResponse.json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: errorMsg,
+      errorType: typeof error,
     });
   } finally {
     if (browser) {

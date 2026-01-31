@@ -220,8 +220,13 @@ export default function TokenDetailPage() {
                   <YAxis 
                     stroke="#94a3b8"
                     fontSize={10}
-                    tickFormatter={(value) => formatNumber(value, showDecimal)}
-                    width={70}
+                    tickFormatter={(value) => {
+                      if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+                      if (value >= 1000) return `${(value / 1000).toFixed(0)}K`;
+                      if (value >= 1) return value.toFixed(showDecimal ? 1 : 0);
+                      return value.toFixed(2);
+                    }}
+                    width={45}
                   />
                   <Tooltip
                     contentStyle={{

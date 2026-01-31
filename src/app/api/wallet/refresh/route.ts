@@ -38,13 +38,13 @@ function getSupabase() {
   return createClient(url, key);
 }
 
-// Total Assets 추출 - 더 단순하고 확실한 방식
-async function extractTotalAssets(page: Page): Promise<string> {
-  // 페이지 로드 후 10초 대기 (JavaScript 렌더링 완료 대기)
-  await new Promise((r) => setTimeout(r, 10000));
+// Total Assets 추출 - 최적화된 버전
+async function extractTotalAssets(page: Page): Promise<string | null> {
+  // 페이지 로드 후 5초 대기 (최적화: 10초 → 5초)
+  await new Promise((r) => setTimeout(r, 5000));
   
-  // 최대 15초 동안 폴링
-  for (let attempt = 0; attempt < 15; attempt++) {
+  // 최대 10초 동안 폴링 (1초 간격)
+  for (let attempt = 0; attempt < 10; attempt++) {
     try {
       const result = await page.evaluate(() => {
         const body = document.body.innerText;
@@ -54,14 +54,11 @@ async function extractTotalAssets(page: Page): Promise<string> {
         for (let i = 0; i < lines.length; i++) {
           const line = lines[i].toLowerCase();
           if (line === 'total assets' || line.includes('total assets')) {
-            // 다음 5줄에서 "$ 숫자" 패턴 찾기
             for (let j = i; j < Math.min(i + 5, lines.length); j++) {
               const searchLine = lines[j];
-              // "$ 51,554" 또는 "$51,554" 형식
               const match = searchLine.match(/\$\s*([\d,]+(?:\.\d+)?)/);
               if (match && match[1]) {
                 const val = parseFloat(match[1].replace(/,/g, ''));
-                // $10 이상이면 유효 (v3 수수료 펀드는 $796 정도)
                 if (val >= 10) {
                   return '$' + match[1];
                 }
@@ -106,7 +103,7 @@ async function extractTotalAssets(page: Page): Promise<string> {
         return null;
       });
 
-      if (result) {
+      if (result && result !== '$0') {
         console.log(`Found: ${result} (attempt ${attempt + 1})`);
         return result;
       }
@@ -117,12 +114,75 @@ async function extractTotalAssets(page: Page): Promise<string> {
     await new Promise((r) => setTimeout(r, 1000));
   }
 
-  return '$0';
+  return null; // 실패 시 null 반환 (기존 값 유지용)
+}
+
+// 단일 지갑 크롤링 (재시도 로직 포함)
+async function fetchSingleWallet(
+  address: string, 
+  browserlessToken: string,
+  retryCount: number = 0
+): Promise<string | null> {
+  let browser = null;
+  let page = null;
+  
+  try {
+    console.log(`[${address}] Connecting... (attempt ${retryCount + 1})`);
+    browser = await puppeteer.connect({
+      browserWSEndpoint: `wss://chrome.browserless.io?token=${browserlessToken}`,
+    });
+    
+    page = await browser.newPage();
+    
+    // 리소스 차단으로 페이지 로드 속도 향상
+    await page.setRequestInterception(true);
+    page.on('request', (req) => {
+      const resourceType = req.resourceType();
+      // 이미지, 폰트, 미디어 차단
+      if (['image', 'font', 'media', 'stylesheet'].includes(resourceType)) {
+        req.abort();
+      } else {
+        req.continue();
+      }
+    });
+    
+    await page.setViewport({ width: 1280, height: 720 });
+    
+    const url = `${PUMPSPACE_URL}${address}`;
+    console.log(`[${address}] Navigating to: ${url}`);
+    
+    await page.goto(url, { 
+      waitUntil: 'domcontentloaded', // networkidle2 대신 더 빠른 옵션
+      timeout: 30000 
+    });
+
+    const totalAssets = await extractTotalAssets(page);
+    console.log(`[${address}] Result: ${totalAssets}`);
+    
+    return totalAssets;
+
+  } catch (err) {
+    console.error(`[${address}] Error:`, err);
+    
+    // 재시도 (최대 1회)
+    if (retryCount < 1) {
+      console.log(`[${address}] Retrying...`);
+      await new Promise((r) => setTimeout(r, 3000));
+      return fetchSingleWallet(address, browserlessToken, retryCount + 1);
+    }
+    
+    return null;
+  } finally {
+    if (page) {
+      try { await page.close(); } catch (e) { /* ignore */ }
+    }
+    if (browser) {
+      try { await browser.close(); } catch (e) { /* ignore */ }
+    }
+  }
 }
 
 // GET: 지갑 새로고침 (Cron에서 호출)
-// ?group=1,2,3 으로 그룹 지정 가능
-// ?addresses=0x... 으로 특정 주소 지정 가능
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const groupParam = searchParams.get('group');
@@ -131,14 +191,11 @@ export async function GET(request: NextRequest) {
   let addresses: string[];
   
   if (addressesParam) {
-    // 특정 주소 지정
     addresses = addressesParam.split(',').map(a => a.trim());
   } else if (groupParam && WALLET_GROUPS[groupParam]) {
-    // 그룹 지정
     addresses = WALLET_GROUPS[groupParam];
     console.log(`Processing group ${groupParam}:`, addresses);
   } else {
-    // 기본: 모든 지갑
     addresses = ALL_ADDRESSES;
   }
   
@@ -167,72 +224,42 @@ async function handleRefresh(addresses: string[]) {
 
   const results: Record<string, string | null> = {};
 
-  // 각 지갑마다 독립적으로 browser 연결 (세션 끊김 방지)
+  // 각 지갑 순차 처리
   for (const address of addresses) {
-    let browser = null;
-    let page = null;
+    const totalAssets = await fetchSingleWallet(address, browserlessToken);
+    results[address.toLowerCase()] = totalAssets;
     
-    try {
-      console.log(`[${address}] Connecting to Browserless...`);
-      browser = await puppeteer.connect({
-        browserWSEndpoint: `wss://chrome.browserless.io?token=${browserlessToken}`,
-      });
-      
-      page = await browser.newPage();
-      await page.setViewport({ width: 1280, height: 720 });
-      
-      const url = `${PUMPSPACE_URL}${address}`;
-      console.log(`[${address}] Navigating to: ${url}`);
-      
-      await page.goto(url, { 
-        waitUntil: 'networkidle2', 
-        timeout: 45000 
-      });
-
-      const totalAssets = await extractTotalAssets(page);
-      results[address.toLowerCase()] = totalAssets;
-      console.log(`[${address}] Result: ${totalAssets}`);
-
-    } catch (err) {
-      console.error(`[${address}] Error:`, err);
-      results[address.toLowerCase()] = null;
-    } finally {
-      // 페이지와 브라우저 닫기
-      if (page) {
-        try { await page.close(); } catch (e) { /* ignore */ }
-      }
-      if (browser) {
-        try { await browser.close(); } catch (e) { /* ignore */ }
-      }
-    }
-    
-    // 다음 요청 전 5초 대기 (rate limit 방지)
-    await new Promise((r) => setTimeout(r, 5000));
+    // 다음 요청 전 3초 대기 (최적화: 5초 → 3초)
+    await new Promise((r) => setTimeout(r, 3000));
   }
 
-  // Supabase에 저장
+  // Supabase에 저장 (null이 아닌 것만)
   const now = new Date().toISOString();
-  const upsertData = Object.entries(results).map(([address, total_assets]) => ({
-    address: address.toLowerCase(),
-    total_assets,
-    updated_at: now,
-  }));
+  const upsertData = Object.entries(results)
+    .filter(([, total_assets]) => total_assets !== null) // null은 저장하지 않음 (기존 값 유지)
+    .map(([address, total_assets]) => ({
+      address: address.toLowerCase(),
+      total_assets,
+      updated_at: now,
+    }));
 
   console.log('Saving to Supabase:', upsertData);
 
-  try {
-    const supabase = getSupabase();
-    const { error: upsertError } = await supabase
-      .from('wallet_assets')
-      .upsert(upsertData, { onConflict: 'address' });
+  if (upsertData.length > 0) {
+    try {
+      const supabase = getSupabase();
+      const { error: upsertError } = await supabase
+        .from('wallet_assets')
+        .upsert(upsertData, { onConflict: 'address' });
 
-    if (upsertError) {
-      console.error('Supabase upsert error:', upsertError);
-    } else {
-      console.log('Saved to Supabase successfully');
+      if (upsertError) {
+        console.error('Supabase upsert error:', upsertError);
+      } else {
+        console.log('Saved to Supabase successfully');
+      }
+    } catch (dbError) {
+      console.error('Database error:', dbError);
     }
-  } catch (dbError) {
-    console.error('Database error:', dbError);
   }
 
   return NextResponse.json({

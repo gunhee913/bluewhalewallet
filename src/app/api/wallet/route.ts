@@ -14,9 +14,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Address is required' }, { status: 400 });
   }
 
-  // 환경변수 확인
   const browserlessToken = process.env.BROWSERLESS_TOKEN;
-  
+
   if (!browserlessToken) {
     return NextResponse.json({
       success: false,
@@ -29,9 +28,9 @@ export async function GET(request: NextRequest) {
   let browser = null;
 
   try {
-    // Browserless.io 원격 브라우저 연결
+    // Browserless.io 원격 브라우저 연결 (타임아웃 추가)
     browser = await puppeteer.connect({
-      browserWSEndpoint: `wss://chrome.browserless.io?token=${browserlessToken}`,
+      browserWSEndpoint: `wss://chrome.browserless.io?token=${browserlessToken}&timeout=55000`,
     });
 
     const page = await browser.newPage();
@@ -42,12 +41,12 @@ export async function GET(request: NextRequest) {
     );
 
     await page.goto(`${PUMPSPACE_URL}${address}`, {
-      waitUntil: 'networkidle2',
+      waitUntil: 'networkidle0',
       timeout: 45000,
     });
 
-    // 데이터 로딩 대기
-    await new Promise((resolve) => setTimeout(resolve, 5000));
+    // 데이터 로딩 충분히 대기 (10초)
+    await new Promise((resolve) => setTimeout(resolve, 10000));
 
     // 페이지 텍스트에서 금액 찾기
     const totalAssets = await page.evaluate(() => {
@@ -97,15 +96,17 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Puppeteer Error:', error);
     if (browser) {
-      await browser.close();
+      try {
+        await browser.close();
+      } catch (e) {
+        // ignore close error
+      }
     }
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to fetch wallet data',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      success: false,
+      address,
+      totalAssets: null,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
   }
 }

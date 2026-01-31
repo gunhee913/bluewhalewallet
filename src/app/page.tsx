@@ -232,7 +232,7 @@ function WalletCard({ wallet, totalAssets, fundDetails }: WalletCardProps) {
             
             {/* 펀드 요약 (바이백/아돌) */}
             {fundDetails && (
-              <div className="mt-1 text-xs text-slate-500">
+              <div className="mt-2 text-sm text-slate-400">
                 메인 {fundDetails.main ? formatAssets(fundDetails.main) : '-'} | AI {fundDetails.ai ? formatAssets(fundDetails.ai) : '-'}
               </div>
             )}

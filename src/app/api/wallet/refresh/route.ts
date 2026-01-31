@@ -142,63 +142,62 @@ async function handleRefresh(addresses: string[]) {
     });
   }
 
-  let browser = null;
   const results: Record<string, string | null> = {};
 
-  try {
-    console.log('Connecting to Browserless...');
-    browser = await puppeteer.connect({
-      browserWSEndpoint: `wss://chrome.browserless.io?token=${browserlessToken}`,
-    });
-    console.log('Connected to Browserless');
-
-    // 각 주소마다 새 페이지 생성 (detached frame 에러 방지)
-    for (const address of addresses) {
-      let page = null;
-      try {
-        page = await browser.newPage();
-        await page.setViewport({ width: 1280, height: 720 });
-        
-        const url = `${PUMPSPACE_URL}${address}`;
-        console.log(`Navigating to: ${url}`);
-        
-        await page.goto(url, { 
-          waitUntil: 'networkidle2', 
-          timeout: 45000 
-        });
-
-        const totalAssets = await extractTotalAssets(page);
-        results[address.toLowerCase()] = totalAssets;
-        console.log(`Result for ${address}: ${totalAssets}`);
-
-      } catch (err) {
-        console.error(`Error fetching ${address}:`, err);
-        results[address.toLowerCase()] = null;
-      } finally {
-        // 각 페이지 처리 후 반드시 닫기
-        if (page) {
-          try {
-            await page.close();
-          } catch (e) {
-            console.error('Page close error:', e);
-          }
-        }
-      }
+  // 각 지갑마다 독립적으로 browser 연결 (세션 끊김 방지)
+  for (const address of addresses) {
+    let browser = null;
+    let page = null;
+    
+    try {
+      console.log(`[${address}] Connecting to Browserless...`);
+      browser = await puppeteer.connect({
+        browserWSEndpoint: `wss://chrome.browserless.io?token=${browserlessToken}`,
+      });
       
-      // 다음 요청 전 10초 대기 (rate limit 방지)
-      await new Promise((r) => setTimeout(r, 10000));
+      page = await browser.newPage();
+      await page.setViewport({ width: 1280, height: 720 });
+      
+      const url = `${PUMPSPACE_URL}${address}`;
+      console.log(`[${address}] Navigating to: ${url}`);
+      
+      await page.goto(url, { 
+        waitUntil: 'networkidle2', 
+        timeout: 45000 
+      });
+
+      const totalAssets = await extractTotalAssets(page);
+      results[address.toLowerCase()] = totalAssets;
+      console.log(`[${address}] Result: ${totalAssets}`);
+
+    } catch (err) {
+      console.error(`[${address}] Error:`, err);
+      results[address.toLowerCase()] = null;
+    } finally {
+      // 페이지와 브라우저 닫기
+      if (page) {
+        try { await page.close(); } catch (e) { /* ignore */ }
+      }
+      if (browser) {
+        try { await browser.close(); } catch (e) { /* ignore */ }
+      }
     }
+    
+    // 다음 요청 전 5초 대기 (rate limit 방지)
+    await new Promise((r) => setTimeout(r, 5000));
+  }
 
-    // Supabase에 저장
-    const now = new Date().toISOString();
-    const upsertData = Object.entries(results).map(([address, total_assets]) => ({
-      address: address.toLowerCase(),
-      total_assets,
-      updated_at: now,
-    }));
+  // Supabase에 저장
+  const now = new Date().toISOString();
+  const upsertData = Object.entries(results).map(([address, total_assets]) => ({
+    address: address.toLowerCase(),
+    total_assets,
+    updated_at: now,
+  }));
 
-    console.log('Saving to Supabase:', upsertData);
+  console.log('Saving to Supabase:', upsertData);
 
+  try {
     const supabase = getSupabase();
     const { error: upsertError } = await supabase
       .from('wallet_assets')
@@ -209,35 +208,13 @@ async function handleRefresh(addresses: string[]) {
     } else {
       console.log('Saved to Supabase successfully');
     }
-
-    return NextResponse.json({
-      success: true,
-      results,
-      message: 'Data refreshed and saved',
-    });
-  } catch (error: unknown) {
-    console.error('Puppeteer Error:', error);
-    
-    // ErrorEvent 또는 Error 객체에서 메시지 추출
-    let errorMessage = 'Unknown error';
-    if (error instanceof Error) {
-      errorMessage = error.message;
-    } else if (error && typeof error === 'object' && 'message' in error) {
-      errorMessage = String((error as { message: unknown }).message);
-    }
-    
-    return NextResponse.json({
-      success: false,
-      error: errorMessage,
-    });
-  } finally {
-    if (browser) {
-      try {
-        await browser.close();
-        console.log('Browser closed');
-      } catch (e) {
-        console.error('Browser close error:', e);
-      }
-    }
+  } catch (dbError) {
+    console.error('Database error:', dbError);
   }
+
+  return NextResponse.json({
+    success: true,
+    results,
+    message: 'Data refreshed and saved',
+  });
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import puppeteer from 'puppeteer-core';
+import puppeteer, { Page } from 'puppeteer-core';
 import { createClient } from '@supabase/supabase-js';
 
 // Vercel Pro 최대 300초
@@ -29,7 +29,7 @@ function getSupabase() {
 }
 
 // 토큰 소각 데이터 추출
-async function extractTokenBurnData(page: puppeteer.Page): Promise<Record<string, { units: number; value: string }>> {
+async function extractTokenBurnData(page: Page): Promise<Record<string, { units: number; value: string }>> {
   // 페이지 로드 후 8초 대기
   await new Promise((r) => setTimeout(r, 8000));
   

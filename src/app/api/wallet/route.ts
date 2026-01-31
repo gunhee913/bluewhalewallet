@@ -14,25 +14,25 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Address is required' }, { status: 400 });
   }
 
+  // 환경변수 확인
+  const browserlessToken = process.env.BROWSERLESS_TOKEN;
+  
+  if (!browserlessToken) {
+    return NextResponse.json({
+      success: false,
+      error: 'BROWSERLESS_TOKEN not configured',
+      address,
+      totalAssets: null,
+    });
+  }
+
   let browser = null;
 
   try {
-    // Browserless.io 원격 브라우저 사용
-    const browserlessToken = process.env.BROWSERLESS_TOKEN;
-
-    if (!browserlessToken) {
-      // 로컬 환경: puppeteer 사용
-      const puppeteerLocal = await import('puppeteer');
-      browser = await puppeteerLocal.default.launch({
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
-      });
-    } else {
-      // Vercel 환경: Browserless.io 사용
-      browser = await puppeteer.connect({
-        browserWSEndpoint: `wss://chrome.browserless.io?token=${browserlessToken}`,
-      });
-    }
+    // Browserless.io 원격 브라우저 연결
+    browser = await puppeteer.connect({
+      browserWSEndpoint: `wss://chrome.browserless.io?token=${browserlessToken}`,
+    });
 
     const page = await browser.newPage();
 
@@ -70,7 +70,6 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // 전체에서 가장 큰 금액 찾기
       const allMatches = body.match(/\$\s*[\d,]+(?:\.\d+)?/g);
       if (allMatches && allMatches.length > 0) {
         let max = 0;

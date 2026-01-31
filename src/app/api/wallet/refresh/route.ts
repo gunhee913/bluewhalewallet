@@ -213,11 +213,20 @@ async function handleRefresh(addresses: string[]) {
       results,
       message: 'Data refreshed and saved',
     });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Puppeteer Error:', error);
+    
+    let errorMsg = 'Unknown error';
+    if (error instanceof Error) {
+      errorMsg = error.message;
+    } else if (error && typeof error === 'object') {
+      const err = error as Record<string, unknown>;
+      errorMsg = (err.message as string) || (err.error as string) || JSON.stringify(error);
+    }
+    
     return NextResponse.json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: errorMsg,
     });
   } finally {
     if (browser) {

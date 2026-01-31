@@ -217,12 +217,20 @@ export async function GET() {
       });
     }
     
+    // 디버깅: 페이지 텍스트 일부 가져오기
+    const debugPage = await browser.newPage();
+    await debugPage.goto(PUMPSPACE_URL, { waitUntil: 'networkidle2', timeout: 30000 });
+    await new Promise((r) => setTimeout(r, 8000));
+    const pageText = await debugPage.evaluate(() => document.body.innerText.slice(0, 2000));
+    await debugPage.close();
+    
     console.log('[Token Burn Save] Success!');
     return NextResponse.json({
       success: true,
       message: `Saved ${upsertData.length} tokens for ${today}`,
       data: upsertData,
       extracted: burnData,
+      debug_page_text: pageText,
     });
   } catch (error: unknown) {
     console.error('[Token Burn Save] Error type:', typeof error);

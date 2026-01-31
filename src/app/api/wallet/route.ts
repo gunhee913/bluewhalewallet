@@ -1,38 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import type { Browser } from 'puppeteer-core';
+import puppeteer from 'puppeteer-core';
 
 const PUMPSPACE_URL = 'https://pumpspace.io/wallet/detail?account=';
 
 // Vercel Pro 최대 60초
 export const maxDuration = 60;
-
-// Vercel 환경인지 확인
-const isVercel = process.env.VERCEL === '1';
-
-async function getBrowser(): Promise<Browser> {
-  if (isVercel) {
-    // Vercel: puppeteer-core + @sparticuz/chromium
-    const puppeteer = await import('puppeteer-core');
-    const chromium = await import('@sparticuz/chromium');
-    
-    chromium.default.setHeadlessMode = true;
-    chromium.default.setGraphicsMode = false;
-
-    return puppeteer.default.launch({
-      args: chromium.default.args,
-      defaultViewport: { width: 1280, height: 800 },
-      executablePath: await chromium.default.executablePath(),
-      headless: chromium.default.headless,
-    });
-  } else {
-    // 로컬: puppeteer (Chrome 포함)
-    const puppeteer = await import('puppeteer');
-    return puppeteer.default.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    }) as unknown as Browser;
-  }
-}
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -42,10 +14,26 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Address is required' }, { status: 400 });
   }
 
-  let browser: Browser | null = null;
+  let browser = null;
 
   try {
-    browser = await getBrowser();
+    // Browserless.io 원격 브라우저 사용
+    const browserlessToken = process.env.BROWSERLESS_TOKEN;
+
+    if (!browserlessToken) {
+      // 로컬 환경: puppeteer 사용
+      const puppeteerLocal = await import('puppeteer');
+      browser = await puppeteerLocal.default.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      });
+    } else {
+      // Vercel 환경: Browserless.io 사용
+      browser = await puppeteer.connect({
+        browserWSEndpoint: `wss://chrome.browserless.io?token=${browserlessToken}`,
+      });
+    }
+
     const page = await browser.newPage();
 
     await page.setViewport({ width: 1280, height: 800 });

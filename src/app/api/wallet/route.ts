@@ -28,7 +28,6 @@ export async function GET(request: NextRequest) {
   let browser = null;
 
   try {
-    // Browserless.io 원격 브라우저 연결 (타임아웃 추가)
     browser = await puppeteer.connect({
       browserWSEndpoint: `wss://chrome.browserless.io?token=${browserlessToken}&timeout=55000`,
     });
@@ -45,46 +44,60 @@ export async function GET(request: NextRequest) {
       timeout: 45000,
     });
 
-    // 데이터 로딩 충분히 대기 (10초)
-    await new Promise((resolve) => setTimeout(resolve, 10000));
+    // 금액이 로드될 때까지 폴링 (최대 30초)
+    let totalAssets: string | null = null;
 
-    // 페이지 텍스트에서 금액 찾기
-    const totalAssets = await page.evaluate(() => {
-      const body = document.body.innerText;
+    for (let attempt = 0; attempt < 30; attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      const lines = body
-        .split('\n')
-        .map((l) => l.trim())
-        .filter((l) => l);
+      totalAssets = await page.evaluate(() => {
+        const body = document.body.innerText;
 
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].toLowerCase();
-        if (line.includes('total') && line.includes('asset')) {
-          for (let j = i; j < Math.min(i + 5, lines.length); j++) {
-            const match = lines[j].match(/\$\s*[\d,]+(?:\.\d+)?/);
-            if (match) {
-              return match[0].replace(/\s/g, '');
+        // Total Assets 근처에서 $1,000 이상인 금액 찾기
+        const lines = body
+          .split('\n')
+          .map((l) => l.trim())
+          .filter((l) => l);
+
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].toLowerCase();
+          if (line.includes('total') && line.includes('asset')) {
+            for (let j = i; j < Math.min(i + 5, lines.length); j++) {
+              const match = lines[j].match(/\$\s*[\d,]+(?:\.\d+)?/);
+              if (match) {
+                const amount = parseFloat(match[0].replace(/[$,\s]/g, ''));
+                // $0이 아니고 실제 금액이면 반환
+                if (amount > 0) {
+                  return match[0].replace(/\s/g, '');
+                }
+              }
             }
           }
         }
-      }
 
-      const allMatches = body.match(/\$\s*[\d,]+(?:\.\d+)?/g);
-      if (allMatches && allMatches.length > 0) {
-        let max = 0;
-        let maxStr = '';
-        for (const m of allMatches) {
-          const num = parseFloat(m.replace(/[$,\s]/g, ''));
-          if (num > max) {
-            max = num;
-            maxStr = m.replace(/\s/g, '');
+        // 전체에서 $1,000 이상인 가장 큰 금액 찾기
+        const allMatches = body.match(/\$\s*[\d,]+(?:\.\d+)?/g);
+        if (allMatches && allMatches.length > 0) {
+          let max = 0;
+          let maxStr = '';
+          for (const m of allMatches) {
+            const num = parseFloat(m.replace(/[$,\s]/g, ''));
+            if (num > max && num >= 1000) {
+              max = num;
+              maxStr = m.replace(/\s/g, '');
+            }
           }
+          if (maxStr) return maxStr;
         }
-        return maxStr || null;
-      }
 
-      return null;
-    });
+        return null;
+      });
+
+      // 금액을 찾으면 바로 종료
+      if (totalAssets) {
+        break;
+      }
+    }
 
     await browser.close();
 
@@ -99,7 +112,7 @@ export async function GET(request: NextRequest) {
       try {
         await browser.close();
       } catch (e) {
-        // ignore close error
+        // ignore
       }
     }
     return NextResponse.json({

@@ -293,7 +293,7 @@ export default function BuybackAnalysisPage() {
                   이동
                 </a>
               )}
-              {filteredHistory.length >= 2 && (
+              {selectedTab === 'total' && filteredHistory.length >= 2 && (
                 <div className="text-right">
                   <p className="text-xs md:text-sm text-slate-400 mb-1">전일 대비</p>
                   {(() => {

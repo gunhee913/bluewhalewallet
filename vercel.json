@@ -1,8 +1,16 @@
 {
   "crons": [
     {
-      "path": "/api/wallet/refresh",
-      "schedule": "*/30 7-21 * * *"
+      "path": "/api/wallet/refresh?group=1",
+      "schedule": "0,30 7-21 * * *"
+    },
+    {
+      "path": "/api/wallet/refresh?group=2",
+      "schedule": "10,40 7-21 * * *"
+    },
+    {
+      "path": "/api/wallet/refresh?group=3",
+      "schedule": "20,50 7-21 * * *"
     },
     {
       "path": "/api/wallet/history/save",

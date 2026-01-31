@@ -7,15 +7,24 @@ const PUMPSPACE_URL = 'https://pumpspace.io/wallet/detail?account=';
 // Vercel Pro 최대 300초
 export const maxDuration = 300;
 
+// 지갑 주소 그룹 (2개씩 나눠서 다른 시간에 처리)
+const WALLET_GROUPS: Record<string, string[]> = {
+  '1': [
+    '0x3654378aa2deb0860c2e5c7906471c8704c44c6f', // 바이백펀드
+    '0xEd1b254B6c3a6785e19ba83b728ECe4A6444f4d7', // 아돌펀드
+  ],
+  '2': [
+    '0xD57423c54F188220862391A069a2942c725ee37B', // Aqua1 펀드
+    '0xfd48a5FFE5127896E93BAA8074CE98c5a999Ea97', // v3 수수료 펀드
+  ],
+  '3': [
+    '0x000000000000000000000000000000000000dEaD', // 소각 지갑
+    '0x525e7f0a5d3fd6169d6ec35288104d52bf3bb95f', // 팀 지갑
+  ],
+};
+
 // 모든 지갑 주소
-const ALL_ADDRESSES = [
-  '0x3654378aa2deb0860c2e5c7906471c8704c44c6f',
-  '0xEd1b254B6c3a6785e19ba83b728ECe4A6444f4d7',
-  '0xD57423c54F188220862391A069a2942c725ee37B',
-  '0xfd48a5FFE5127896E93BAA8074CE98c5a999Ea97',
-  '0x000000000000000000000000000000000000dEaD',
-  '0x525e7f0a5d3fd6169d6ec35288104d52bf3bb95f',
-];
+const ALL_ADDRESSES = Object.values(WALLET_GROUPS).flat();
 
 // Supabase 클라이언트 (lazy initialization)
 function getSupabase() {
@@ -111,13 +120,27 @@ async function extractTotalAssets(page: Page): Promise<string> {
   return '$0';
 }
 
-// GET: 모든 지갑 새로고침 (Cron에서 호출)
+// GET: 지갑 새로고침 (Cron에서 호출)
+// ?group=1,2,3 으로 그룹 지정 가능
+// ?addresses=0x... 으로 특정 주소 지정 가능
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
+  const groupParam = searchParams.get('group');
   const addressesParam = searchParams.get('addresses');
-  const addresses = addressesParam 
-    ? addressesParam.split(',').map(a => a.trim()) 
-    : ALL_ADDRESSES;
+  
+  let addresses: string[];
+  
+  if (addressesParam) {
+    // 특정 주소 지정
+    addresses = addressesParam.split(',').map(a => a.trim());
+  } else if (groupParam && WALLET_GROUPS[groupParam]) {
+    // 그룹 지정
+    addresses = WALLET_GROUPS[groupParam];
+    console.log(`Processing group ${groupParam}:`, addresses);
+  } else {
+    // 기본: 모든 지갑
+    addresses = ALL_ADDRESSES;
+  }
   
   return handleRefresh(addresses);
 }

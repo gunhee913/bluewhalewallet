@@ -36,7 +36,6 @@ interface HistoryItem {
 }
 
 type TimeFrame = 'daily' | 'weekly' | 'monthly';
-type TabType = 'cumulative' | 'daily';
 
 async function fetchTokenHistory(tokenName: string): Promise<HistoryItem[]> {
   const response = await fetch(`/api/token/history?token=${tokenName}`);
@@ -50,7 +49,6 @@ export default function TokenDetailPage() {
   const tokenName = params.tokenName as string;
   const tokenImage = TOKEN_IMAGES[tokenName];
   
-  const [selectedTab, setSelectedTab] = useState<TabType>('cumulative');
   const [timeFrame, setTimeFrame] = useState<TimeFrame>('daily');
   const [visibleCount, setVisibleCount] = useState(20);
 
@@ -108,17 +106,17 @@ export default function TokenDetailPage() {
     }
   }, [historyWithDaily, timeFrame]);
 
-  // 차트 데이터
+  // 차트 데이터 (누적 소각량)
   const chartData = useMemo(() => {
     return [...filteredHistory].reverse().map((item) => {
       const [, month, day] = item.recorded_at.split('-');
       return {
         date: `${parseInt(month)}/${parseInt(day)}`,
         fullDate: item.recorded_at,
-        amount: selectedTab === 'cumulative' ? item.burned_amount : item.dailyBurn,
+        amount: item.burned_amount,
       };
     });
-  }, [filteredHistory, selectedTab]);
+  }, [filteredHistory]);
 
   // X축 간격 계산
   const xAxisInterval = useMemo(() => {
@@ -176,30 +174,6 @@ export default function TokenDetailPage() {
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 md:px-6 py-6 md:py-10">
-        {/* 탭 선택 */}
-        <div className="flex gap-4 mb-6 border-b border-slate-700/50">
-          <button
-            onClick={() => setSelectedTab('cumulative')}
-            className={`pb-3 text-sm font-medium transition-colors ${
-              selectedTab === 'cumulative'
-                ? 'text-white border-b-2 border-white'
-                : 'text-slate-500 hover:text-slate-300'
-            }`}
-          >
-            누적 현황
-          </button>
-          <button
-            onClick={() => setSelectedTab('daily')}
-            className={`pb-3 text-sm font-medium transition-colors ${
-              selectedTab === 'daily'
-                ? 'text-white border-b-2 border-white'
-                : 'text-slate-500 hover:text-slate-300'
-            }`}
-          >
-            일일 현황
-          </button>
-        </div>
-
         {/* 시간 프레임 탭 */}
         <div className="flex gap-2 mb-4 md:mb-6">
           {(['daily', 'weekly', 'monthly'] as TimeFrame[]).map((tf) => (
@@ -230,7 +204,7 @@ export default function TokenDetailPage() {
         ) : chartData.length > 0 ? (
           <Card className="bg-slate-800/50 border-slate-700/50 p-4 md:p-6 mb-6">
             <h2 className="text-base md:text-lg font-semibold text-white mb-3 md:mb-4">
-              {selectedTab === 'cumulative' ? '누적 소각량' : '일일 소각량'} 그래프
+              누적 소각량 그래프
             </h2>
             <div className="h-48 md:h-64">
               <ResponsiveContainer width="100%" height="100%">
@@ -265,7 +239,7 @@ export default function TokenDetailPage() {
                     }}
                     formatter={(value: number) => [
                       `${formatNumber(value, showDecimal)} 개`,
-                      selectedTab === 'cumulative' ? '누적 소각량' : '일일 소각량'
+                      '누적 소각량'
                     ]}
                   />
                   <Line
@@ -285,9 +259,7 @@ export default function TokenDetailPage() {
         {/* 테이블 */}
         <Card className="bg-slate-800/50 border-slate-700/50 overflow-hidden">
           <div className="p-3 md:p-4 border-b border-slate-700">
-            <h2 className="text-base md:text-lg font-semibold text-white">
-              {selectedTab === 'cumulative' ? '누적 현황' : '일일 현황'} 테이블
-            </h2>
+            <h2 className="text-base md:text-lg font-semibold text-white">소각 현황</h2>
           </div>
           
           {isLoading ? (
@@ -300,20 +272,12 @@ export default function TokenDetailPage() {
                 <table className="w-full">
                   <thead className="bg-slate-800">
                     <tr>
-                      <th className="text-left text-sm md:text-base font-medium text-slate-400 px-4 py-3 md:py-4">날짜</th>
-                      {selectedTab === 'cumulative' ? (
-                        <>
-                          <th className="text-right text-sm md:text-base font-medium text-slate-400 px-4 py-3 md:py-4">누적 소각량</th>
-                          <th className="text-right text-sm md:text-base font-medium text-slate-400 px-4 py-3 md:py-4">소각 가치</th>
-                          <th className="text-right text-sm md:text-base font-medium text-slate-400 px-4 py-3 md:py-4">소각률</th>
-                        </>
-                      ) : (
-                        <>
-                          <th className="text-right text-sm md:text-base font-medium text-slate-400 px-4 py-3 md:py-4">일일 소각량</th>
-                          <th className="text-right text-sm md:text-base font-medium text-slate-400 px-4 py-3 md:py-4">소각 금액</th>
-                          <th className="text-right text-sm md:text-base font-medium text-slate-400 px-4 py-3 md:py-4">토큰 가격</th>
-                        </>
-                      )}
+                      <th className="text-left text-xs md:text-sm font-medium text-slate-400 px-3 py-3">날짜</th>
+                      <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-2 py-3">일소각량</th>
+                      <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-2 py-3">일소각금</th>
+                      <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-2 py-3">누적소각량</th>
+                      <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-2 py-3">누적소각금</th>
+                      <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-3 py-3">소각률</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -328,34 +292,24 @@ export default function TokenDetailPage() {
                           key={index} 
                           className="border-t border-slate-700/50 hover:bg-slate-700/30"
                         >
-                          <td className="px-4 py-4 text-sm md:text-base text-white">
+                          <td className="px-3 py-3 text-xs md:text-sm text-white whitespace-nowrap">
                             {item.recorded_at}
                           </td>
-                          {selectedTab === 'cumulative' ? (
-                            <>
-                              <td className="px-4 py-4 text-right text-sm md:text-base text-orange-400 font-mono">
-                                {formatNumber(item.burned_amount, showDecimal)}
-                              </td>
-                              <td className="px-4 py-4 text-right text-sm md:text-base text-emerald-400">
-                                {item.burned_value || '-'}
-                              </td>
-                              <td className="px-4 py-4 text-right text-sm md:text-base text-white">
-                                {burnRate > 0 ? `${burnRate.toFixed(2)}%` : '-'}
-                              </td>
-                            </>
-                          ) : (
-                            <>
-                              <td className="px-4 py-4 text-right text-sm md:text-base text-orange-400 font-mono">
-                                {formatNumber(item.dailyBurn, showDecimal)}
-                              </td>
-                              <td className="px-4 py-4 text-right text-sm md:text-base text-emerald-400">
-                                {item.dailyValue > 0 ? `$${formatNumber(item.dailyValue)}` : '-'}
-                              </td>
-                              <td className="px-4 py-4 text-right text-sm md:text-base text-white">
-                                {item.token_price > 0 ? `$${item.token_price.toFixed(2)}` : '-'}
-                              </td>
-                            </>
-                          )}
+                          <td className="px-2 py-3 text-right text-xs md:text-sm text-orange-400 font-mono">
+                            {formatNumber(item.dailyBurn, showDecimal)}
+                          </td>
+                          <td className="px-2 py-3 text-right text-xs md:text-sm text-yellow-400">
+                            {item.dailyValue > 0 ? `$${formatNumber(item.dailyValue)}` : '-'}
+                          </td>
+                          <td className="px-2 py-3 text-right text-xs md:text-sm text-orange-400 font-mono">
+                            {formatNumber(item.burned_amount, showDecimal)}
+                          </td>
+                          <td className="px-2 py-3 text-right text-xs md:text-sm text-emerald-400">
+                            {item.burned_value || '-'}
+                          </td>
+                          <td className="px-3 py-3 text-right text-xs md:text-sm text-white">
+                            {burnRate > 0 ? `${burnRate.toFixed(2)}%` : '-'}
+                          </td>
                         </tr>
                       );
                     })}

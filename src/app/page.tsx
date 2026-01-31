@@ -268,7 +268,7 @@ export default function Home() {
         <div className="max-w-4xl mx-auto px-6 py-5">
           <div>
             <h1 className="text-xl font-bold text-white tracking-tight">
-              BlueWhale Wallet
+              BlueWhale Analytics
             </h1>
             <p className="text-sm text-slate-400">블루웨일 지갑 주소 한눈에 보기(Made.축산왕)</p>
           </div>
@@ -288,7 +288,7 @@ export default function Home() {
                   : 'text-slate-500 hover:text-slate-300'
               }`}
             >
-              Wallet
+              지갑
             </button>
             <button
               onClick={() => setSelectedTab('token')}
@@ -298,7 +298,7 @@ export default function Home() {
                   : 'text-slate-500 hover:text-slate-300'
               }`}
             >
-              Token
+              토큰
             </button>
           </div>
         </div>

@@ -253,7 +253,7 @@ function WalletCard({ wallet, totalAssets, fundDetails, aquaFairPrice }: WalletC
               <div className="mt-2">
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-slate-400">적정가격:</span>
-                  <span className="text-sm font-medium text-cyan-400">
+                  <span className="text-sm text-slate-400">
                     {aquaFairPrice.fairPrice.toFixed(4)} USDT
                   </span>
                   <span className="text-sm text-slate-400">

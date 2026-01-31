@@ -236,6 +236,8 @@ async function handleRefresh(addresses: string[]) {
   if (upsertData.length > 0) {
     try {
       const supabase = getSupabase();
+      
+      // 1. wallet_assets 업데이트 (현재 자산)
       const { error: upsertError } = await supabase
         .from('wallet_assets')
         .upsert(upsertData, { onConflict: 'address' });
@@ -243,7 +245,25 @@ async function handleRefresh(addresses: string[]) {
       if (upsertError) {
         console.error('Supabase upsert error:', upsertError);
       } else {
-        console.log('Saved to Supabase successfully');
+        console.log('Saved to wallet_assets successfully');
+      }
+      
+      // 2. wallet_assets_history에도 저장 (매번 업데이트, 같은 날짜면 덮어쓰기)
+      const today = new Date().toISOString().split('T')[0];
+      const historyData = upsertData.map((item) => ({
+        address: item.address,
+        total_assets: item.total_assets,
+        recorded_at: today,
+      }));
+      
+      const { error: historyError } = await supabase
+        .from('wallet_assets_history')
+        .upsert(historyData, { onConflict: 'address,recorded_at' });
+      
+      if (historyError) {
+        console.error('History save error:', historyError);
+      } else {
+        console.log('Saved to wallet_assets_history successfully');
       }
     } catch (dbError) {
       console.error('Database error:', dbError);

@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { ExternalLink, Copy, Wallet, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 
 const PUMPSPACE_BASE_URL = 'https://pumpspace.io/wallet/detail?account=';
 
@@ -57,22 +57,24 @@ const CHAIN_CONFIG = {
   },
 };
 
-async function fetchWalletData(address: string) {
-  const response = await fetch(`/api/wallet?address=${address}`);
+// 모든 지갑 데이터를 한번에 가져오기
+async function fetchAllWalletData(addresses: string[]) {
+  const response = await fetch(`/api/wallet?addresses=${addresses.join(',')}`);
   if (!response.ok) {
     throw new Error('Failed to fetch wallet data');
   }
   return response.json();
 }
 
-function WalletCard({ wallet }: { wallet: WalletInfo }) {
-  const { toast } = useToast();
+interface WalletCardProps {
+  wallet: WalletInfo;
+  totalAssets: string | null;
+  isLoading: boolean;
+  error: boolean;
+}
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['wallet', wallet.address],
-    queryFn: () => fetchWalletData(wallet.address),
-    staleTime: 1000 * 60 * 5,
-  });
+function WalletCard({ wallet, totalAssets, isLoading, error }: WalletCardProps) {
+  const { toast } = useToast();
 
   const handleCopyAddress = (address: string) => {
     navigator.clipboard.writeText(address);
@@ -112,9 +114,9 @@ function WalletCard({ wallet }: { wallet: WalletInfo }) {
                 <Loader2 className="w-4 h-4 text-emerald-400 animate-spin" />
               ) : error ? (
                 <span className="text-sm text-red-400">불러오기 실패</span>
-              ) : data?.totalAssets ? (
+              ) : totalAssets ? (
                 <span className="text-lg font-bold text-emerald-400">
-                  {data.totalAssets}
+                  {totalAssets}
                 </span>
               ) : (
                 <span className="text-sm text-slate-500">-</span>
@@ -140,9 +142,35 @@ function WalletCard({ wallet }: { wallet: WalletInfo }) {
 export default function Home() {
   const [selectedChain, setSelectedChain] = useState<Chain>('avalanche');
 
-  const filteredWallets = WALLETS.filter(
-    (wallet) => wallet.chain === selectedChain
+  // 현재 체인에 해당하는 지갑들
+  const filteredWallets = useMemo(
+    () => WALLETS.filter((wallet) => wallet.chain === selectedChain),
+    [selectedChain]
   );
+
+  // 현재 체인의 모든 지갑 주소
+  const addresses = useMemo(
+    () => filteredWallets.map((w) => w.address),
+    [filteredWallets]
+  );
+
+  // 한번에 모든 지갑 데이터 가져오기
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['wallets', selectedChain],
+    queryFn: () => fetchAllWalletData(addresses),
+    staleTime: 1000 * 60 * 5, // 5분 캐시
+    enabled: addresses.length > 0,
+  });
+
+  // 각 지갑의 자산 정보 가져오기
+  const getAssets = (address: string): string | null => {
+    if (!data?.results) return null;
+    // 대소문자 무시하고 찾기
+    const key = Object.keys(data.results).find(
+      (k) => k.toLowerCase() === address.toLowerCase()
+    );
+    return key ? data.results[key] : null;
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -189,10 +217,24 @@ export default function Home() {
           </button>
         </div>
 
+        {/* 로딩 상태 표시 */}
+        {isLoading && (
+          <div className="flex items-center gap-2 mb-4 text-slate-400">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span className="text-sm">모든 지갑 정보를 불러오는 중...</span>
+          </div>
+        )}
+
         {/* 지갑 목록 */}
         <div className="space-y-4">
           {filteredWallets.map((wallet) => (
-            <WalletCard key={wallet.address} wallet={wallet} />
+            <WalletCard
+              key={wallet.address}
+              wallet={wallet}
+              totalAssets={getAssets(wallet.address)}
+              isLoading={isLoading}
+              error={!!error}
+            />
           ))}
         </div>
 

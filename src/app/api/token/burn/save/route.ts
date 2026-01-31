@@ -131,6 +131,9 @@ export async function GET() {
     });
   }
   
+  // 토큰 앞 10자리만 확인용
+  console.log('[Token Burn Save] Token prefix:', browserlessToken.slice(0, 10));
+  
   let browser = null;
   
   try {

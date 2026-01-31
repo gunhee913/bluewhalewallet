@@ -10,10 +10,26 @@ import { useSearchParams } from 'next/navigation';
 const PUMPSPACE_BASE_URL = 'https://pumpspace.io/wallet/detail?account=';
 const BURN_ADDRESS = '0x000000000000000000000000000000000000dEaD';
 
+// 바이백펀드 메인 지갑
+const BUYBACK_MAIN = '0x3654378aa2deb0860c2e5c7906471c8704c44c6f';
+
+// 바이백펀드 AI 지갑들
+const BUYBACK_AI_WALLETS = [
+  '0xDf3723f75a8B3E10Fe0093991C961d58A5549fDE', // AI(1)
+  '0x8c29527976b07F6e9c5Fa7705a4997C3B9e7fdD4', // AI(2)
+  '0xF7E18a70C31C5E8D89e00a5a5e81Fc44E607513B', // AI(3)
+  '0x7c6d9059792C711229Ca7295eaa8916cF2a33776', // AI(4)
+  '0x61CA700c0b004029Fc4A80C409C9829ABe79528D', // AI(5)
+  '0xa617A017A09CFEc5d22598e92C252dfBF327fF91', // AI(6)
+  '0x981086C666D3EB8A11f122B001B58346A6422B80', // AI(7)
+  '0x5DEf16B5E663baEb75C44B30c273281aFD5Fd342', // AI(8)
+];
+
 interface WalletInfo {
   name: string;
   address: string;
   hasAnalysis?: boolean;
+  isBuybackTotal?: boolean; // 바이백펀드 종합 표시용
 }
 
 const WALLETS: WalletInfo[] = [
@@ -21,6 +37,7 @@ const WALLETS: WalletInfo[] = [
     name: '바이백펀드',
     address: '0x3654378aa2deb0860c2e5c7906471c8704c44c6f',
     hasAnalysis: true,
+    isBuybackTotal: true,
   },
   {
     name: '아돌펀드',
@@ -234,7 +251,7 @@ function HomeContent() {
   }, [tabParam]);
 
   const addresses = useMemo(
-    () => WALLETS.map((w) => w.address),
+    () => [...WALLETS.map((w) => w.address), ...BUYBACK_AI_WALLETS],
     []
   );
 
@@ -254,8 +271,29 @@ function HomeContent() {
     enabled: selectedTab === 'token',
   });
 
-  const getAssets = (address: string): string | null => {
+  const parseAmount = (assets: string | null): number => {
+    if (!assets) return 0;
+    return parseFloat(assets.replace(/[$,]/g, '')) || 0;
+  };
+
+  const getAssets = (address: string, isBuybackTotal?: boolean): string | null => {
     if (!walletData?.results) return null;
+    
+    // 바이백펀드 종합인 경우 메인 + AI 지갑 합계
+    if (isBuybackTotal) {
+      const allBuybackAddresses = [BUYBACK_MAIN, ...BUYBACK_AI_WALLETS];
+      let total = 0;
+      for (const addr of allBuybackAddresses) {
+        const key = Object.keys(walletData.results).find(
+          (k) => k.toLowerCase() === addr.toLowerCase()
+        );
+        if (key && walletData.results[key]) {
+          total += parseAmount(walletData.results[key]);
+        }
+      }
+      return total > 0 ? `$${total.toLocaleString()}` : null;
+    }
+    
     const key = Object.keys(walletData.results).find(
       (k) => k.toLowerCase() === address.toLowerCase()
     );
@@ -321,7 +359,7 @@ function HomeContent() {
               <WalletCard
                 key={wallet.address}
                 wallet={wallet}
-                totalAssets={getAssets(wallet.address)}
+                totalAssets={getAssets(wallet.address, wallet.isBuybackTotal)}
               />
             ))}
           </div>

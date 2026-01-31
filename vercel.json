@@ -57,6 +57,22 @@
       "schedule": "26 7-23 * * *"
     },
     {
+      "path": "/api/wallet/refresh?group=15",
+      "schedule": "28 7-23 * * *"
+    },
+    {
+      "path": "/api/wallet/refresh?group=16",
+      "schedule": "30 7-23 * * *"
+    },
+    {
+      "path": "/api/wallet/refresh?group=17",
+      "schedule": "32 7-23 * * *"
+    },
+    {
+      "path": "/api/wallet/refresh?group=18",
+      "schedule": "34 7-23 * * *"
+    },
+    {
       "path": "/api/wallet/history/save",
       "schedule": "0 0 * * *"
     },

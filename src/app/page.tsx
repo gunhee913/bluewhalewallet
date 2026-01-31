@@ -25,11 +25,23 @@ const BUYBACK_AI_WALLETS = [
   '0x5DEf16B5E663baEb75C44B30c273281aFD5Fd342', // AI(8)
 ];
 
+// 아돌펀드 메인 지갑
+const ADOL_MAIN = '0xEd1b254B6c3a6785e19ba83b728ECe4A6444f4d7';
+
+// 아돌펀드 AI 지갑들
+const ADOL_AI_WALLETS = [
+  '0xe2E6252aBf18680169f8e95aa8f2b5c5E6c05390', // AI(1)
+  '0x8E63231be79fFDFECf46b13FFDE1881fD9C7e231', // AI(2)
+  '0x9Bd2c37535F41cE4FC373cAcee1F7Bd023DC5b9A', // AI(3)
+  '0xC81A059E9A2185A97925d6B7b5D527294c439625', // AI(4)
+];
+
 interface WalletInfo {
   name: string;
   address: string;
   hasAnalysis?: boolean;
   isBuybackTotal?: boolean; // 바이백펀드 종합 표시용
+  isAdolTotal?: boolean; // 아돌펀드 종합 표시용
 }
 
 const WALLETS: WalletInfo[] = [
@@ -43,6 +55,7 @@ const WALLETS: WalletInfo[] = [
     name: '아돌펀드',
     address: '0xEd1b254B6c3a6785e19ba83b728ECe4A6444f4d7',
     hasAnalysis: true,
+    isAdolTotal: true,
   },
   {
     name: 'Aqua1 펀드',
@@ -185,13 +198,20 @@ interface BuybackDetails {
 interface WalletCardProps {
   wallet: WalletInfo;
   totalAssets: string | null;
-  buybackDetails?: BuybackDetails;
+  fundDetails?: BuybackDetails; // 바이백/아돌 펀드 메인/AI 분리 표시용
 }
 
-function WalletCard({ wallet, totalAssets, buybackDetails }: WalletCardProps) {
+function WalletCard({ wallet, totalAssets, fundDetails }: WalletCardProps) {
   const formatAssets = (assets: string) => {
     // 소수점 제거: "$1,234.56" -> "$1,234"
     return assets.replace(/\.\d+/, '');
+  };
+
+  // 분석 페이지 링크 결정
+  const getAnalysisLink = () => {
+    if (wallet.isBuybackTotal) return '/wallet/buyback';
+    if (wallet.isAdolTotal) return '/wallet/adol';
+    return `/wallet/${wallet.address}`;
   };
 
   return (
@@ -210,10 +230,10 @@ function WalletCard({ wallet, totalAssets, buybackDetails }: WalletCardProps) {
               )}
             </div>
             
-            {/* 바이백펀드 요약 */}
-            {buybackDetails && (
+            {/* 펀드 요약 (바이백/아돌) */}
+            {fundDetails && (
               <div className="mt-1 text-xs text-slate-500">
-                메인 {buybackDetails.main ? formatAssets(buybackDetails.main) : '-'} | AI {buybackDetails.ai ? formatAssets(buybackDetails.ai) : '-'}
+                메인 {fundDetails.main ? formatAssets(fundDetails.main) : '-'} | AI {fundDetails.ai ? formatAssets(fundDetails.ai) : '-'}
               </div>
             )}
           </div>
@@ -229,9 +249,7 @@ function WalletCard({ wallet, totalAssets, buybackDetails }: WalletCardProps) {
             </a>
             {wallet.hasAnalysis && (
               <Link
-                href={wallet.address.toLowerCase() === '0x3654378aa2deb0860c2e5c7906471c8704c44c6f' 
-                  ? '/wallet/buyback' 
-                  : `/wallet/${wallet.address}`}
+                href={getAnalysisLink()}
                 className="px-6 py-2.5 bg-slate-600 hover:bg-slate-500 text-white rounded-md transition-all duration-200 font-medium text-center"
               >
                 분석
@@ -257,7 +275,7 @@ function HomeContent() {
   }, [tabParam]);
 
   const addresses = useMemo(
-    () => [...WALLETS.map((w) => w.address), ...BUYBACK_AI_WALLETS],
+    () => [...WALLETS.map((w) => w.address), ...BUYBACK_AI_WALLETS, ...ADOL_AI_WALLETS],
     []
   );
 
@@ -282,7 +300,7 @@ function HomeContent() {
     return parseFloat(assets.replace(/[$,]/g, '')) || 0;
   };
 
-  const getAssets = (address: string, isBuybackTotal?: boolean): string | null => {
+  const getAssets = (address: string, isBuybackTotal?: boolean, isAdolTotal?: boolean): string | null => {
     if (!walletData?.results) return null;
     
     // 바이백펀드 종합인 경우 메인 + AI 지갑 합계
@@ -290,6 +308,21 @@ function HomeContent() {
       const allBuybackAddresses = [BUYBACK_MAIN, ...BUYBACK_AI_WALLETS];
       let total = 0;
       for (const addr of allBuybackAddresses) {
+        const key = Object.keys(walletData.results).find(
+          (k) => k.toLowerCase() === addr.toLowerCase()
+        );
+        if (key && walletData.results[key]) {
+          total += parseAmount(walletData.results[key]);
+        }
+      }
+      return total > 0 ? `$${total.toLocaleString()}` : null;
+    }
+    
+    // 아돌펀드 종합인 경우 메인 + AI 지갑 합계
+    if (isAdolTotal) {
+      const allAdolAddresses = [ADOL_MAIN, ...ADOL_AI_WALLETS];
+      let total = 0;
+      for (const addr of allAdolAddresses) {
         const key = Object.keys(walletData.results).find(
           (k) => k.toLowerCase() === addr.toLowerCase()
         );
@@ -319,6 +352,31 @@ function HomeContent() {
     // AI 합계
     let aiTotal = 0;
     for (const addr of BUYBACK_AI_WALLETS) {
+      const key = Object.keys(walletData.results).find(
+        (k) => k.toLowerCase() === addr.toLowerCase()
+      );
+      if (key && walletData.results[key]) {
+        aiTotal += parseAmount(walletData.results[key]);
+      }
+    }
+    const aiAmount = aiTotal > 0 ? `$${aiTotal.toLocaleString()}` : null;
+    
+    return { main: mainAmount, ai: aiAmount };
+  };
+
+  // 아돌펀드 메인/AI 금액 계산
+  const getAdolDetails = (): BuybackDetails | undefined => {
+    if (!walletData?.results) return undefined;
+    
+    // 메인 금액
+    const mainKey = Object.keys(walletData.results).find(
+      (k) => k.toLowerCase() === ADOL_MAIN.toLowerCase()
+    );
+    const mainAmount = mainKey ? walletData.results[mainKey] : null;
+    
+    // AI 합계
+    let aiTotal = 0;
+    for (const addr of ADOL_AI_WALLETS) {
       const key = Object.keys(walletData.results).find(
         (k) => k.toLowerCase() === addr.toLowerCase()
       );
@@ -390,8 +448,12 @@ function HomeContent() {
               <WalletCard
                 key={wallet.address}
                 wallet={wallet}
-                totalAssets={getAssets(wallet.address, wallet.isBuybackTotal)}
-                buybackDetails={wallet.isBuybackTotal ? getBuybackDetails() : undefined}
+                totalAssets={getAssets(wallet.address, wallet.isBuybackTotal, wallet.isAdolTotal)}
+                fundDetails={
+                  wallet.isBuybackTotal ? getBuybackDetails() : 
+                  wallet.isAdolTotal ? getAdolDetails() : 
+                  undefined
+                }
               />
             ))}
           </div>

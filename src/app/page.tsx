@@ -269,10 +269,10 @@ function WalletCard({ wallet, totalAssets, fundDetails, aquaFairPrice }: WalletC
                       <div className="space-y-2 text-xs">
                         <p className="text-slate-400 font-medium text-sm mb-3">산출 방식</p>
                         <p>sBWPM바이백 = (총발행량 + 소각량) × 3%</p>
-                        <p className="text-slate-400">= ({aquaFairPrice.totalSupply.toLocaleString()} + {aquaFairPrice.burnedAmount.toLocaleString()}) × 3% = {aquaFairPrice.blueWhaleByback.toLocaleString()}개</p>
+                        <p className="text-slate-400">= ({Math.round(aquaFairPrice.totalSupply).toLocaleString()} + {Math.round(aquaFairPrice.burnedAmount).toLocaleString()}) × 3% = {Math.round(aquaFairPrice.blueWhaleByback).toLocaleString()}개</p>
                         <p className="mt-3">적정가격 = (현재 펀드자산 - sBWPM바이백) / Aqua1 유통량</p>
-                        <p className="text-slate-400">= ({aquaFairPrice.currentValue.toLocaleString()} - {aquaFairPrice.blueWhaleByback.toLocaleString()}) / {aquaFairPrice.circulation.toLocaleString()}</p>
-                        <p className="text-slate-300 font-medium mt-2">= {aquaFairPrice.fairPrice.toFixed(4)} USDT</p>
+                        <p className="text-slate-400">= ({Math.round(aquaFairPrice.currentValue).toLocaleString()} - {Math.round(aquaFairPrice.blueWhaleByback).toLocaleString()}) / {Math.round(aquaFairPrice.circulation).toLocaleString()}</p>
+                        <p className="text-slate-300 font-medium mt-2">= {aquaFairPrice.fairPrice.toFixed(2)} USDT</p>
                       </div>
                     </PopoverContent>
                   </Popover>

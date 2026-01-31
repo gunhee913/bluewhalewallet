@@ -166,6 +166,7 @@ export default function TokenDetailPage() {
             />
             <div>
               <h1 className="text-xl md:text-2xl font-bold text-white">{tokenName}</h1>
+              <p className="text-xs md:text-sm text-slate-400">소각 분석</p>
             </div>
           </div>
         </div>

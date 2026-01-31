@@ -272,13 +272,13 @@ export default function TokenDetailPage() {
                 <table className="w-full">
                   <thead className="bg-slate-800">
                     <tr>
-                      <th className="text-left text-xs md:text-sm font-medium text-slate-400 px-2 py-3 whitespace-nowrap">날짜</th>
-                      <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-2 py-3 whitespace-nowrap">소각량</th>
-                      <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-2 py-3 whitespace-nowrap">토큰가격</th>
-                      <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-2 py-3 whitespace-nowrap">소각금</th>
-                      <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-2 py-3 whitespace-nowrap">누적소각량</th>
-                      <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-2 py-3 whitespace-nowrap">총소각가치</th>
-                      <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-2 py-3 whitespace-nowrap">소각률</th>
+                      <th className="text-left text-sm font-medium text-slate-400 px-3 py-4 whitespace-nowrap">날짜</th>
+                      <th className="text-right text-sm font-medium text-slate-400 px-3 py-4 whitespace-nowrap">소각량</th>
+                      <th className="text-right text-sm font-medium text-slate-400 px-3 py-4 whitespace-nowrap">토큰가격</th>
+                      <th className="text-right text-sm font-medium text-slate-400 px-3 py-4 whitespace-nowrap">소각금</th>
+                      <th className="text-right text-sm font-medium text-slate-400 px-3 py-4 whitespace-nowrap">누적소각량</th>
+                      <th className="text-right text-sm font-medium text-slate-400 px-3 py-4 whitespace-nowrap">총소각가치</th>
+                      <th className="text-right text-sm font-medium text-slate-400 px-3 py-4 whitespace-nowrap">소각률</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -288,30 +288,32 @@ export default function TokenDetailPage() {
                         ? (item.burned_amount / totalSupply) * 100 
                         : 0;
                       
+                      const shortDate = item.recorded_at.replace(/^20/, '');
+                      
                       return (
                         <tr 
                           key={index} 
                           className="border-t border-slate-700/50 hover:bg-slate-700/30"
                         >
-                          <td className="px-3 py-3 text-xs md:text-sm text-white whitespace-nowrap">
-                            {item.recorded_at}
+                          <td className="px-3 py-4 text-sm text-white whitespace-nowrap">
+                            {shortDate}
                           </td>
-                          <td className="px-2 py-3 text-right text-xs md:text-sm text-orange-400 font-mono">
+                          <td className="px-3 py-4 text-right text-sm text-orange-400 font-mono">
                             {formatNumber(item.dailyBurn, showDecimal)}
                           </td>
-                          <td className="px-2 py-3 text-right text-xs md:text-sm text-slate-300">
+                          <td className="px-3 py-4 text-right text-sm text-slate-300">
                             {item.token_price > 0 ? `$${item.token_price.toFixed(item.token_price >= 1 ? 2 : 4)}` : '-'}
                           </td>
-                          <td className="px-2 py-3 text-right text-xs md:text-sm text-yellow-400">
+                          <td className="px-3 py-4 text-right text-sm text-yellow-400">
                             {item.dailyValue > 0 ? `$${item.dailyValue.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}` : '-'}
                           </td>
-                          <td className="px-2 py-3 text-right text-xs md:text-sm text-orange-400 font-mono">
+                          <td className="px-3 py-4 text-right text-sm text-orange-400 font-mono">
                             {formatNumber(item.burned_amount, showDecimal)}
                           </td>
-                          <td className="px-2 py-3 text-right text-xs md:text-sm text-emerald-400">
+                          <td className="px-3 py-4 text-right text-sm text-emerald-400">
                             {item.burned_value || '-'}
                           </td>
-                          <td className="px-3 py-3 text-right text-xs md:text-sm text-white">
+                          <td className="px-3 py-4 text-right text-sm text-white">
                             {burnRate > 0 ? `${burnRate.toFixed(2)}%` : '-'}
                           </td>
                         </tr>

@@ -21,42 +21,58 @@ function getSupabase() {
 
 // Total Assets 추출 (폴링으로 실제 금액이 나올 때까지 대기)
 async function extractTotalAssets(page: Page): Promise<string | null> {
-  // 최대 10초 동안 폴링 (1초 간격)
-  for (let attempt = 0; attempt < 10; attempt++) {
+  // 최대 15초 동안 폴링 (1초 간격)
+  for (let attempt = 0; attempt < 15; attempt++) {
     const result = await page.evaluate(() => {
       const body = document.body.innerText;
-      const lines = body.split('\n').map((l) => l.trim()).filter((l) => l);
-
-      // Total Assets 찾기
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].toLowerCase();
-        if (line.includes('total') && line.includes('asset')) {
-          for (let j = i; j < Math.min(i + 5, lines.length); j++) {
-            const match = lines[j].match(/\$\s*[\d,]+(?:\.\d+)?/);
-            if (match) {
-              const amount = match[0].replace(/\s/g, '');
-              const numericValue = parseFloat(amount.replace(/[$,]/g, ''));
-              // $0이 아닌 실제 금액만 반환
-              if (numericValue > 0) {
-                return amount;
-              }
-            }
-          }
+      
+      // 디버그: 페이지 내용 일부 출력
+      console.log('Page content length:', body.length);
+      console.log('First 500 chars:', body.substring(0, 500));
+      
+      // 방법 1: "Total Assets" 텍스트 근처에서 찾기
+      const totalAssetsMatch = body.match(/Total\s*Assets[\s\S]{0,50}?\$\s*([\d,]+(?:\.\d+)?)/i);
+      if (totalAssetsMatch) {
+        const amount = '$' + totalAssetsMatch[1];
+        const numericValue = parseFloat(totalAssetsMatch[1].replace(/,/g, ''));
+        if (numericValue > 0) {
+          return { amount, method: 'regex1' };
         }
       }
-      return null;
+      
+      // 방법 2: 모든 $ 금액 중 가장 큰 것 찾기
+      const allAmounts = body.match(/\$\s*[\d,]+(?:\.\d+)?/g);
+      if (allAmounts && allAmounts.length > 0) {
+        let maxAmount = '';
+        let maxValue = 0;
+        for (const amt of allAmounts) {
+          const val = parseFloat(amt.replace(/[$,\s]/g, ''));
+          if (val > maxValue) {
+            maxValue = val;
+            maxAmount = amt.replace(/\s/g, '');
+          }
+        }
+        if (maxValue > 0) {
+          return { amount: maxAmount, method: 'max', allAmounts };
+        }
+      }
+      
+      return { amount: null, method: 'none', bodyPreview: body.substring(0, 300) };
     });
 
-    if (result) {
-      console.log(`Found Total Assets after ${attempt + 1} attempts: ${result}`);
-      return result;
+    console.log(`Attempt ${attempt + 1}:`, JSON.stringify(result));
+
+    if (result && result.amount) {
+      console.log(`Found Total Assets after ${attempt + 1} attempts: ${result.amount} (method: ${result.method})`);
+      return result.amount;
     }
 
     // 1초 대기 후 재시도
     await new Promise((r) => setTimeout(r, 1000));
   }
 
-  // 10초 후에도 못 찾으면 $0 반환 (실제로 $0인 경우 대비)
+  // 15초 후에도 못 찾으면 $0 반환
+  console.log('Could not find Total Assets after 15 attempts');
   return '$0';
 }
 

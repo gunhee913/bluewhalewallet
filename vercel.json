@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/wallet/refresh",
-      "schedule": "*/10 * * * *"
+      "schedule": "*/30 7-21 * * *"
     },
     {
       "path": "/api/wallet/history/save",

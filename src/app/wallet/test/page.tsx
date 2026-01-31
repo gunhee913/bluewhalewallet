@@ -151,7 +151,7 @@ export default function TestWalletPage() {
               </p>
             </div>
             <div className="text-right">
-              <p className="text-xs md:text-sm text-slate-400 mb-1">어제 대비</p>
+              <p className="text-xs md:text-sm text-slate-400 mb-1">전일 대비</p>
               {(() => {
                 const change = calculateChange(CURRENT_ASSETS, DUMMY_HISTORY[1]?.total_assets);
                 if (change === null) return <p className="text-slate-500">-</p>;
@@ -237,9 +237,8 @@ export default function TestWalletPage() {
 
         {/* 히스토리 테이블 */}
         <Card className="bg-slate-800/50 border-slate-700/50 overflow-hidden">
-          <div className="p-3 md:p-4 border-b border-slate-700 flex items-center justify-between">
+          <div className="p-3 md:p-4 border-b border-slate-700">
             <h2 className="text-base md:text-lg font-semibold text-white">Total Assets 테이블</h2>
-            <span className="text-xs md:text-sm text-slate-400">{filteredHistory.length}개</span>
           </div>
           
           <div className="overflow-x-auto">

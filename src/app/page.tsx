@@ -5,8 +5,6 @@ import { Wallet, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { useState, useMemo } from 'react';
-import { formatDistanceToNow } from 'date-fns';
-import { ko } from 'date-fns/locale';
 
 const PUMPSPACE_BASE_URL = 'https://pumpspace.io/wallet/detail?account=';
 
@@ -149,8 +147,8 @@ export default function Home() {
   const { data, isLoading } = useQuery({
     queryKey: ['wallets', selectedChain],
     queryFn: () => fetchCachedData(addresses),
-    staleTime: 10 * 60 * 1000, // 10분
-    refetchInterval: 10 * 60 * 1000, // 10분마다 리페치
+    staleTime: 30 * 60 * 1000, // 30분
+    refetchInterval: 30 * 60 * 1000, // 30분마다 리페치
     enabled: addresses.length > 0,
   });
 
@@ -161,10 +159,6 @@ export default function Home() {
     );
     return key ? data.results[key] : null;
   };
-
-  const lastUpdated = data?.lastUpdated
-    ? formatDistanceToNow(new Date(data.lastUpdated), { addSuffix: true, locale: ko })
-    : null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -206,13 +200,6 @@ export default function Home() {
               Kaia
             </button>
           </div>
-
-          {/* 마지막 업데이트 시간 */}
-          {lastUpdated && (
-            <span className="text-xs text-slate-500 pb-3">
-              마지막 업데이트: {lastUpdated}
-            </span>
-          )}
         </div>
 
         {/* 로딩 */}

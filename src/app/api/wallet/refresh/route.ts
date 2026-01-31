@@ -4,8 +4,8 @@ import { createClient } from '@supabase/supabase-js';
 
 const PUMPSPACE_URL = 'https://pumpspace.io/wallet/detail?account=';
 
-// Vercel Pro 최대 60초
-export const maxDuration = 60;
+// Vercel Pro 최대 300초
+export const maxDuration = 300;
 
 // 모든 지갑 주소
 const ALL_ADDRESSES = [

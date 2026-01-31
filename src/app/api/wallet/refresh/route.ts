@@ -38,10 +38,23 @@ async function extractTotalAssets(page: Page): Promise<string | null> {
   });
 }
 
-// POST: 스크래핑 후 Supabase에 저장
+// GET: URL 파라미터로 주소 받기
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const addressesParam = searchParams.get('addresses');
+  const addresses = addressesParam ? addressesParam.split(',').map(a => a.trim()) : [];
+  return handleRefresh(addresses);
+}
+
+// POST: Body로 주소 받기
 export async function POST(request: NextRequest) {
   const body = await request.json();
   const addresses: string[] = body.addresses || [];
+  return handleRefresh(addresses);
+}
+
+// 실제 스크래핑 로직
+async function handleRefresh(addresses: string[]) {
 
   if (addresses.length === 0) {
     return NextResponse.json({ error: 'Addresses required' }, { status: 400 });

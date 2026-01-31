@@ -208,7 +208,7 @@ export default function TokenDetailPage() {
             </h2>
             <div className="h-48 md:h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                <LineChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                   <XAxis 
                     dataKey="date" 
@@ -221,7 +221,7 @@ export default function TokenDetailPage() {
                     stroke="#94a3b8"
                     fontSize={10}
                     tickFormatter={(value) => formatNumber(value, showDecimal)}
-                    width={45}
+                    width={70}
                   />
                   <Tooltip
                     contentStyle={{

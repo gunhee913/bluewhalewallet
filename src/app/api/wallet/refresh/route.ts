@@ -213,11 +213,20 @@ async function handleRefresh(addresses: string[]) {
       results,
       message: 'Data refreshed and saved',
     });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Puppeteer Error:', error);
+    
+    // ErrorEvent 또는 Error 객체에서 메시지 추출
+    let errorMessage = 'Unknown error';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (error && typeof error === 'object' && 'message' in error) {
+      errorMessage = String((error as { message: unknown }).message);
+    }
+    
     return NextResponse.json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: errorMessage,
     });
   } finally {
     if (browser) {

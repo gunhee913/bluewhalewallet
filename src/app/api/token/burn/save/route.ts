@@ -48,15 +48,25 @@ async function extractTokenBurnData(page: Page): Promise<Record<string, { units:
       
       console.log(`[Attempt ${attempt + 1}] Page lines count: ${lines.length}`);
       
+      // "Held Tokens" 섹션 시작점 찾기
+      let heldTokensStart = 0;
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i] === 'Held Tokens') {
+          heldTokensStart = i;
+          console.log(`[Held Tokens section starts at line ${i}]`);
+          break;
+        }
+      }
+      
       for (const tokenName of tokenNames) {
         // 이미 찾은 토큰은 스킵
         if (result[tokenName]) continue;
         
-        // 토큰명이 있는 라인 인덱스 찾기
-        for (let i = 0; i < lines.length; i++) {
+        // "Held Tokens" 이후에서 토큰명 찾기
+        for (let i = heldTokensStart; i < lines.length; i++) {
           const line = lines[i];
           
-          // 정확히 토큰명만 있는 라인 찾기 (Held Tokens 섹션)
+          // 정확히 토큰명만 있는 라인 찾기
           if (line === tokenName) {
             console.log(`[${tokenName}] Found at line ${i}`);
             
@@ -64,12 +74,15 @@ async function extractTokenBurnData(page: Page): Promise<Record<string, { units:
             let value = '$0';
             let units = 0;
             
-            for (let j = i + 1; j < Math.min(i + 15, lines.length); j++) {
+            for (let j = i + 1; j < Math.min(i + 12, lines.length); j++) {
               const searchLine = lines[j];
               
+              // 다른 토큰을 만나면 중단
+              if (tokenNames.includes(searchLine) && searchLine !== tokenName) {
+                break;
+              }
+              
               // 총 가치 패턴: "$ 숫자" (가격+변화율이 아닌 것)
-              // 가격+변화율: "$ 44.653+41.8 %" 또는 "$ 1,037.1+54.61 %"
-              // 총 가치: "$ 22,721" 또는 "$ 1,152.3"
               if (searchLine.startsWith('$ ') && !searchLine.includes('%') && value === '$0') {
                 const numStr = searchLine.replace('$ ', '').replace(/,/g, '');
                 const num = parseFloat(numStr);
@@ -80,11 +93,9 @@ async function extractTokenBurnData(page: Page): Promise<Record<string, { units:
               }
               
               // Units 패턴: "숫자." 다음 줄에 "소수점이하" 그 다음에 "Units"
-              // 예: "508." -> "8353" -> "Units"
               if (searchLine === 'Units' && j >= 2) {
-                // 바로 앞 두 줄에서 숫자 조합
-                const decimalPart = lines[j - 1]; // 소수점 이하
-                const integerPart = lines[j - 2]; // 정수부 + "."
+                const decimalPart = lines[j - 1];
+                const integerPart = lines[j - 2];
                 
                 if (integerPart && integerPart.endsWith('.') && decimalPart) {
                   const fullNumber = integerPart + decimalPart;

@@ -1,8 +1,7 @@
 'use client';
 
 import { Card } from '@/components/ui/card';
-import { ExternalLink, Copy, Wallet, Loader2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { ExternalLink, Wallet, Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useState, useMemo } from 'react';
 import { formatDistanceToNow } from 'date-fns';
@@ -68,35 +67,15 @@ interface WalletCardProps {
 }
 
 function WalletCard({ wallet, totalAssets }: WalletCardProps) {
-  const { toast } = useToast();
-
-  const handleCopyAddress = (address: string) => {
-    navigator.clipboard.writeText(address);
-    toast({ description: '지갑 주소가 복사되었습니다' });
-  };
-
-  const formatAddress = (address: string) => {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
-  };
-
   return (
     <Card className="bg-slate-800/50 border-slate-700/50 hover:bg-slate-800/80 transition-all duration-200 overflow-hidden group">
       <div className="p-5">
         <div className="flex items-center justify-between">
           <div className="flex-1 min-w-0">
             <h2 className="text-lg font-semibold text-white mb-1">{wallet.name}</h2>
-            <div className="flex items-center gap-2 mb-2">
-              <code className="text-sm text-emerald-400 font-mono">
-                {formatAddress(wallet.address)}
-              </code>
-              <button
-                onClick={() => handleCopyAddress(wallet.address)}
-                className="p-1.5 text-slate-500 hover:text-white hover:bg-slate-700 rounded-md transition-colors"
-                title="주소 복사"
-              >
-                <Copy className="w-3.5 h-3.5" />
-              </button>
-            </div>
+            <code className="text-xs text-emerald-400 font-mono mb-2 block break-all">
+              {wallet.address}
+            </code>
 
             <div className="flex items-center gap-2">
               <span className="text-sm text-slate-400">Total Assets:</span>
@@ -114,7 +93,7 @@ function WalletCard({ wallet, totalAssets }: WalletCardProps) {
             rel="noopener noreferrer"
             className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded-xl transition-all duration-200 group-hover:scale-105"
           >
-            <span className="text-sm font-medium">PumpSpace</span>
+            <span className="text-sm font-medium">이동</span>
             <ExternalLink className="w-4 h-4" />
           </a>
         </div>

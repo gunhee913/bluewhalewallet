@@ -31,45 +31,63 @@ function getSupabase() {
 
 // Total Assets 추출 - 더 단순하고 확실한 방식
 async function extractTotalAssets(page: Page): Promise<string> {
-  // 페이지 로드 후 5초 대기 (JavaScript 렌더링 완료 대기)
-  await new Promise((r) => setTimeout(r, 5000));
+  // 페이지 로드 후 8초 대기 (JavaScript 렌더링 완료 대기)
+  await new Promise((r) => setTimeout(r, 8000));
   
-  // 최대 20초 동안 폴링
-  for (let attempt = 0; attempt < 20; attempt++) {
+  // 최대 15초 동안 폴링
+  for (let attempt = 0; attempt < 15; attempt++) {
     try {
       const result = await page.evaluate(() => {
         const body = document.body.innerText;
         
-        // "Total Assets" 다음에 오는 $ 금액 찾기
+        // 1. "Total Assets" 근처에서 금액 찾기 (다양한 패턴)
         const patterns = [
-          /Total\s*Assets[:\s]*\$\s*([\d,]+(?:\.\d+)?)/i,
-          /Total\s*Assets[\s\S]{0,30}?\$\s*([\d,]+(?:\.\d+)?)/i,
-          /\$\s*([\d,]+(?:\.\d+)?)\s*Total\s*Assets/i,
+          /Total\s*Assets[:\s]*\$?\s*([\d,]+(?:\.\d+)?)/i,
+          /Total\s*Assets[\s\S]{0,50}?\$\s*([\d,]+(?:\.\d+)?)/i,
+          /Total\s*Assets[\s\S]{0,50}?([\d,]+(?:\.\d+)?)\s*(?:USD|\$)/i,
+          /\$\s*([\d,]+(?:\.\d+)?)\s*(?:Total\s*Assets|total)/i,
         ];
         
         for (const pattern of patterns) {
           const match = body.match(pattern);
           if (match && match[1]) {
             const numValue = parseFloat(match[1].replace(/,/g, ''));
-            if (numValue > 0) {
+            if (numValue > 100) { // $100 이상만 유효
               return '$' + match[1];
             }
           }
         }
         
-        // 페이지의 모든 $ 금액 중 가장 큰 것 (보통 Total Assets가 가장 큼)
-        const allAmounts = body.match(/\$([\d,]+(?:\.\d+)?)/g);
+        // 2. 페이지에서 "Total Assets" 텍스트 찾고 그 줄에서 숫자 추출
+        const lines = body.split('\n');
+        for (let i = 0; i < lines.length; i++) {
+          if (lines[i].toLowerCase().includes('total assets') || lines[i].toLowerCase().includes('total asset')) {
+            // 같은 줄 또는 다음 줄에서 금액 찾기
+            for (let j = i; j < Math.min(i + 3, lines.length); j++) {
+              const amountMatch = lines[j].match(/\$?\s*([\d,]+(?:\.\d+)?)/);
+              if (amountMatch && amountMatch[1]) {
+                const val = parseFloat(amountMatch[1].replace(/,/g, ''));
+                if (val > 100) {
+                  return '$' + amountMatch[1];
+                }
+              }
+            }
+          }
+        }
+        
+        // 3. 페이지의 모든 $ 금액 중 가장 큰 것 (fallback)
+        const allAmounts = body.match(/\$\s*([\d,]+(?:\.\d+)?)/g);
         if (allAmounts && allAmounts.length > 0) {
           let maxAmount = '$0';
           let maxValue = 0;
           for (const amt of allAmounts) {
-            const val = parseFloat(amt.replace(/[$,]/g, ''));
+            const val = parseFloat(amt.replace(/[$,\s]/g, ''));
             if (val > maxValue) {
               maxValue = val;
-              maxAmount = amt;
+              maxAmount = '$' + val.toLocaleString();
             }
           }
-          if (maxValue > 0) {
+          if (maxValue > 100) {
             return maxAmount;
           }
         }
@@ -128,18 +146,17 @@ async function handleRefresh(addresses: string[]) {
   try {
     console.log('Connecting to Browserless...');
     browser = await puppeteer.connect({
-      browserWSEndpoint: `wss://chrome.browserless.io?token=${browserlessToken}&timeout=55000`,
+      browserWSEndpoint: `wss://chrome.browserless.io?token=${browserlessToken}&timeout=240000`,
     });
     console.log('Connected to Browserless');
 
-    const page = await browser.newPage();
-    
-    // 뷰포트 설정
-    await page.setViewport({ width: 1280, height: 720 });
-
-    // 각 주소 순차 처리 (하나씩!)
+    // 각 주소마다 새 페이지 생성 (detached frame 에러 방지)
     for (const address of addresses) {
+      let page = null;
       try {
+        page = await browser.newPage();
+        await page.setViewport({ width: 1280, height: 720 });
+        
         const url = `${PUMPSPACE_URL}${address}`;
         console.log(`Navigating to: ${url}`);
         
@@ -152,12 +169,22 @@ async function handleRefresh(addresses: string[]) {
         results[address.toLowerCase()] = totalAssets;
         console.log(`Result for ${address}: ${totalAssets}`);
 
-        // 다음 요청 전 2초 대기 (rate limit 방지)
-        await new Promise((r) => setTimeout(r, 2000));
       } catch (err) {
         console.error(`Error fetching ${address}:`, err);
         results[address.toLowerCase()] = null;
+      } finally {
+        // 각 페이지 처리 후 반드시 닫기
+        if (page) {
+          try {
+            await page.close();
+          } catch (e) {
+            console.error('Page close error:', e);
+          }
+        }
       }
+      
+      // 다음 요청 전 1초 대기 (rate limit 방지)
+      await new Promise((r) => setTimeout(r, 1000));
     }
 
     // Supabase에 저장

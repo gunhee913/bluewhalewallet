@@ -274,10 +274,10 @@ export default function TokenDetailPage() {
                     <tr>
                       <th className="text-left text-xs md:text-sm font-medium text-slate-400 px-2 py-3 whitespace-nowrap">날짜</th>
                       <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-2 py-3 whitespace-nowrap">소각량</th>
-                      <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-2 py-3 whitespace-nowrap">가격</th>
+                      <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-2 py-3 whitespace-nowrap">토큰가격</th>
                       <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-2 py-3 whitespace-nowrap">소각금</th>
-                      <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-2 py-3 whitespace-nowrap">누적</th>
-                      <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-2 py-3 whitespace-nowrap">총가치</th>
+                      <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-2 py-3 whitespace-nowrap">누적소각량</th>
+                      <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-2 py-3 whitespace-nowrap">총소각가치</th>
                       <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-2 py-3 whitespace-nowrap">소각률</th>
                     </tr>
                   </thead>

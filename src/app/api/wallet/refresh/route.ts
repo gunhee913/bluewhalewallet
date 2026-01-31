@@ -217,8 +217,8 @@ async function handleRefresh(addresses: string[]) {
     const totalAssets = await fetchSingleWallet(address, browserlessToken);
     results[address.toLowerCase()] = totalAssets;
     
-    // 다음 요청 전 3초 대기 (최적화: 5초 → 3초)
-    await new Promise((r) => setTimeout(r, 3000));
+    // 다음 요청 전 15초 대기 (rate limit 방지)
+    await new Promise((r) => setTimeout(r, 15000));
   }
 
   // Supabase에 저장 (null이 아닌 것만)

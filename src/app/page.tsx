@@ -100,7 +100,7 @@ function TokenCard({ name, totalSupply, burnData }: TokenCardProps) {
   const burnRate = totalSupply > 0 ? (burnedAmount / totalSupply) * 100 : 0;
 
   const formatNumber = (num: number) => {
-    return num.toLocaleString();
+    return num.toLocaleString(undefined, { maximumFractionDigits: 1 });
   };
 
   const formatValue = (value?: string) => {

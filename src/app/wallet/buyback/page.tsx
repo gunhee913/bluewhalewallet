@@ -275,11 +275,11 @@ export default function BuybackAnalysisPage() {
                 {formatAssets(currentAssets)}
               </p>
             </div>
-            {filteredHistory.length > 0 && (
+            {filteredHistory.length >= 2 && (
               <div className="text-right">
                 <p className="text-xs md:text-sm text-slate-400 mb-1">전일 대비</p>
                 {(() => {
-                  const change = calculateChange(currentAssets, filteredHistory[0]?.total_assets);
+                  const change = calculateChange(filteredHistory[0]?.total_assets, filteredHistory[1]?.total_assets);
                   if (change === null) return <p className="text-slate-500">-</p>;
                   const isPositive = change >= 0;
                   return (

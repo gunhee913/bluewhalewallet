@@ -174,11 +174,11 @@ export default function WalletDetailPage() {
                 {formatAssets(currentAssets)}
               </p>
             </div>
-            {history && history.length > 0 && (
+            {history && history.length >= 2 && (
               <div className="text-right">
                 <p className="text-xs md:text-sm text-slate-400 mb-1">전일 대비</p>
                 {(() => {
-                  const change = calculateChange(currentAssets, history[0]?.total_assets);
+                  const change = calculateChange(history[0]?.total_assets, history[1]?.total_assets);
                   if (change === null) return <p className="text-slate-500">-</p>;
                   const isPositive = change >= 0;
                   return (

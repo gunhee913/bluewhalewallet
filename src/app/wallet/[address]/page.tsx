@@ -298,7 +298,7 @@ export default function WalletDetailPage() {
                       
                       return (
                         <tr key={item.recorded_at} className="border-t border-slate-700/50 hover:bg-slate-700/30">
-                          <td className="px-4 py-4 text-sm md:text-base text-white">{item.recorded_at}</td>
+                          <td className="px-4 py-4 text-sm md:text-base text-white">{item.recorded_at.replace(/^20/, '').replace(/-/g, '.')}</td>
                           <td className="px-4 py-4 text-right text-sm md:text-base text-emerald-400 font-mono">
                             {formatAssets(item.total_assets)}
                           </td>

@@ -1,23 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
-import puppeteer, { Browser } from 'puppeteer-core';
-import chromium from '@sparticuz/chromium';
+import type { Browser } from 'puppeteer-core';
 
 const PUMPSPACE_URL = 'https://pumpspace.io/wallet/detail?account=';
 
 // Vercel Pro 최대 60초
 export const maxDuration = 60;
 
-// Chromium 최적화 설정
-chromium.setHeadlessMode = true;
-chromium.setGraphicsMode = false;
+// Vercel 환경인지 확인
+const isVercel = process.env.VERCEL === '1';
 
 async function getBrowser(): Promise<Browser> {
-  return puppeteer.launch({
-    args: chromium.args,
-    defaultViewport: { width: 1280, height: 800 },
-    executablePath: await chromium.executablePath(),
-    headless: chromium.headless,
-  });
+  if (isVercel) {
+    // Vercel: puppeteer-core + @sparticuz/chromium
+    const puppeteer = await import('puppeteer-core');
+    const chromium = await import('@sparticuz/chromium');
+    
+    chromium.default.setHeadlessMode = true;
+    chromium.default.setGraphicsMode = false;
+
+    return puppeteer.default.launch({
+      args: chromium.default.args,
+      defaultViewport: { width: 1280, height: 800 },
+      executablePath: await chromium.default.executablePath(),
+      headless: chromium.default.headless,
+    });
+  } else {
+    // 로컬: puppeteer (Chrome 포함)
+    const puppeteer = await import('puppeteer');
+    return puppeteer.default.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    }) as unknown as Browser;
+  }
 }
 
 export async function GET(request: NextRequest) {
@@ -34,6 +48,7 @@ export async function GET(request: NextRequest) {
     browser = await getBrowser();
     const page = await browser.newPage();
 
+    await page.setViewport({ width: 1280, height: 800 });
     await page.setUserAgent(
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
     );

@@ -116,9 +116,20 @@ export async function GET() {
   
   try {
     console.log('[Token Burn Save] Connecting to Browserless...');
-    browser = await puppeteer.connect({
-      browserWSEndpoint: `wss://chrome.browserless.io?token=${browserlessToken}&timeout=240000`,
-    });
+    console.log('[Token Burn Save] Token:', browserlessToken?.slice(0, 10) + '...');
+    
+    try {
+      browser = await puppeteer.connect({
+        browserWSEndpoint: `wss://chrome.browserless.io?token=${browserlessToken}&timeout=240000`,
+      });
+    } catch (connectError) {
+      console.error('[Token Burn Save] Browserless connect error:', connectError);
+      return NextResponse.json({
+        success: false,
+        error: 'Browserless connection failed',
+        details: connectError instanceof Error ? connectError.message : String(connectError),
+      });
+    }
     
     const page = await browser.newPage();
     await page.setViewport({ width: 1280, height: 720 });

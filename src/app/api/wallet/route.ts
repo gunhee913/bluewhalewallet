@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
 
 const PUMPSPACE_URL = 'https://pumpspace.io/wallet/detail?account=';
 
@@ -14,14 +15,12 @@ export async function GET(request: NextRequest) {
   let browser = null;
 
   try {
+    // Vercel 서버리스 환경용 설정
     browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-      ],
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless,
     });
 
     const page = await browser.newPage();
@@ -42,10 +41,13 @@ export async function GET(request: NextRequest) {
     // 페이지 텍스트에서 금액 찾기
     const result = await page.evaluate(() => {
       const body = document.body.innerText;
-      
+
       // Total Assets 찾기
-      const lines = body.split('\n').map(l => l.trim()).filter(l => l);
-      
+      const lines = body
+        .split('\n')
+        .map((l) => l.trim())
+        .filter((l) => l);
+
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i].toLowerCase();
         if (line.includes('total') && line.includes('asset')) {
@@ -54,7 +56,10 @@ export async function GET(request: NextRequest) {
             const match = lines[j].match(/\$\s*[\d,]+(?:\.\d+)?/);
             if (match) {
               // 공백 제거하고 반환
-              return { totalAssets: match[0].replace(/\s/g, ''), foundAt: lines[j] };
+              return {
+                totalAssets: match[0].replace(/\s/g, ''),
+                foundAt: lines[j],
+              };
             }
           }
         }

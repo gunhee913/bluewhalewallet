@@ -146,7 +146,7 @@ async function handleRefresh(addresses: string[]) {
   try {
     console.log('Connecting to Browserless...');
     browser = await puppeteer.connect({
-      browserWSEndpoint: `wss://chrome.browserless.io?token=${browserlessToken}&timeout=240000`,
+      browserWSEndpoint: `wss://chrome.browserless.io?token=${browserlessToken}`,
     });
     console.log('Connected to Browserless');
 

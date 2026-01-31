@@ -272,7 +272,7 @@ function WalletCard({ wallet, totalAssets, fundDetails, aquaFairPrice }: WalletC
                         <p className="text-slate-400">= ({aquaFairPrice.totalSupply.toLocaleString()} + {aquaFairPrice.burnedAmount.toLocaleString()}) × 0.03 = {aquaFairPrice.blueWhaleByback.toLocaleString()}개</p>
                         <p className="mt-3">적정가격 = (현재가치 - 블웨바이백) / 유통량</p>
                         <p className="text-slate-400">= ({aquaFairPrice.currentValue.toLocaleString()} - {aquaFairPrice.blueWhaleByback.toLocaleString()}) / {aquaFairPrice.circulation.toLocaleString()}</p>
-                        <p className="text-cyan-400 font-medium mt-2">= {aquaFairPrice.fairPrice.toFixed(4)} USDT</p>
+                        <p className="text-slate-300 font-medium mt-2">= {aquaFairPrice.fairPrice.toFixed(4)} USDT</p>
                       </div>
                     </PopoverContent>
                   </Popover>

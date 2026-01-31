@@ -44,16 +44,16 @@ export async function GET(request: NextRequest) {
       timeout: 45000,
     });
 
-    // 금액이 로드될 때까지 폴링 (최대 30초)
+    // 금액이 로드될 때까지 폴링 (최대 20초)
     let totalAssets: string | null = null;
 
-    for (let attempt = 0; attempt < 30; attempt++) {
+    for (let attempt = 0; attempt < 20; attempt++) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       totalAssets = await page.evaluate(() => {
         const body = document.body.innerText;
 
-        // Total Assets 근처에서 $1,000 이상인 금액 찾기
+        // Total Assets 근처에서 금액 찾기
         const lines = body
           .split('\n')
           .map((l) => l.trim())
@@ -66,8 +66,8 @@ export async function GET(request: NextRequest) {
               const match = lines[j].match(/\$\s*[\d,]+(?:\.\d+)?/);
               if (match) {
                 const amount = parseFloat(match[0].replace(/[$,\s]/g, ''));
-                // $0이 아니고 실제 금액이면 반환
-                if (amount > 0) {
+                // $1 이상이면 반환 (로딩 완료 간주)
+                if (amount >= 1) {
                   return match[0].replace(/\s/g, '');
                 }
               }
@@ -75,19 +75,20 @@ export async function GET(request: NextRequest) {
           }
         }
 
-        // 전체에서 $1,000 이상인 가장 큰 금액 찾기
-        const allMatches = body.match(/\$\s*[\d,]+(?:\.\d+)?/g);
-        if (allMatches && allMatches.length > 0) {
-          let max = 0;
-          let maxStr = '';
-          for (const m of allMatches) {
-            const num = parseFloat(m.replace(/[$,\s]/g, ''));
-            if (num > max && num >= 1000) {
-              max = num;
-              maxStr = m.replace(/\s/g, '');
+        // Total Token Value에서도 찾기
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].toLowerCase();
+          if (line.includes('total') && line.includes('token') && line.includes('value')) {
+            for (let j = i; j < Math.min(i + 3, lines.length); j++) {
+              const match = lines[j].match(/\$\s*[\d,]+(?:\.\d+)?/);
+              if (match) {
+                const amount = parseFloat(match[0].replace(/[$,\s]/g, ''));
+                if (amount >= 1) {
+                  return match[0].replace(/\s/g, '');
+                }
+              }
             }
           }
-          if (maxStr) return maxStr;
         }
 
         return null;
@@ -97,6 +98,27 @@ export async function GET(request: NextRequest) {
       if (totalAssets) {
         break;
       }
+    }
+
+    // 못 찾으면 가장 큰 금액이라도 반환
+    if (!totalAssets) {
+      totalAssets = await page.evaluate(() => {
+        const body = document.body.innerText;
+        const allMatches = body.match(/\$\s*[\d,]+(?:\.\d+)?/g);
+        if (allMatches && allMatches.length > 0) {
+          let max = 0;
+          let maxStr = '';
+          for (const m of allMatches) {
+            const num = parseFloat(m.replace(/[$,\s]/g, ''));
+            if (num > max) {
+              max = num;
+              maxStr = m.replace(/\s/g, '');
+            }
+          }
+          return maxStr || null;
+        }
+        return null;
+      });
     }
 
     await browser.close();

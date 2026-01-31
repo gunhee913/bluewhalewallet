@@ -412,7 +412,7 @@ function HomeContent() {
           <div className="flex gap-6">
             <button
               onClick={() => setSelectedTab('wallet')}
-              className={`pb-3 text-sm font-medium transition-colors ${
+              className={`pb-3 text-base md:text-lg font-medium transition-colors ${
                 selectedTab === 'wallet'
                   ? 'text-white border-b-2 border-white'
                   : 'text-slate-500 hover:text-slate-300'
@@ -422,7 +422,7 @@ function HomeContent() {
             </button>
             <button
               onClick={() => setSelectedTab('token')}
-              className={`pb-3 text-sm font-medium transition-colors ${
+              className={`pb-3 text-base md:text-lg font-medium transition-colors ${
                 selectedTab === 'token'
                   ? 'text-white border-b-2 border-white'
                   : 'text-slate-500 hover:text-slate-300'

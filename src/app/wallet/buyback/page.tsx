@@ -254,7 +254,7 @@ export default function BuybackAnalysisPage() {
                 }}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
                   selectedTab === tab.id
-                    ? 'bg-blue-500 text-white'
+                    ? 'bg-emerald-500 text-white'
                     : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                 }`}
               >

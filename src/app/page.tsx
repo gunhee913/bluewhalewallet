@@ -189,10 +189,6 @@ interface WalletCardProps {
 }
 
 function WalletCard({ wallet, totalAssets, buybackDetails }: WalletCardProps) {
-  const formatAddress = (address: string) => {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
-  };
-
   const formatAssets = (assets: string) => {
     // 소수점 제거: "$1,234.56" -> "$1,234"
     return assets.replace(/\.\d+/, '');
@@ -203,10 +199,7 @@ function WalletCard({ wallet, totalAssets, buybackDetails }: WalletCardProps) {
       <div className="p-5">
         <div className="flex items-center justify-between">
           <div className="flex-1 min-w-0">
-            <h2 className="text-lg font-semibold text-white mb-1">{wallet.name}</h2>
-            <code className="text-sm text-slate-400 font-mono mb-2 block">
-              {formatAddress(wallet.address)}
-            </code>
+            <h2 className="text-lg font-semibold text-white mb-2">{wallet.name}</h2>
 
             <div className="flex items-center gap-2">
               <span className="text-sm text-slate-400">Total Assets:</span>

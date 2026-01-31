@@ -152,7 +152,7 @@ export default function TokenDetailPage() {
       <header className="border-b border-slate-700/50 backdrop-blur-sm">
         <div className="max-w-4xl mx-auto px-4 md:px-6 py-4 md:py-5">
           <Link
-            href="/?tab=token"
+            href="/"
             className="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-3"
           >
             <ArrowLeft className="w-5 h-5" />

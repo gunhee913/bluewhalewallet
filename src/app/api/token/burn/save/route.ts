@@ -25,11 +25,11 @@ function getSupabase() {
 }
 
 // 토큰 소각 데이터 추출
-async function extractTokenBurnData(page: Page): Promise<Record<string, { units: number; value: string }>> {
+async function extractTokenBurnData(page: Page): Promise<Record<string, { units: number; value: string; tokenPrice: number }>> {
   // 페이지 로드 후 8초 대기
   await new Promise((r) => setTimeout(r, 8000));
   
-  const result: Record<string, { units: number; value: string }> = {};
+  const result: Record<string, { units: number; value: string; tokenPrice: number }> = {};
   const tokenNames = TOKEN_NAMES;
   
   // 최대 10초 동안 폴링
@@ -64,6 +64,7 @@ async function extractTokenBurnData(page: Page): Promise<Record<string, { units:
             
             let value = '$0';
             let units = 0;
+            let tokenPrice = 0;
             
             for (let j = i + 1; j < Math.min(i + 12, lines.length); j++) {
               const searchLine = lines[j];
@@ -73,7 +74,19 @@ async function extractTokenBurnData(page: Page): Promise<Record<string, { units:
                 break;
               }
               
-              // 총 가치 패턴
+              // 토큰 가격 패턴 ($ 44.653+41.8 % 형태)
+              if (searchLine.startsWith('$ ') && searchLine.includes('%') && tokenPrice === 0) {
+                const priceMatch = searchLine.match(/\$ ([\d,.]+)/);
+                if (priceMatch) {
+                  const price = parseFloat(priceMatch[1].replace(/,/g, ''));
+                  if (!isNaN(price) && price > 0) {
+                    tokenPrice = price;
+                    console.log(`[${tokenName}] Token Price: $${tokenPrice}`);
+                  }
+                }
+              }
+              
+              // 총 가치 패턴 ($ 22,721 형태, % 없음)
               if (searchLine.startsWith('$ ') && !searchLine.includes('%') && value === '$0') {
                 const numStr = searchLine.replace('$ ', '').replace(/,/g, '');
                 const num = parseFloat(numStr);
@@ -100,8 +113,8 @@ async function extractTokenBurnData(page: Page): Promise<Record<string, { units:
             }
             
             if (units > 0) {
-              result[tokenName] = { units, value };
-              console.log(`[${tokenName}] ✓ Extracted: ${units} units, ${value}`);
+              result[tokenName] = { units, value, tokenPrice };
+              console.log(`[${tokenName}] ✓ Extracted: ${units} units, ${value}, price: $${tokenPrice}`);
             }
             break;
           }
@@ -125,7 +138,7 @@ async function extractTokenBurnData(page: Page): Promise<Record<string, { units:
 }
 
 // 단일 크롤링 시도 (재시도 로직 포함)
-async function fetchTokenData(browserlessToken: string, retryCount: number = 0): Promise<Record<string, { units: number; value: string }> | null> {
+async function fetchTokenData(browserlessToken: string, retryCount: number = 0): Promise<Record<string, { units: number; value: string; tokenPrice: number }> | null> {
   let browser = null;
   let page = null;
   
@@ -218,6 +231,7 @@ export async function GET() {
       total_supply: tokenSupplyMap[tokenName] || 0,
       burned_amount: burnData[tokenName].units,
       burned_value: burnData[tokenName].value,
+      token_price: burnData[tokenName].tokenPrice || 0,
       recorded_at: today,
     }));
   

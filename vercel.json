@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/wallet/refresh",
+      "schedule": "*/30 * * * *"
+    }
+  ]
+}

@@ -56,6 +56,8 @@ export default function TokenDetailPage() {
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
   }, []);
 
   const { data: history, isLoading } = useQuery({
@@ -67,7 +69,6 @@ export default function TokenDetailPage() {
   const historyWithDaily = useMemo(() => {
     if (!history || history.length === 0) return [];
     
-    // 날짜 오름차순 정렬
     const sorted = [...history].sort((a, b) => 
       new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime()
     );
@@ -81,10 +82,10 @@ export default function TokenDetailPage() {
       
       return {
         ...item,
-        dailyBurn: Math.max(0, dailyBurn), // 음수 방지
+        dailyBurn: Math.max(0, dailyBurn),
         dailyValue,
       };
-    }).reverse(); // 최신순으로 다시 정렬
+    }).reverse();
   }, [history]);
 
   // 시간 프레임에 따른 필터링
@@ -93,30 +94,51 @@ export default function TokenDetailPage() {
     
     switch (timeFrame) {
       case 'weekly':
-        return historyWithDaily.filter((_, index) => index % 7 === 0);
+        return historyWithDaily.filter((item) => {
+          const date = new Date(item.recorded_at);
+          return date.getDay() === 1;
+        });
       case 'monthly':
-        return historyWithDaily.filter((_, index) => index % 30 === 0);
+        return historyWithDaily.filter((item) => {
+          const date = new Date(item.recorded_at);
+          return date.getDate() === 1;
+        });
       default:
-        return historyWithDaily;
+        return historyWithDaily.slice(0, 90);
     }
   }, [historyWithDaily, timeFrame]);
 
   // 차트 데이터
   const chartData = useMemo(() => {
-    return [...filteredHistory].reverse().map((item) => ({
-      date: new Date(item.recorded_at).toLocaleDateString('ko-KR', {
-        month: 'short',
-        day: 'numeric',
-      }),
-      value: selectedTab === 'cumulative' ? item.burned_amount : item.dailyBurn,
-    }));
+    return [...filteredHistory].reverse().map((item) => {
+      const [, month, day] = item.recorded_at.split('-');
+      return {
+        date: `${parseInt(month)}/${parseInt(day)}`,
+        fullDate: item.recorded_at,
+        amount: selectedTab === 'cumulative' ? item.burned_amount : item.dailyBurn,
+      };
+    });
   }, [filteredHistory, selectedTab]);
+
+  // X축 간격 계산
+  const xAxisInterval = useMemo(() => {
+    if (timeFrame === 'daily') return Math.floor(chartData.length / 5);
+    if (timeFrame === 'weekly') return 7;
+    if (timeFrame === 'monthly') return 1;
+    return 0;
+  }, [timeFrame, chartData.length]);
 
   const formatNumber = (num: number, withDecimal: boolean = false) => {
     return num.toLocaleString(undefined, { maximumFractionDigits: withDecimal ? 4 : 0 });
   };
 
   const showDecimal = tokenName === 'sBWPM' || tokenName === 'sADOL';
+
+  const timeFrameLabel = {
+    daily: '일간',
+    weekly: '주간',
+    monthly: '월간',
+  };
 
   if (!tokenInfo) {
     return (
@@ -127,33 +149,33 @@ export default function TokenDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* Header */}
-      <header className="border-b border-slate-700/50">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-5">
-          <div className="flex items-center gap-3 sm:gap-4">
-            <Link
-              href="/"
-              className="p-2 sm:p-2.5 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-            </Link>
-            <div className="flex items-center gap-3">
-              <img 
-                src={tokenInfo.image} 
-                alt={tokenName} 
-                className="w-8 h-8 sm:w-10 sm:h-10 rounded-full"
-              />
-              <div>
-                <h1 className="text-lg sm:text-xl font-bold text-white">{tokenName}</h1>
-                <p className="text-xs sm:text-sm text-slate-400">소각 분석</p>
-              </div>
+      <header className="border-b border-slate-700/50 backdrop-blur-sm">
+        <div className="max-w-4xl mx-auto px-4 md:px-6 py-4 md:py-5">
+          <Link
+            href="/?tab=token"
+            className="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-3"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span>돌아가기</span>
+          </Link>
+          <div className="flex items-center gap-3">
+            <img 
+              src={tokenInfo.image} 
+              alt={tokenName} 
+              className="w-8 h-8 md:w-10 md:h-10 rounded-full"
+            />
+            <div>
+              <h1 className="text-xl md:text-2xl font-bold text-white">{tokenName}</h1>
+              <p className="text-xs md:text-sm text-slate-400">소각 분석</p>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
+      {/* Main Content */}
+      <main className="max-w-4xl mx-auto px-4 md:px-6 py-6 md:py-10">
         {/* 탭 선택 */}
         <div className="flex gap-4 mb-6 border-b border-slate-700/50">
           <button
@@ -178,97 +200,118 @@ export default function TokenDetailPage() {
           </button>
         </div>
 
-        {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 animate-spin text-emerald-400" />
-          </div>
-        ) : (
-          <>
-            {/* 차트 */}
-            <Card className="bg-slate-800/50 border-slate-700/50 p-4 sm:p-6 mb-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-                <h2 className="text-base sm:text-lg font-semibold text-white">
-                  {selectedTab === 'cumulative' ? '누적 소각량' : '일일 소각량'} 그래프
-                </h2>
-                <div className="flex gap-2">
-                  {(['daily', 'weekly', 'monthly'] as TimeFrame[]).map((tf) => (
-                    <button
-                      key={tf}
-                      onClick={() => setTimeFrame(tf)}
-                      className={`px-3 py-1.5 text-xs sm:text-sm rounded-md transition-colors ${
-                        timeFrame === tf
-                          ? 'bg-emerald-500 text-white'
-                          : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                      }`}
-                    >
-                      {tf === 'daily' ? '일간' : tf === 'weekly' ? '주간' : '월간'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="h-[250px] sm:h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                    <XAxis 
-                      dataKey="date" 
-                      stroke="#94a3b8" 
-                      fontSize={11}
-                      interval={timeFrame === 'daily' ? 'preserveStartEnd' : 0}
-                    />
-                    <YAxis 
-                      stroke="#94a3b8" 
-                      fontSize={11}
-                      tickFormatter={(val) => formatNumber(val, showDecimal)}
-                      width={70}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: '#1e293b',
-                        border: '1px solid #334155',
-                        borderRadius: '8px',
-                      }}
-                      labelStyle={{ color: '#94a3b8' }}
-                      formatter={(value: number) => [
-                        `${formatNumber(value, showDecimal)} 개`,
-                        selectedTab === 'cumulative' ? '누적 소각량' : '일일 소각량'
-                      ]}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="value"
-                      stroke="#10b981"
-                      strokeWidth={2}
-                      dot={false}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </Card>
+        {/* 시간 프레임 탭 */}
+        <div className="flex gap-2 mb-4 md:mb-6">
+          {(['daily', 'weekly', 'monthly'] as TimeFrame[]).map((tf) => (
+            <button
+              key={tf}
+              onClick={() => {
+                setTimeFrame(tf);
+                setVisibleCount(20);
+              }}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                timeFrame === tf
+                  ? 'bg-emerald-500 text-white'
+                  : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+              }`}
+            >
+              {timeFrameLabel[tf]}
+            </button>
+          ))}
+        </div>
 
-            {/* 테이블 */}
-            <Card className="bg-slate-800/50 border-slate-700/50 p-4 sm:p-6">
-              <h2 className="text-base sm:text-lg font-semibold text-white mb-4">
-                {selectedTab === 'cumulative' ? '누적 현황' : '일일 현황'} 테이블
-              </h2>
-              
-              <div className="overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-700">
-                      <th className="text-left py-3 px-2 text-slate-400 font-medium">날짜</th>
+        {/* 차트 */}
+        {isLoading ? (
+          <Card className="bg-slate-800/50 border-slate-700/50 p-4 md:p-6 mb-6">
+            <div className="flex items-center justify-center h-48 md:h-64">
+              <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+            </div>
+          </Card>
+        ) : chartData.length > 0 ? (
+          <Card className="bg-slate-800/50 border-slate-700/50 p-4 md:p-6 mb-6">
+            <h2 className="text-base md:text-lg font-semibold text-white mb-3 md:mb-4">
+              {selectedTab === 'cumulative' ? '누적 소각량' : '일일 소각량'} 그래프
+            </h2>
+            <div className="h-48 md:h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                  <XAxis 
+                    dataKey="date" 
+                    stroke="#94a3b8"
+                    fontSize={10}
+                    interval={xAxisInterval}
+                    tickMargin={8}
+                  />
+                  <YAxis 
+                    stroke="#94a3b8"
+                    fontSize={10}
+                    tickFormatter={(value) => formatNumber(value, showDecimal)}
+                    width={70}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#1e293b',
+                      border: '1px solid #334155',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                    }}
+                    labelStyle={{ color: '#94a3b8' }}
+                    labelFormatter={(label, payload) => {
+                      if (payload && payload[0]) {
+                        return payload[0].payload.fullDate;
+                      }
+                      return label;
+                    }}
+                    formatter={(value: number) => [
+                      `${formatNumber(value, showDecimal)} 개`,
+                      selectedTab === 'cumulative' ? '누적 소각량' : '일일 소각량'
+                    ]}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="amount"
+                    stroke="#34d399"
+                    strokeWidth={2}
+                    dot={false}
+                    activeDot={{ r: 5, fill: '#34d399', stroke: 'none' }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+        ) : null}
+
+        {/* 테이블 */}
+        <Card className="bg-slate-800/50 border-slate-700/50 overflow-hidden">
+          <div className="p-3 md:p-4 border-b border-slate-700">
+            <h2 className="text-base md:text-lg font-semibold text-white">
+              {selectedTab === 'cumulative' ? '누적 현황' : '일일 현황'} 테이블
+            </h2>
+          </div>
+          
+          {isLoading ? (
+            <div className="flex items-center justify-center py-10">
+              <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+            </div>
+          ) : filteredHistory.length > 0 ? (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-slate-800">
+                    <tr>
+                      <th className="text-left text-sm md:text-base font-medium text-slate-400 px-4 py-3 md:py-4">날짜</th>
                       {selectedTab === 'cumulative' ? (
                         <>
-                          <th className="text-right py-3 px-2 text-slate-400 font-medium">누적 소각량</th>
-                          <th className="text-right py-3 px-2 text-slate-400 font-medium">소각 가치</th>
-                          <th className="text-right py-3 px-2 text-slate-400 font-medium">소각률</th>
+                          <th className="text-right text-sm md:text-base font-medium text-slate-400 px-4 py-3 md:py-4">누적 소각량</th>
+                          <th className="text-right text-sm md:text-base font-medium text-slate-400 px-4 py-3 md:py-4">소각 가치</th>
+                          <th className="text-right text-sm md:text-base font-medium text-slate-400 px-4 py-3 md:py-4">소각률</th>
                         </>
                       ) : (
                         <>
-                          <th className="text-right py-3 px-2 text-slate-400 font-medium">일일 소각량</th>
-                          <th className="text-right py-3 px-2 text-slate-400 font-medium">소각 금액</th>
-                          <th className="text-right py-3 px-2 text-slate-400 font-medium">토큰 가격</th>
+                          <th className="text-right text-sm md:text-base font-medium text-slate-400 px-4 py-3 md:py-4">일일 소각량</th>
+                          <th className="text-right text-sm md:text-base font-medium text-slate-400 px-4 py-3 md:py-4">소각 금액</th>
+                          <th className="text-right text-sm md:text-base font-medium text-slate-400 px-4 py-3 md:py-4">토큰 가격</th>
                         </>
                       )}
                     </tr>
@@ -282,35 +325,32 @@ export default function TokenDetailPage() {
                       return (
                         <tr 
                           key={index} 
-                          className="border-b border-slate-700/50 hover:bg-slate-700/30"
+                          className="border-t border-slate-700/50 hover:bg-slate-700/30"
                         >
-                          <td className="py-4 px-2 text-white">
-                            {new Date(item.recorded_at).toLocaleDateString('ko-KR', {
-                              month: 'short',
-                              day: 'numeric',
-                            })}
+                          <td className="px-4 py-4 text-sm md:text-base text-white">
+                            {item.recorded_at}
                           </td>
                           {selectedTab === 'cumulative' ? (
                             <>
-                              <td className="py-4 px-2 text-right text-orange-400 font-medium">
+                              <td className="px-4 py-4 text-right text-sm md:text-base text-orange-400 font-mono">
                                 {formatNumber(item.burned_amount, showDecimal)}
                               </td>
-                              <td className="py-4 px-2 text-right text-emerald-400">
+                              <td className="px-4 py-4 text-right text-sm md:text-base text-emerald-400">
                                 {item.burned_value || '-'}
                               </td>
-                              <td className="py-4 px-2 text-right text-white">
+                              <td className="px-4 py-4 text-right text-sm md:text-base text-white">
                                 {burnRate > 0 ? `${burnRate.toFixed(2)}%` : '-'}
                               </td>
                             </>
                           ) : (
                             <>
-                              <td className="py-4 px-2 text-right text-orange-400 font-medium">
+                              <td className="px-4 py-4 text-right text-sm md:text-base text-orange-400 font-mono">
                                 {formatNumber(item.dailyBurn, showDecimal)}
                               </td>
-                              <td className="py-4 px-2 text-right text-emerald-400">
+                              <td className="px-4 py-4 text-right text-sm md:text-base text-emerald-400">
                                 {item.dailyValue > 0 ? `$${formatNumber(item.dailyValue)}` : '-'}
                               </td>
-                              <td className="py-4 px-2 text-right text-white">
+                              <td className="px-4 py-4 text-right text-sm md:text-base text-white">
                                 {item.token_price > 0 ? `$${item.token_price.toFixed(2)}` : '-'}
                               </td>
                             </>
@@ -321,20 +361,24 @@ export default function TokenDetailPage() {
                   </tbody>
                 </table>
               </div>
-
-              {filteredHistory.length > visibleCount && (
-                <div className="mt-4 text-center">
+              {visibleCount < filteredHistory.length && (
+                <div className="p-4 border-t border-slate-700">
                   <button
                     onClick={() => setVisibleCount((prev) => prev + 20)}
-                    className="px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors text-sm"
+                    className="w-full py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm font-medium transition-colors"
                   >
                     더보기
                   </button>
                 </div>
               )}
-            </Card>
-          </>
-        )}
+            </>
+          ) : (
+            <div className="text-center py-10 text-slate-400">
+              <p>아직 기록된 데이터가 없습니다</p>
+              <p className="text-sm mt-1">매일 자정에 데이터가 저장됩니다</p>
+            </div>
+          )}
+        </Card>
       </main>
     </div>
   );

@@ -1,10 +1,11 @@
 'use client';
 
 import { Card } from '@/components/ui/card';
-import { Wallet, Loader2, Flame } from 'lucide-react';
+import { Loader2, Flame } from 'lucide-react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 const PUMPSPACE_BASE_URL = 'https://pumpspace.io/wallet/detail?account=';
 const BURN_ADDRESS = '0x000000000000000000000000000000000000dEaD';
@@ -226,7 +227,16 @@ function WalletCard({ wallet, totalAssets }: WalletCardProps) {
 }
 
 export default function Home() {
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get('tab');
   const [selectedTab, setSelectedTab] = useState<'wallet' | 'token'>('wallet');
+
+  // URL 파라미터로 탭 설정
+  useEffect(() => {
+    if (tabParam === 'token') {
+      setSelectedTab('token');
+    }
+  }, [tabParam]);
 
   const addresses = useMemo(
     () => WALLETS.map((w) => w.address),

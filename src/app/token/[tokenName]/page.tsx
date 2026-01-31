@@ -16,15 +16,15 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
-// 토큰 정보
-const TOKEN_INFO: Record<string, { totalSupply: number; image: string }> = {
-  'sBWPM': { totalSupply: 7000, image: '/sBWPM.svg' },
-  'sADOL': { totalSupply: 70000, image: '/sADOL.svg' },
-  'AQUA1': { totalSupply: 0, image: '/AQUA1.svg' },
-  'CLAM': { totalSupply: 70000000, image: '/CLAM.svg' },
-  'PEARL': { totalSupply: 0, image: '/PEARL.svg' },
-  'SHELL': { totalSupply: 0, image: '/SHELL.svg' },
-  'CORAL': { totalSupply: 0, image: '/CORAL.png' },
+// 토큰 이미지
+const TOKEN_IMAGES: Record<string, string> = {
+  'sBWPM': '/sBWPM.svg',
+  'sADOL': '/sADOL.svg',
+  'AQUA1': '/AQUA1.svg',
+  'CLAM': '/CLAM.svg',
+  'PEARL': '/PEARL.svg',
+  'SHELL': '/SHELL.svg',
+  'CORAL': '/CORAL.png',
 };
 
 interface HistoryItem {
@@ -48,7 +48,7 @@ async function fetchTokenHistory(tokenName: string): Promise<HistoryItem[]> {
 export default function TokenDetailPage() {
   const params = useParams();
   const tokenName = params.tokenName as string;
-  const tokenInfo = TOKEN_INFO[tokenName];
+  const tokenImage = TOKEN_IMAGES[tokenName];
   
   const [selectedTab, setSelectedTab] = useState<TabType>('cumulative');
   const [timeFrame, setTimeFrame] = useState<TimeFrame>('daily');
@@ -162,7 +162,7 @@ export default function TokenDetailPage() {
           </Link>
           <div className="flex items-center gap-3">
             <img 
-              src={tokenInfo.image} 
+              src={tokenImage} 
               alt={tokenName} 
               className="w-8 h-8 md:w-10 md:h-10 rounded-full"
             />
@@ -318,8 +318,9 @@ export default function TokenDetailPage() {
                   </thead>
                   <tbody>
                     {filteredHistory.slice(0, visibleCount).map((item, index) => {
-                      const burnRate = tokenInfo.totalSupply > 0 
-                        ? (item.burned_amount / tokenInfo.totalSupply) * 100 
+                      const totalSupply = item.total_supply || 0;
+                      const burnRate = totalSupply > 0 
+                        ? (item.burned_amount / totalSupply) * 100 
                         : 0;
                       
                       return (

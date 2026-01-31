@@ -28,11 +28,26 @@ export async function GET() {
       return NextResponse.json({ success: false, error: error.message, tokens: [] });
     }
     
-    // 토큰별 최신 데이터만 추출
+    // token_info 테이블에서 총 발행량 가져오기
+    const { data: tokenInfoData } = await supabase
+      .from('token_info')
+      .select('token_name, total_supply');
+    
+    const supplyMap: Record<string, number> = {};
+    if (tokenInfoData) {
+      tokenInfoData.forEach((t: { token_name: string; total_supply: number }) => {
+        supplyMap[t.token_name] = t.total_supply;
+      });
+    }
+    
+    // 토큰별 최신 데이터만 추출 + token_info의 total_supply 사용
     const latestByToken: Record<string, typeof data[0]> = {};
     for (const item of data || []) {
       if (!latestByToken[item.token_name]) {
-        latestByToken[item.token_name] = item;
+        latestByToken[item.token_name] = {
+          ...item,
+          total_supply: supplyMap[item.token_name] ?? item.total_supply,
+        };
       }
     }
     

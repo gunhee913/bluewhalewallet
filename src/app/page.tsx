@@ -62,25 +62,17 @@ async function fetchTokenBurnData() {
   return response.json();
 }
 
-// 토큰 목록 (총 발행량 포함)
-const TOKENS = [
-  { name: 'sBWPM', totalSupply: 7000 },
-  { name: 'sADOL', totalSupply: 70000 },
-  { name: 'AQUA1', totalSupply: 0 },
-  { name: 'CLAM', totalSupply: 70000000 },
-  { name: 'PEARL', totalSupply: 0 },
-  { name: 'SHELL', totalSupply: 0 },
-  { name: 'CORAL', totalSupply: 0 },
-];
+// 토큰 목록 (순서만 정의, 총 발행량은 API에서 가져옴)
+const TOKEN_NAMES = ['sBWPM', 'sADOL', 'AQUA1', 'CLAM', 'PEARL', 'SHELL', 'CORAL'];
 
 interface TokenBurnData {
   burned_amount: number;
   burned_value: string;
+  total_supply: number;
 }
 
 interface TokenCardProps {
   name: string;
-  totalSupply: number;
   burnData?: TokenBurnData;
 }
 
@@ -95,8 +87,9 @@ const TOKEN_IMAGES: Record<string, string> = {
   'AQUA1': '/AQUA1.svg',
 };
 
-function TokenCard({ name, totalSupply, burnData }: TokenCardProps) {
+function TokenCard({ name, burnData }: TokenCardProps) {
   const burnedAmount = burnData?.burned_amount || 0;
+  const totalSupply = burnData?.total_supply || 0;
   const remaining = totalSupply > 0 ? totalSupply - burnedAmount : 0;
   const burnRate = totalSupply > 0 ? (burnedAmount / totalSupply) * 100 : 0;
 
@@ -335,15 +328,14 @@ function HomeContent() {
         {/* Token 탭 - 소각 현황 */}
         {selectedTab === 'token' && (
           <div className="space-y-4">
-            {TOKENS.map((token) => {
+            {TOKEN_NAMES.map((tokenName) => {
               const burnData = tokenData?.tokens?.find(
-                (t: { token_name: string }) => t.token_name === token.name
+                (t: { token_name: string }) => t.token_name === tokenName
               );
               return (
                 <TokenCard
-                  key={token.name}
-                  name={token.name}
-                  totalSupply={token.totalSupply}
+                  key={tokenName}
+                  name={tokenName}
                   burnData={burnData}
                 />
               );

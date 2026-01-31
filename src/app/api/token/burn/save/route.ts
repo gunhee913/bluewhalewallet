@@ -32,10 +32,10 @@ function getSupabase() {
   return createClient(url, key);
 }
 
-// 토큰 소각 데이터 추출 (새로운 로직)
+// 토큰 소각 데이터 추출
 async function extractTokenBurnData(page: Page): Promise<Record<string, { units: number; value: string }>> {
-  // 페이지 로드 후 10초 대기
-  await new Promise((r) => setTimeout(r, 10000));
+  // 페이지 로드 후 8초 대기
+  await new Promise((r) => setTimeout(r, 8000));
   
   const result: Record<string, { units: number; value: string }> = {};
   const tokenNames = Object.keys(TOKEN_INFO);
@@ -70,7 +70,6 @@ async function extractTokenBurnData(page: Page): Promise<Record<string, { units:
           if (line === tokenName) {
             console.log(`[${tokenName}] Found at line ${i}`);
             
-            // 다음 10줄에서 가격과 Units 찾기
             let value = '$0';
             let units = 0;
             
@@ -82,7 +81,7 @@ async function extractTokenBurnData(page: Page): Promise<Record<string, { units:
                 break;
               }
               
-              // 총 가치 패턴: "$ 숫자" (가격+변화율이 아닌 것)
+              // 총 가치 패턴
               if (searchLine.startsWith('$ ') && !searchLine.includes('%') && value === '$0') {
                 const numStr = searchLine.replace('$ ', '').replace(/,/g, '');
                 const num = parseFloat(numStr);
@@ -92,7 +91,7 @@ async function extractTokenBurnData(page: Page): Promise<Record<string, { units:
                 }
               }
               
-              // Units 패턴: "숫자." 다음 줄에 "소수점이하" 그 다음에 "Units"
+              // Units 패턴
               if (searchLine === 'Units' && j >= 2) {
                 const decimalPart = lines[j - 1];
                 const integerPart = lines[j - 2];
@@ -133,6 +132,52 @@ async function extractTokenBurnData(page: Page): Promise<Record<string, { units:
   return result;
 }
 
+// 단일 크롤링 시도 (재시도 로직 포함)
+async function fetchTokenData(browserlessToken: string, retryCount: number = 0): Promise<Record<string, { units: number; value: string }> | null> {
+  let browser = null;
+  let page = null;
+  
+  try {
+    console.log(`[Token Burn] Connecting... (attempt ${retryCount + 1})`);
+    browser = await puppeteer.connect({
+      browserWSEndpoint: `wss://chrome.browserless.io?token=${browserlessToken}`,
+    });
+    
+    page = await browser.newPage();
+    await page.setViewport({ width: 1280, height: 720 });
+    
+    console.log(`[Token Burn] Navigating to: ${PUMPSPACE_URL}`);
+    await page.goto(PUMPSPACE_URL, {
+      waitUntil: 'networkidle2',
+      timeout: 60000,
+    });
+    console.log('[Token Burn] Page loaded');
+    
+    const burnData = await extractTokenBurnData(page);
+    console.log('[Token Burn] Extracted:', burnData);
+    
+    return burnData;
+  } catch (error) {
+    console.error(`[Token Burn] Error (attempt ${retryCount + 1}):`, error);
+    
+    // 재시도 (최대 1회)
+    if (retryCount < 1) {
+      console.log('[Token Burn] Retrying...');
+      await new Promise((r) => setTimeout(r, 5000));
+      return fetchTokenData(browserlessToken, retryCount + 1);
+    }
+    
+    return null;
+  } finally {
+    if (page) {
+      try { await page.close(); } catch (e) { /* ignore */ }
+    }
+    if (browser) {
+      try { await browser.close(); } catch (e) { /* ignore */ }
+    }
+  }
+}
+
 // GET: 토큰 소각 데이터 저장
 export async function GET() {
   console.log('[Token Burn Save] Starting...');
@@ -146,44 +191,33 @@ export async function GET() {
     });
   }
   
-  let browser = null;
+  const burnData = await fetchTokenData(browserlessToken);
   
-  try {
-    console.log('[Token Burn Save] Connecting to Browserless...');
-    browser = await puppeteer.connect({
-      browserWSEndpoint: `wss://chrome.browserless.io?token=${browserlessToken}`,
+  if (!burnData || Object.keys(burnData).length === 0) {
+    return NextResponse.json({
+      success: false,
+      error: 'Failed to extract token data',
     });
-    console.log('[Token Burn Save] Connected!');
-    
-    const page = await browser.newPage();
-    await page.setViewport({ width: 1280, height: 720 });
-    
-    console.log(`[Token Burn Save] Navigating to: ${PUMPSPACE_URL}`);
-    await page.goto(PUMPSPACE_URL, {
-      waitUntil: 'networkidle2',
-      timeout: 60000,
-    });
-    console.log('[Token Burn Save] Page loaded');
-    
-    const burnData = await extractTokenBurnData(page);
-    console.log('[Token Burn Save] Extracted:', burnData);
-    
-    await page.close();
-    
-    // Supabase에 저장
-    const supabase = getSupabase();
-    const today = new Date().toISOString().split('T')[0];
-    
-    const upsertData = Object.entries(TOKEN_INFO).map(([tokenName, totalSupply]) => ({
+  }
+  
+  // Supabase에 저장 (성공한 토큰만)
+  const supabase = getSupabase();
+  const today = new Date().toISOString().split('T')[0];
+  
+  // 성공한 토큰만 저장 (실패한 토큰은 기존 값 유지)
+  const upsertData = Object.entries(TOKEN_INFO)
+    .filter(([tokenName]) => burnData[tokenName] && burnData[tokenName].units > 0)
+    .map(([tokenName, totalSupply]) => ({
       token_name: tokenName,
       total_supply: totalSupply,
-      burned_amount: burnData[tokenName]?.units || 0,
-      burned_value: burnData[tokenName]?.value || '$0',
+      burned_amount: burnData[tokenName].units,
+      burned_value: burnData[tokenName].value,
       recorded_at: today,
     }));
-    
-    console.log('[Token Burn Save] Saving:', upsertData);
-    
+  
+  console.log('[Token Burn Save] Saving:', upsertData);
+  
+  if (upsertData.length > 0) {
     const { error: upsertError } = await supabase
       .from('token_burn')
       .upsert(upsertData, { onConflict: 'token_name,recorded_at' });
@@ -196,39 +230,13 @@ export async function GET() {
         extracted: burnData,
       });
     }
-    
-    console.log('[Token Burn Save] Success!');
-    return NextResponse.json({
-      success: true,
-      message: `Saved ${upsertData.length} tokens for ${today}`,
-      data: upsertData,
-      extracted: burnData,
-    });
-  } catch (error: unknown) {
-    console.error('[Token Burn Save] Error:', error);
-    
-    let errorMsg = 'Unknown error';
-    if (error instanceof Error) {
-      errorMsg = error.message;
-    } else if (typeof error === 'object' && error !== null) {
-      try {
-        errorMsg = JSON.stringify(error);
-      } catch {
-        errorMsg = String(error);
-      }
-    }
-    
-    return NextResponse.json({
-      success: false,
-      error: errorMsg,
-    });
-  } finally {
-    if (browser) {
-      try {
-        await browser.close();
-      } catch (e) {
-        console.error('[Token Burn Save] Browser close error:', e);
-      }
-    }
   }
+  
+  console.log('[Token Burn Save] Success!');
+  return NextResponse.json({
+    success: true,
+    message: `Saved ${upsertData.length} tokens for ${today}`,
+    data: upsertData,
+    extracted: burnData,
+  });
 }

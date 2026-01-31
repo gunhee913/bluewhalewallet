@@ -13,29 +13,45 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-// Total Assets 추출
+// Total Assets 추출 (폴링으로 실제 금액이 나올 때까지 대기)
 async function extractTotalAssets(page: Page): Promise<string | null> {
-  return await page.evaluate(() => {
-    const body = document.body.innerText;
-    const lines = body.split('\n').map((l) => l.trim()).filter((l) => l);
+  // 최대 10초 동안 폴링 (1초 간격)
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const result = await page.evaluate(() => {
+      const body = document.body.innerText;
+      const lines = body.split('\n').map((l) => l.trim()).filter((l) => l);
 
-    // Total Assets 찾기
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].toLowerCase();
-      if (line.includes('total') && line.includes('asset')) {
-        for (let j = i; j < Math.min(i + 5, lines.length); j++) {
-          const match = lines[j].match(/\$\s*[\d,]+(?:\.\d+)?/);
-          if (match) {
-            return match[0].replace(/\s/g, '');
+      // Total Assets 찾기
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].toLowerCase();
+        if (line.includes('total') && line.includes('asset')) {
+          for (let j = i; j < Math.min(i + 5, lines.length); j++) {
+            const match = lines[j].match(/\$\s*[\d,]+(?:\.\d+)?/);
+            if (match) {
+              const amount = match[0].replace(/\s/g, '');
+              const numericValue = parseFloat(amount.replace(/[$,]/g, ''));
+              // $0이 아닌 실제 금액만 반환
+              if (numericValue > 0) {
+                return amount;
+              }
+            }
           }
         }
       }
+      return null;
+    });
+
+    if (result) {
+      console.log(`Found Total Assets after ${attempt + 1} attempts: ${result}`);
+      return result;
     }
 
-    // 폴백: 첫 번째 $ 금액
-    const firstAmount = body.match(/\$[\d,]+(?:\.\d+)?/);
-    return firstAmount ? firstAmount[0] : '$0';
-  });
+    // 1초 대기 후 재시도
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+
+  // 10초 후에도 못 찾으면 $0 반환 (실제로 $0인 경우 대비)
+  return '$0';
 }
 
 // GET: URL 파라미터로 주소 받기
@@ -95,13 +111,13 @@ async function handleRefresh(addresses: string[]) {
     for (const address of addresses) {
       try {
         const url = `${PUMPSPACE_URL}${address}`;
-        await page.goto(url, { waitUntil: 'networkidle2', timeout: 15000 });
-        await new Promise((r) => setTimeout(r, 3000));
+        console.log(`Navigating to ${url}`);
+        await page.goto(url, { waitUntil: 'networkidle0', timeout: 20000 });
 
         const totalAssets = await extractTotalAssets(page);
         results[address.toLowerCase()] = totalAssets;
 
-        console.log(`Fetched ${address}: ${totalAssets}`);
+        console.log(`Result for ${address}: ${totalAssets}`);
       } catch (err) {
         console.error(`Error fetching ${address}:`, err);
         results[address.toLowerCase()] = null;

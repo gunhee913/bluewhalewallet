@@ -28,9 +28,9 @@ function getSupabase() {
   return createClient(url, key);
 }
 
-// 토큰 소각 데이터 추출 - 더 robust한 방식
+// 토큰 소각 데이터 추출
 async function extractTokenBurnData(page: Page): Promise<Record<string, { units: number; value: string }>> {
-  // 페이지 로드 후 10초 대기 (JavaScript 렌더링 완료 대기)
+  // 페이지 로드 후 10초 대기
   await new Promise((r) => setTimeout(r, 10000));
   
   const result: Record<string, { units: number; value: string }> = {};
@@ -43,73 +43,50 @@ async function extractTokenBurnData(page: Page): Promise<Record<string, { units:
         const body = document.body.innerText;
         const extracted: Record<string, { units: number; value: string }> = {};
         
-        console.log('Page body length:', body.length);
-        
         for (const tokenName of tokens) {
-          // 토큰이 페이지에 있는지 확인
-          if (!body.includes(tokenName)) {
-            console.log(`Token ${tokenName} not found in page`);
-            continue;
-          }
+          if (!body.includes(tokenName)) continue;
           
-          // 방법 1: 줄 단위로 검색
+          // 페이지에서 토큰 행 찾기
+          // 형식: "토큰명 Bridge $가격 +xx% $금액 Units수 Units"
           const lines = body.split('\n');
+          
           for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
             
-            // 토큰 이름이 포함된 줄 찾기
-            if (line.includes(tokenName)) {
-              console.log(`Found ${tokenName} at line ${i}: ${line}`);
+            if (line.includes(tokenName) && !line.includes('Show')) {
+              // 이 줄과 주변 줄에서 Units와 Value 찾기
+              let units = 0;
+              let value = '$0';
               
-              // 현재 줄과 이후 10줄에서 Units와 Value 찾기
-              let foundUnits = 0;
-              let foundValue = '$0';
-              
+              // 현재 줄부터 10줄 검색
               for (let j = i; j < Math.min(i + 10, lines.length); j++) {
                 const searchLine = lines[j];
                 
-                // Units 찾기 (숫자 Units 패턴)
+                // Units 패턴: "숫자 Units" 또는 "숫자Units"
                 const unitsMatch = searchLine.match(/([\d,]+(?:\.\d+)?)\s*Units/i);
-                if (unitsMatch && foundUnits === 0) {
-                  foundUnits = parseFloat(unitsMatch[1].replace(/,/g, ''));
-                  console.log(`Found units for ${tokenName}: ${foundUnits}`);
+                if (unitsMatch && units === 0) {
+                  units = parseFloat(unitsMatch[1].replace(/,/g, ''));
                 }
                 
-                // Value 찾기 ($숫자 패턴)
-                const valueMatch = searchLine.match(/\$\s*([\d,]+(?:\.\d+)?)/);
-                if (valueMatch && foundValue === '$0') {
-                  const val = parseFloat(valueMatch[1].replace(/,/g, ''));
-                  if (val > 0) {
-                    foundValue = '$' + valueMatch[1];
-                    console.log(`Found value for ${tokenName}: ${foundValue}`);
+                // Value 패턴: "$ 숫자" (큰 금액, 토큰 가치)
+                // 토큰 가격($0.xxx)이 아닌 총 가치($x,xxx)를 찾아야 함
+                const valueMatches = searchLine.match(/\$\s*([\d,]+(?:\.\d+)?)/g);
+                if (valueMatches && value === '$0') {
+                  for (const match of valueMatches) {
+                    const numStr = match.replace(/[$\s,]/g, '');
+                    const num = parseFloat(numStr);
+                    // $100 이상인 값만 (토큰 가격이 아닌 총 가치)
+                    if (num >= 100) {
+                      value = '$' + num.toLocaleString();
+                      break;
+                    }
                   }
                 }
               }
               
-              if (foundUnits > 0) {
-                extracted[tokenName] = { units: foundUnits, value: foundValue };
-                break; // 이 토큰은 찾았으니 다음 토큰으로
-              }
-            }
-          }
-          
-          // 방법 2: 정규식으로 전체 검색 (방법 1 실패시)
-          if (!extracted[tokenName]) {
-            // 토큰명 뒤에 오는 숫자 Units 패턴
-            const regex = new RegExp(tokenName + '[\\s\\S]{0,300}?([\\d,]+(?:\\.\\d+)?)\\s*Units', 'i');
-            const match = body.match(regex);
-            
-            if (match) {
-              const units = parseFloat(match[1].replace(/,/g, ''));
-              
-              // Value 찾기
-              const valueRegex = new RegExp(tokenName + '[\\s\\S]{0,300}?\\$\\s*([\\d,]+(?:\\.\\d+)?)', 'i');
-              const valueMatch = body.match(valueRegex);
-              const value = valueMatch ? '$' + valueMatch[1] : '$0';
-              
               if (units > 0) {
                 extracted[tokenName] = { units, value };
-                console.log(`Regex found ${tokenName}: ${units} Units, ${value}`);
+                break;
               }
             }
           }
@@ -125,7 +102,7 @@ async function extractTokenBurnData(page: Page): Promise<Record<string, { units:
         }
       }
       
-      console.log(`Attempt ${attempt + 1}: Found ${Object.keys(result).length}/${tokenNames.length} tokens`);
+      console.log(`Attempt ${attempt + 1}: Found ${Object.keys(result).length}/${tokenNames.length} tokens`, result);
       
       // 모든 토큰 찾았으면 종료
       if (Object.keys(result).length === tokenNames.length) {
@@ -141,7 +118,7 @@ async function extractTokenBurnData(page: Page): Promise<Record<string, { units:
   return result;
 }
 
-// GET: 자정에 호출되어 토큰 소각 데이터 저장
+// GET: 토큰 소각 데이터 저장
 export async function GET() {
   console.log('[Token Burn Save] Starting...');
   
@@ -161,7 +138,7 @@ export async function GET() {
     browser = await puppeteer.connect({
       browserWSEndpoint: `wss://chrome.browserless.io?token=${browserlessToken}&timeout=240000`,
     });
-    console.log('[Token Burn Save] Connected to Browserless');
+    console.log('[Token Burn Save] Connected!');
     
     const page = await browser.newPage();
     await page.setViewport({ width: 1280, height: 720 });
@@ -171,10 +148,10 @@ export async function GET() {
       waitUntil: 'networkidle2',
       timeout: 60000,
     });
+    console.log('[Token Burn Save] Page loaded');
     
-    console.log('[Token Burn Save] Page loaded, extracting data...');
     const burnData = await extractTokenBurnData(page);
-    console.log('[Token Burn Save] Extracted data:', JSON.stringify(burnData));
+    console.log('[Token Burn Save] Extracted:', burnData);
     
     await page.close();
     
@@ -190,7 +167,7 @@ export async function GET() {
       recorded_at: today,
     }));
     
-    console.log('[Token Burn Save] Saving to Supabase:', JSON.stringify(upsertData));
+    console.log('[Token Burn Save] Saving:', upsertData);
     
     const { error: upsertError } = await supabase
       .from('token_burn')
@@ -210,30 +187,18 @@ export async function GET() {
       success: true,
       message: `Saved ${upsertData.length} tokens for ${today}`,
       data: upsertData,
+      extracted: burnData,
     });
-  } catch (error: unknown) {
+  } catch (error) {
     console.error('[Token Burn Save] Error:', error);
-    
-    let errorMessage = 'Unknown error';
-    if (error instanceof Error) {
-      errorMessage = error.message;
-    } else if (typeof error === 'object' && error !== null) {
-      // ErrorEvent 등 특수 객체 처리
-      const errObj = error as Record<string, unknown>;
-      errorMessage = errObj.message as string || errObj.error as string || JSON.stringify(error, Object.getOwnPropertyNames(error));
-    } else {
-      errorMessage = String(error);
-    }
-    
     return NextResponse.json({
       success: false,
-      error: errorMessage,
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
   } finally {
     if (browser) {
       try {
         await browser.close();
-        console.log('[Token Burn Save] Browser closed');
       } catch (e) {
         console.error('[Token Burn Save] Browser close error:', e);
       }

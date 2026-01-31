@@ -274,6 +274,7 @@ export default function TokenDetailPage() {
                     <tr>
                       <th className="text-left text-xs md:text-sm font-medium text-slate-400 px-3 py-3">날짜</th>
                       <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-2 py-3">일소각량</th>
+                      <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-2 py-3">토큰가격</th>
                       <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-2 py-3">일소각금</th>
                       <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-2 py-3">누적소각량</th>
                       <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-2 py-3">총소각가치</th>
@@ -297,6 +298,9 @@ export default function TokenDetailPage() {
                           </td>
                           <td className="px-2 py-3 text-right text-xs md:text-sm text-orange-400 font-mono">
                             {formatNumber(item.dailyBurn, showDecimal)}
+                          </td>
+                          <td className="px-2 py-3 text-right text-xs md:text-sm text-slate-300">
+                            {item.token_price > 0 ? `$${item.token_price.toFixed(item.token_price >= 1 ? 2 : 4)}` : '-'}
                           </td>
                           <td className="px-2 py-3 text-right text-xs md:text-sm text-yellow-400">
                             {item.dailyValue > 0 ? `$${formatNumber(item.dailyValue)}` : '-'}

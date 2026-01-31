@@ -227,13 +227,12 @@ export default function Home() {
     []
   );
 
-  // 지갑 데이터 로드
+  // 지갑 데이터 로드 (푸터에 lastUpdated 필요하므로 항상 로드)
   const { data: walletData, isLoading: walletLoading } = useQuery({
     queryKey: ['wallets'],
     queryFn: () => fetchCachedData(addresses),
     staleTime: 30 * 60 * 1000,
     refetchInterval: 30 * 60 * 1000,
-    enabled: selectedTab === 'wallet',
   });
 
   // 토큰 소각 데이터 로드

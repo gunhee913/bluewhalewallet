@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// 분석 대상 지갑 주소 (4개)
+// 분석 대상 지갑 주소 (5개)
 const ANALYSIS_ADDRESSES = [
   '0x3654378aa2deb0860c2e5c7906471c8704c44c6f', // 바이백펀드
   '0xEd1b254B6c3a6785e19ba83b728ECe4A6444f4d7', // 아돌펀드
   '0xD57423c54F188220862391A069a2942c725ee37B', // Aqua1 펀드
+  '0x525e7f0a5d3fd6169d6ec35288104d52bf3bb95f', // 팀 지갑
   '0xfd48a5FFE5127896E93BAA8074CE98c5a999Ea97', // v3 수수료 펀드(40%)
 ];
 

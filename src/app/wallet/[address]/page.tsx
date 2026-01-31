@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
@@ -22,6 +22,7 @@ const WALLET_NAMES: Record<string, string> = {
   '0xed1b254b6c3a6785e19ba83b728ece4a6444f4d7': '아돌펀드',
   '0xd57423c54f188220862391a069a2942c725ee37b': 'Aqua1 펀드',
   '0xfd48a5ffe5127896e93baa8074ce98c5a999ea97': 'v3 수수료 펀드(40%)',
+  '0x525e7f0a5d3fd6169d6ec35288104d52bf3bb95f': '팀 지갑',
 };
 
 interface HistoryItem {
@@ -51,6 +52,11 @@ export default function WalletDetailPage() {
   const walletName = WALLET_NAMES[address] || '알 수 없는 지갑';
   const [timeFrame, setTimeFrame] = useState<TimeFrame>('daily');
   const [visibleCount, setVisibleCount] = useState(20);
+
+  // 페이지 진입 시 스크롤 맨 위로
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const { data: history, isLoading: historyLoading } = useQuery({
     queryKey: ['wallet-history', address],

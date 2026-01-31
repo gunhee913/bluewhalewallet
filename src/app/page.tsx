@@ -39,6 +39,12 @@ const WALLETS: WalletInfo[] = [
     hasAnalysis: true,
   },
   {
+    name: '팀 지갑',
+    address: '0x525e7f0a5d3fd6169d6ec35288104d52bf3bb95f',
+    chain: 'avalanche',
+    hasAnalysis: true,
+  },
+  {
     name: 'v3 수수료 펀드(40%)',
     address: '0xfd48a5FFE5127896E93BAA8074CE98c5a999Ea97',
     chain: 'avalanche',

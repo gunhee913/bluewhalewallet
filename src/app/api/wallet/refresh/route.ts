@@ -40,8 +40,8 @@ function getSupabase() {
 
 // Total Assets 추출 - 최적화된 버전
 async function extractTotalAssets(page: Page): Promise<string | null> {
-  // 페이지 로드 후 5초 대기 (최적화: 10초 → 5초)
-  await new Promise((r) => setTimeout(r, 5000));
+  // 페이지 로드 후 8초 대기
+  await new Promise((r) => setTimeout(r, 8000));
   
   // 최대 10초 동안 폴링 (1초 간격)
   for (let attempt = 0; attempt < 10; attempt++) {
@@ -134,12 +134,11 @@ async function fetchSingleWallet(
     
     page = await browser.newPage();
     
-    // 리소스 차단으로 페이지 로드 속도 향상
+    // 리소스 차단 (이미지, 폰트만 - CSS는 유지)
     await page.setRequestInterception(true);
     page.on('request', (req) => {
       const resourceType = req.resourceType();
-      // 이미지, 폰트, 미디어 차단
-      if (['image', 'font', 'media', 'stylesheet'].includes(resourceType)) {
+      if (['image', 'font', 'media'].includes(resourceType)) {
         req.abort();
       } else {
         req.continue();
@@ -152,8 +151,8 @@ async function fetchSingleWallet(
     console.log(`[${address}] Navigating to: ${url}`);
     
     await page.goto(url, { 
-      waitUntil: 'domcontentloaded', // networkidle2 대신 더 빠른 옵션
-      timeout: 30000 
+      waitUntil: 'networkidle2',
+      timeout: 45000 
     });
 
     const totalAssets = await extractTotalAssets(page);

@@ -173,7 +173,7 @@ function TokenCard({ name, burnData }: TokenCardProps) {
             <span className="text-sm font-medium text-emerald-400">{formatValue(burnData?.burned_value)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-sm text-slate-400">남은 개수</span>
+            <span className="text-sm text-slate-400">유통량</span>
             <span className="text-sm font-medium text-white">
               {burnedAmount > 0 ? `${formatNumber(remaining, showDecimal)} 개` : '-'}
             </span>

@@ -30,8 +30,8 @@ function getSupabase() {
 
 // 토큰 소각 데이터 추출
 async function extractTokenBurnData(page: Page): Promise<Record<string, { units: number; value: string }>> {
-  // 페이지 로드 후 10초 대기
-  await new Promise((r) => setTimeout(r, 10000));
+  // 페이지 로드 후 12초 대기
+  await new Promise((r) => setTimeout(r, 12000));
   
   const result: Record<string, { units: number; value: string }> = {};
   const tokenNames = Object.keys(TOKEN_INFO);
@@ -43,17 +43,28 @@ async function extractTokenBurnData(page: Page): Promise<Record<string, { units:
         const body = document.body.innerText;
         const extracted: Record<string, { units: number; value: string }> = {};
         
+        // 디버깅: 토큰이 페이지에 있는지 확인
+        console.log('Tokens to find:', tokens);
+        console.log('Body includes sBWPM:', body.includes('sBWPM'));
+        console.log('Body includes sADOL:', body.includes('sADOL'));
+        console.log('Body includes CLAM:', body.includes('CLAM'));
+        
         for (const tokenName of tokens) {
-          if (!body.includes(tokenName)) continue;
+          if (!body.includes(tokenName)) {
+            console.log(`Token ${tokenName} NOT found in page`);
+            continue;
+          }
+          console.log(`Token ${tokenName} found in page`);
           
           // 페이지에서 토큰 행 찾기
-          // 형식: "토큰명 Bridge $가격 +xx% $금액 Units수 Units"
           const lines = body.split('\n');
           
           for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
             
             if (line.includes(tokenName) && !line.includes('Show')) {
+              console.log(`Found line for ${tokenName}: "${line}"`);
+              
               // 이 줄과 주변 줄에서 Units와 Value 찾기
               let units = 0;
               let value = '$0';
@@ -66,18 +77,19 @@ async function extractTokenBurnData(page: Page): Promise<Record<string, { units:
                 const unitsMatch = searchLine.match(/([\d,]+(?:\.\d+)?)\s*Units/i);
                 if (unitsMatch && units === 0) {
                   units = parseFloat(unitsMatch[1].replace(/,/g, ''));
+                  console.log(`Found units for ${tokenName}: ${units}`);
                 }
                 
                 // Value 패턴: "$ 숫자" (큰 금액, 토큰 가치)
-                // 토큰 가격($0.xxx)이 아닌 총 가치($x,xxx)를 찾아야 함
                 const valueMatches = searchLine.match(/\$\s*([\d,]+(?:\.\d+)?)/g);
                 if (valueMatches && value === '$0') {
                   for (const match of valueMatches) {
                     const numStr = match.replace(/[$\s,]/g, '');
                     const num = parseFloat(numStr);
-                    // $100 이상인 값만 (토큰 가격이 아닌 총 가치)
-                    if (num >= 100) {
+                    // $10 이상인 값 (작은 금액도 허용)
+                    if (num >= 10) {
                       value = '$' + num.toLocaleString();
+                      console.log(`Found value for ${tokenName}: ${value}`);
                       break;
                     }
                   }

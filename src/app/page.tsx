@@ -2,6 +2,7 @@
 
 import { Card } from '@/components/ui/card';
 import { Wallet, Loader2 } from 'lucide-react';
+import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { useState, useMemo } from 'react';
 import { formatDistanceToNow } from 'date-fns';
@@ -15,6 +16,7 @@ interface WalletInfo {
   name: string;
   address: string;
   chain: Chain;
+  hasAnalysis?: boolean;
 }
 
 const WALLETS: WalletInfo[] = [
@@ -22,21 +24,25 @@ const WALLETS: WalletInfo[] = [
     name: '바이백펀드',
     address: '0x3654378aa2deb0860c2e5c7906471c8704c44c6f',
     chain: 'avalanche',
+    hasAnalysis: true,
   },
   {
     name: '아돌펀드',
     address: '0xEd1b254B6c3a6785e19ba83b728ECe4A6444f4d7',
     chain: 'avalanche',
+    hasAnalysis: true,
   },
   {
     name: 'Aqua1 펀드',
     address: '0xD57423c54F188220862391A069a2942c725ee37B',
     chain: 'avalanche',
+    hasAnalysis: true,
   },
   {
     name: 'v3 수수료 펀드(40%)',
     address: '0xfd48a5FFE5127896E93BAA8074CE98c5a999Ea97',
     chain: 'avalanche',
+    hasAnalysis: true,
   },
   {
     name: 'v3 수수료 소각(60%)',
@@ -71,6 +77,11 @@ function WalletCard({ wallet, totalAssets }: WalletCardProps) {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
+  const formatAssets = (assets: string) => {
+    // 소수점 제거: "$1,234.56" -> "$1,234"
+    return assets.replace(/\.\d+/, '');
+  };
+
   return (
     <Card className="bg-slate-800/50 border-slate-700/50 hover:bg-slate-800/80 transition-all duration-200 overflow-hidden group">
       <div className="p-5">
@@ -84,21 +95,31 @@ function WalletCard({ wallet, totalAssets }: WalletCardProps) {
             <div className="flex items-center gap-2">
               <span className="text-sm text-slate-400">Total Assets:</span>
               {totalAssets ? (
-                <span className="text-lg font-bold text-emerald-400">{totalAssets}</span>
+                <span className="text-lg font-bold text-emerald-400">{formatAssets(totalAssets)}</span>
               ) : (
                 <span className="text-sm text-slate-500">-</span>
               )}
             </div>
           </div>
 
-          <a
-            href={`${PUMPSPACE_BASE_URL}${wallet.address}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-6 py-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-md transition-all duration-200 font-medium"
-          >
-            이동
-          </a>
+          <div className="flex flex-col gap-2">
+            <a
+              href={`${PUMPSPACE_BASE_URL}${wallet.address}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-6 py-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-md transition-all duration-200 font-medium text-center"
+            >
+              이동
+            </a>
+            {wallet.hasAnalysis && (
+              <Link
+                href={`/wallet/${wallet.address}`}
+                className="px-6 py-2.5 bg-slate-600 hover:bg-slate-500 text-white rounded-md transition-all duration-200 font-medium text-center"
+              >
+                분석
+              </Link>
+            )}
+          </div>
         </div>
       </div>
     </Card>

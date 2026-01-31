@@ -2,83 +2,79 @@
   "crons": [
     {
       "path": "/api/wallet/refresh?group=1",
-      "schedule": "0,30 0,7-23 * * *"
+      "schedule": "0 0-14,15,22-23 * * *"
     },
     {
       "path": "/api/wallet/refresh?group=2",
-      "schedule": "1,31 0,7-23 * * *"
+      "schedule": "1 0-14,15,22-23 * * *"
     },
     {
       "path": "/api/wallet/refresh?group=3",
-      "schedule": "2,32 0,7-23 * * *"
+      "schedule": "2 0-14,15,22-23 * * *"
     },
     {
       "path": "/api/wallet/refresh?group=4",
-      "schedule": "3,33 0,7-23 * * *"
+      "schedule": "3 0-14,15,22-23 * * *"
     },
     {
       "path": "/api/wallet/refresh?group=5",
-      "schedule": "4,34 0,7-23 * * *"
+      "schedule": "4 0-14,15,22-23 * * *"
     },
     {
       "path": "/api/wallet/refresh?group=6",
-      "schedule": "5,35 0,7-23 * * *"
+      "schedule": "5 0-14,15,22-23 * * *"
     },
     {
       "path": "/api/wallet/refresh?group=7",
-      "schedule": "6,36 0,7-23 * * *"
+      "schedule": "6 0-14,15,22-23 * * *"
     },
     {
       "path": "/api/wallet/refresh?group=8",
-      "schedule": "7,37 0,7-23 * * *"
+      "schedule": "7 0-14,15,22-23 * * *"
     },
     {
       "path": "/api/wallet/refresh?group=9",
-      "schedule": "8,38 0,7-23 * * *"
+      "schedule": "8 0-14,15,22-23 * * *"
     },
     {
       "path": "/api/wallet/refresh?group=10",
-      "schedule": "9,39 0,7-23 * * *"
+      "schedule": "9 0-14,15,22-23 * * *"
     },
     {
       "path": "/api/wallet/refresh?group=11",
-      "schedule": "10,40 0,7-23 * * *"
+      "schedule": "10 0-14,15,22-23 * * *"
     },
     {
       "path": "/api/wallet/refresh?group=12",
-      "schedule": "11,41 0,7-23 * * *"
+      "schedule": "11 0-14,15,22-23 * * *"
     },
     {
       "path": "/api/wallet/refresh?group=13",
-      "schedule": "12,42 0,7-23 * * *"
+      "schedule": "12 0-14,15,22-23 * * *"
     },
     {
       "path": "/api/wallet/refresh?group=14",
-      "schedule": "13,43 0,7-23 * * *"
+      "schedule": "13 0-14,15,22-23 * * *"
     },
     {
       "path": "/api/wallet/refresh?group=15",
-      "schedule": "14,44 0,7-23 * * *"
+      "schedule": "14 0-14,15,22-23 * * *"
     },
     {
       "path": "/api/wallet/refresh?group=16",
-      "schedule": "15,45 0,7-23 * * *"
+      "schedule": "15 0-14,15,22-23 * * *"
     },
     {
       "path": "/api/wallet/refresh?group=17",
-      "schedule": "16,46 0,7-23 * * *"
+      "schedule": "16 0-14,15,22-23 * * *"
     },
     {
       "path": "/api/wallet/refresh?group=18",
-      "schedule": "17,47 0,7-23 * * *"
-    },
-    {
-      "path": "/api/wallet/history/save",
-      "schedule": "0 0 * * *"
+      "schedule": "17 0-14,15,22-23 * * *"
     },
     {
       "path": "/api/token/burn/save",
-      "schedule": "0 0 * * *"
+      "schedule": "0 0,12 * * *"
     }
   ]
 }

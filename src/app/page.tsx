@@ -1,9 +1,9 @@
 'use client';
 
 import { Card } from '@/components/ui/card';
-import { ExternalLink, Copy, Wallet, Loader2, RefreshCw } from 'lucide-react';
+import { ExternalLink, Copy, Wallet, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useState, useMemo } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -59,17 +59,6 @@ const CHAIN_CONFIG = {
 async function fetchCachedData(addresses: string[]) {
   const response = await fetch(`/api/wallet?addresses=${addresses.join(',')}`);
   if (!response.ok) throw new Error('Failed to fetch');
-  return response.json();
-}
-
-// 새로고침 (스크래핑)
-async function refreshData(addresses: string[]) {
-  const response = await fetch('/api/wallet/refresh', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ addresses }),
-  });
-  if (!response.ok) throw new Error('Failed to refresh');
   return response.json();
 }
 
@@ -136,8 +125,6 @@ function WalletCard({ wallet, totalAssets }: WalletCardProps) {
 
 export default function Home() {
   const [selectedChain, setSelectedChain] = useState<Chain>('avalanche');
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
 
   const filteredWallets = useMemo(
     () => WALLETS.filter((wallet) => wallet.chain === selectedChain),
@@ -149,29 +136,13 @@ export default function Home() {
     [filteredWallets]
   );
 
-  // 캐시된 데이터 로드 (즉시)
+  // 캐시된 데이터 로드 (30분마다 자동 업데이트됨)
   const { data, isLoading } = useQuery({
     queryKey: ['wallets', selectedChain],
     queryFn: () => fetchCachedData(addresses),
-    staleTime: Infinity, // 수동 새로고침만
+    staleTime: 30 * 60 * 1000, // 30분
+    refetchInterval: 30 * 60 * 1000, // 30분마다 리페치
     enabled: addresses.length > 0,
-  });
-
-  // 새로고침 mutation
-  const refreshMutation = useMutation({
-    mutationFn: () => refreshData(addresses),
-    onSuccess: (result) => {
-      // 캐시 업데이트
-      queryClient.setQueryData(['wallets', selectedChain], {
-        success: true,
-        results: result.results,
-        lastUpdated: new Date().toISOString(),
-      });
-      toast({ description: '데이터가 업데이트되었습니다!' });
-    },
-    onError: () => {
-      toast({ description: '새로고침 실패. 잠시 후 다시 시도해주세요.', variant: 'destructive' });
-    },
   });
 
   const getAssets = (address: string): string | null => {
@@ -191,32 +162,16 @@ export default function Home() {
       {/* Header */}
       <header className="border-b border-slate-700/50 backdrop-blur-sm">
         <div className="max-w-4xl mx-auto px-6 py-5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-emerald-500/20 rounded-xl">
-                <Wallet className="w-6 h-6 text-emerald-400" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-white tracking-tight">
-                  BlueWhale Wallet
-                </h1>
-                <p className="text-sm text-slate-400">블루웨일 지갑 주소 한눈에 보기</p>
-              </div>
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-emerald-500/20 rounded-xl">
+              <Wallet className="w-6 h-6 text-emerald-400" />
             </div>
-
-            {/* 새로고침 버튼 */}
-            <button
-              onClick={() => refreshMutation.mutate()}
-              disabled={refreshMutation.isPending}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white rounded-lg transition-colors"
-            >
-              <RefreshCw
-                className={`w-4 h-4 ${refreshMutation.isPending ? 'animate-spin' : ''}`}
-              />
-              <span className="text-sm">
-                {refreshMutation.isPending ? '업데이트 중...' : '새로고침'}
-              </span>
-            </button>
+            <div>
+              <h1 className="text-xl font-bold text-white tracking-tight">
+                BlueWhale Wallet
+              </h1>
+              <p className="text-sm text-slate-400">블루웨일 지갑 주소 한눈에 보기</p>
+            </div>
           </div>
         </div>
       </header>

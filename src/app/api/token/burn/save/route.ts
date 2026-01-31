@@ -14,6 +14,9 @@ const TOKEN_INFO: Record<string, number> = {
   'sBWPM': 7000,
   'sADOL': 70000,
   'CLAM': 70000000,
+  'PEARL': 0,
+  'SHELL': 0,
+  'CORAL': 0,
 };
 
 // Supabase 클라이언트

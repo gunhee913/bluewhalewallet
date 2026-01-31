@@ -66,6 +66,9 @@ const TOKENS = [
   { name: 'sBWPM', totalSupply: 7000 },
   { name: 'sADOL', totalSupply: 70000 },
   { name: 'CLAM', totalSupply: 70000000 },
+  { name: 'PEARL', totalSupply: 0 },
+  { name: 'SHELL', totalSupply: 0 },
+  { name: 'CORAL', totalSupply: 0 },
 ];
 
 interface TokenBurnData {
@@ -91,7 +94,7 @@ const TOKEN_IMAGES: Record<string, string> = {
 
 function TokenCard({ name, totalSupply, burnData }: TokenCardProps) {
   const burnedAmount = burnData?.burned_amount || 0;
-  const remaining = totalSupply - burnedAmount;
+  const remaining = totalSupply > 0 ? totalSupply - burnedAmount : 0;
   const burnRate = totalSupply > 0 ? (burnedAmount / totalSupply) * 100 : 0;
 
   const formatNumber = (num: number) => {

@@ -69,6 +69,7 @@ const TOKENS = [
   { name: 'PEARL', totalSupply: 0 },
   { name: 'SHELL', totalSupply: 0 },
   { name: 'CORAL', totalSupply: 0 },
+  { name: 'AQUA1', totalSupply: 0 },
 ];
 
 interface TokenBurnData {
@@ -90,6 +91,7 @@ const TOKEN_IMAGES: Record<string, string> = {
   'PEARL': '/PEARL.svg',
   'SHELL': '/SHELL.svg',
   'CORAL': '/CORAL.png',
+  'AQUA1': '/AQUA1.svg',
 };
 
 function TokenCard({ name, totalSupply, burnData }: TokenCardProps) {

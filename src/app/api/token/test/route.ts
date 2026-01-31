@@ -7,7 +7,7 @@ const BURN_ADDRESS = '0x000000000000000000000000000000000000dEaD';
 const PUMPSPACE_URL = `https://pumpspace.io/wallet/detail?account=${BURN_ADDRESS}`;
 
 // 찾으려는 토큰들
-const TOKENS = ['sBWPM', 'sADOL', 'CLAM', 'PEARL', 'SHELL', 'CORAL'];
+const TOKENS = ['sBWPM', 'sADOL', 'CLAM', 'PEARL', 'SHELL', 'CORAL', 'AQUA1'];
 
 export async function GET() {
   const browserlessToken = process.env.BROWSERLESS_TOKEN;

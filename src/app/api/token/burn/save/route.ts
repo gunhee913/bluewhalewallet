@@ -17,6 +17,7 @@ const TOKEN_INFO: Record<string, number> = {
   'PEARL': 0,
   'SHELL': 0,
   'CORAL': 0,
+  'AQUA1': 0,
 };
 
 // Supabase 클라이언트

@@ -1,6 +1,7 @@
 'use client';
 
 import { Card } from '@/components/ui/card';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Loader2, Flame } from 'lucide-react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
@@ -212,8 +213,6 @@ interface WalletCardProps {
 }
 
 function WalletCard({ wallet, totalAssets, fundDetails, aquaFairPrice }: WalletCardProps) {
-  const [showFormula, setShowFormula] = useState(false);
-  
   const formatAssets = (assets: string) => {
     // 소수점 제거: "$1,234.56" -> "$1,234"
     return assets.replace(/\.\d+/, '');
@@ -257,23 +256,27 @@ function WalletCard({ wallet, totalAssets, fundDetails, aquaFairPrice }: WalletC
                   <span className="text-sm font-medium text-cyan-400">
                     ${aquaFairPrice.fairPrice.toFixed(4)} USDT
                   </span>
-                  <button
-                    onClick={() => setShowFormula(!showFormula)}
-                    className="w-5 h-5 rounded-full bg-slate-600 hover:bg-slate-500 text-xs text-white flex items-center justify-center transition-colors"
-                  >
-                    !
-                  </button>
+                  <span className={`text-sm font-medium ${(aquaFairPrice.fairPrice - 1) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                    ({(aquaFairPrice.fairPrice - 1) >= 0 ? '+' : ''}{((aquaFairPrice.fairPrice - 1) * 100).toFixed(2)}%)
+                  </span>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className="w-5 h-5 rounded-full bg-slate-600 hover:bg-slate-500 text-xs text-white flex items-center justify-center transition-colors">
+                        ?
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80 bg-slate-800 border-slate-700 text-slate-300 p-4">
+                      <div className="space-y-2 text-xs">
+                        <p className="text-slate-400 font-medium text-sm mb-3">산출 방식</p>
+                        <p>블웨바이백 = (총발행량 + 소각량) × 0.03</p>
+                        <p className="text-slate-400">= ({aquaFairPrice.totalSupply.toLocaleString()} + {aquaFairPrice.burnedAmount.toLocaleString()}) × 0.03 = {aquaFairPrice.blueWhaleByback.toLocaleString()}개</p>
+                        <p className="mt-3">적정가격 = (현재가치 - 블웨바이백) / 유통량</p>
+                        <p className="text-slate-400">= (${aquaFairPrice.currentValue.toLocaleString()} - {aquaFairPrice.blueWhaleByback.toLocaleString()}) / {aquaFairPrice.circulation.toLocaleString()}</p>
+                        <p className="text-cyan-400 font-medium mt-2">= ${aquaFairPrice.fairPrice.toFixed(4)} USDT</p>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 </div>
-                {showFormula && (
-                  <div className="mt-2 p-3 bg-slate-700/50 rounded-lg text-xs text-slate-300 space-y-1">
-                    <p className="text-slate-400 font-medium mb-2">산출 방식</p>
-                    <p>블웨바이백 = (총발행량 + 소각량) × 0.03</p>
-                    <p className="text-slate-400">= ({aquaFairPrice.totalSupply.toLocaleString()} + {aquaFairPrice.burnedAmount.toLocaleString()}) × 0.03 = {aquaFairPrice.blueWhaleByback.toLocaleString()}개</p>
-                    <p className="mt-2">적정가격 = (현재가치 - 블웨바이백) / 유통량</p>
-                    <p className="text-slate-400">= (${aquaFairPrice.currentValue.toLocaleString()} - {aquaFairPrice.blueWhaleByback.toLocaleString()}) / {aquaFairPrice.circulation.toLocaleString()}</p>
-                    <p className="text-cyan-400 font-medium">= ${aquaFairPrice.fairPrice.toFixed(4)} USDT</p>
-                  </div>
-                )}
               </div>
             )}
           </div>

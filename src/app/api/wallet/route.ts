@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import puppeteer from 'puppeteer-core';
-import chromium from '@sparticuz/chromium';
+import chromium from '@sparticuz/chromium-min';
 
 const PUMPSPACE_URL = 'https://pumpspace.io/wallet/detail?account=';
 
@@ -18,10 +18,14 @@ export async function GET(request: NextRequest) {
   let browser = null;
 
   try {
+    const executablePath = await chromium.executablePath(
+      'https://github.com/nicholasgriffintn/vercel-chromium-serverless/releases/download/v133.0.0/chromium-v133.0.0-pack.tar'
+    );
+
     browser = await puppeteer.launch({
       args: chromium.args,
       defaultViewport: { width: 1280, height: 800 },
-      executablePath: await chromium.executablePath(),
+      executablePath,
       headless: true,
     });
 

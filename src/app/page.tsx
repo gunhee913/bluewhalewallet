@@ -128,7 +128,7 @@ function TokenCard({ name, totalSupply, burnData }: TokenCardProps) {
             rel="noopener noreferrer"
             className="px-4 py-1.5 bg-rose-500 hover:bg-rose-600 text-white rounded-md transition-all duration-200 text-sm font-medium"
           >
-            이동
+            분석
           </a>
         </div>
 

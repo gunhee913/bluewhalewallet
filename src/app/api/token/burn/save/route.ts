@@ -9,16 +9,8 @@ export const maxDuration = 300;
 const BURN_ADDRESS = '0x000000000000000000000000000000000000dEaD';
 const PUMPSPACE_URL = `https://pumpspace.io/wallet/detail?account=${BURN_ADDRESS}`;
 
-// 토큰 정보 (총 발행량)
-const TOKEN_INFO: Record<string, number> = {
-  'sBWPM': 7000,
-  'sADOL': 70000,
-  'CLAM': 70000000,
-  'PEARL': 49728492,
-  'SHELL': 968025078,
-  'CORAL': 469080,
-  'AQUA1': 207900,
-};
+// 추적할 토큰 목록
+const TOKEN_NAMES = ['sBWPM', 'sADOL', 'CLAM', 'PEARL', 'SHELL', 'CORAL', 'AQUA1'];
 
 // Supabase 클라이언트
 function getSupabase() {
@@ -38,7 +30,7 @@ async function extractTokenBurnData(page: Page): Promise<Record<string, { units:
   await new Promise((r) => setTimeout(r, 8000));
   
   const result: Record<string, { units: number; value: string }> = {};
-  const tokenNames = Object.keys(TOKEN_INFO);
+  const tokenNames = TOKEN_NAMES;
   
   // 최대 10초 동안 폴링
   for (let attempt = 0; attempt < 10; attempt++) {
@@ -204,12 +196,24 @@ export async function GET() {
   const supabase = getSupabase();
   const today = new Date().toISOString().split('T')[0];
   
+  // token_info 테이블에서 총 발행량 가져오기
+  const { data: tokenInfoData } = await supabase
+    .from('token_info')
+    .select('token_name, total_supply');
+  
+  const tokenSupplyMap: Record<string, number> = {};
+  if (tokenInfoData) {
+    tokenInfoData.forEach((t: { token_name: string; total_supply: number }) => {
+      tokenSupplyMap[t.token_name] = t.total_supply;
+    });
+  }
+  
   // 성공한 토큰만 저장 (실패한 토큰은 기존 값 유지)
-  const upsertData = Object.entries(TOKEN_INFO)
-    .filter(([tokenName]) => burnData[tokenName] && burnData[tokenName].units > 0)
-    .map(([tokenName, totalSupply]) => ({
+  const upsertData = TOKEN_NAMES
+    .filter((tokenName) => burnData[tokenName] && burnData[tokenName].units > 0)
+    .map((tokenName) => ({
       token_name: tokenName,
-      total_supply: totalSupply,
+      total_supply: tokenSupplyMap[tokenName] || 0,
       burned_amount: burnData[tokenName].units,
       burned_value: burnData[tokenName].value,
       recorded_at: today,

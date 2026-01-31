@@ -31,46 +31,48 @@ function getSupabase() {
 
 // Total Assets 추출 - 더 단순하고 확실한 방식
 async function extractTotalAssets(page: Page): Promise<string> {
-  // 페이지 로드 후 8초 대기 (JavaScript 렌더링 완료 대기)
-  await new Promise((r) => setTimeout(r, 8000));
+  // 페이지 로드 후 10초 대기 (JavaScript 렌더링 완료 대기)
+  await new Promise((r) => setTimeout(r, 10000));
   
   // 최대 15초 동안 폴링
   for (let attempt = 0; attempt < 15; attempt++) {
     try {
       const result = await page.evaluate(() => {
         const body = document.body.innerText;
+        const lines = body.split('\n').map(l => l.trim());
         
-        // 1. "Total Assets" 근처에서 금액 찾기 (다양한 패턴)
+        // 1. "Total Assets" 줄 찾고 다음 줄에서 금액 추출
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].toLowerCase();
+          if (line === 'total assets' || line.includes('total assets')) {
+            // 다음 5줄에서 "$ 숫자" 패턴 찾기
+            for (let j = i; j < Math.min(i + 5, lines.length); j++) {
+              const searchLine = lines[j];
+              // "$ 51,554" 또는 "$51,554" 형식
+              const match = searchLine.match(/\$\s*([\d,]+(?:\.\d+)?)/);
+              if (match && match[1]) {
+                const val = parseFloat(match[1].replace(/,/g, ''));
+                // $10 이상이면 유효 (v3 수수료 펀드는 $796 정도)
+                if (val >= 10) {
+                  return '$' + match[1];
+                }
+              }
+            }
+          }
+        }
+        
+        // 2. 정규식으로 "Total Assets" 근처 금액 찾기
         const patterns = [
+          /Total\s*Assets[\s\S]{0,30}?\$\s*([\d,]+(?:\.\d+)?)/i,
           /Total\s*Assets[:\s]*\$?\s*([\d,]+(?:\.\d+)?)/i,
-          /Total\s*Assets[\s\S]{0,50}?\$\s*([\d,]+(?:\.\d+)?)/i,
-          /Total\s*Assets[\s\S]{0,50}?([\d,]+(?:\.\d+)?)\s*(?:USD|\$)/i,
-          /\$\s*([\d,]+(?:\.\d+)?)\s*(?:Total\s*Assets|total)/i,
         ];
         
         for (const pattern of patterns) {
           const match = body.match(pattern);
           if (match && match[1]) {
             const numValue = parseFloat(match[1].replace(/,/g, ''));
-            if (numValue > 100) { // $100 이상만 유효
+            if (numValue >= 10) {
               return '$' + match[1];
-            }
-          }
-        }
-        
-        // 2. 페이지에서 "Total Assets" 텍스트 찾고 그 줄에서 숫자 추출
-        const lines = body.split('\n');
-        for (let i = 0; i < lines.length; i++) {
-          if (lines[i].toLowerCase().includes('total assets') || lines[i].toLowerCase().includes('total asset')) {
-            // 같은 줄 또는 다음 줄에서 금액 찾기
-            for (let j = i; j < Math.min(i + 3, lines.length); j++) {
-              const amountMatch = lines[j].match(/\$?\s*([\d,]+(?:\.\d+)?)/);
-              if (amountMatch && amountMatch[1]) {
-                const val = parseFloat(amountMatch[1].replace(/,/g, ''));
-                if (val > 100) {
-                  return '$' + amountMatch[1];
-                }
-              }
             }
           }
         }
@@ -87,7 +89,7 @@ async function extractTotalAssets(page: Page): Promise<string> {
               maxAmount = '$' + val.toLocaleString();
             }
           }
-          if (maxValue > 100) {
+          if (maxValue >= 10) {
             return maxAmount;
           }
         }
@@ -162,7 +164,7 @@ async function handleRefresh(addresses: string[]) {
         
         await page.goto(url, { 
           waitUntil: 'networkidle2', 
-          timeout: 30000 
+          timeout: 45000 
         });
 
         const totalAssets = await extractTotalAssets(page);

@@ -134,17 +134,6 @@ async function fetchSingleWallet(
     
     page = await browser.newPage();
     
-    // 리소스 차단 (이미지, 폰트만 - CSS는 유지)
-    await page.setRequestInterception(true);
-    page.on('request', (req) => {
-      const resourceType = req.resourceType();
-      if (['image', 'font', 'media'].includes(resourceType)) {
-        req.abort();
-      } else {
-        req.continue();
-      }
-    });
-    
     await page.setViewport({ width: 1280, height: 720 });
     
     const url = `${PUMPSPACE_URL}${address}`;

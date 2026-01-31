@@ -211,11 +211,23 @@ export async function GET() {
       message: `Saved ${upsertData.length} tokens for ${today}`,
       data: upsertData,
     });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('[Token Burn Save] Error:', error);
+    
+    let errorMessage = 'Unknown error';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (typeof error === 'object' && error !== null) {
+      // ErrorEvent 등 특수 객체 처리
+      const errObj = error as Record<string, unknown>;
+      errorMessage = errObj.message as string || errObj.error as string || JSON.stringify(error, Object.getOwnPropertyNames(error));
+    } else {
+      errorMessage = String(error);
+    }
+    
     return NextResponse.json({
       success: false,
-      error: error instanceof Error ? error.message : String(error),
+      error: errorMessage,
     });
   } finally {
     if (browser) {

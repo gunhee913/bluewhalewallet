@@ -45,7 +45,7 @@ const WALLETS: WalletInfo[] = [
     hasAnalysis: true,
   },
   {
-    name: 'v3 수수료 소각(60%)',
+    name: '소각 지갑',
     address: '0x000000000000000000000000000000000000dEaD',
     chain: 'avalanche',
   },

@@ -254,10 +254,10 @@ function WalletCard({ wallet, totalAssets, fundDetails, aquaFairPrice }: WalletC
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-slate-400">적정가격:</span>
                   <span className="text-sm text-slate-400">
-                    {aquaFairPrice.fairPrice.toFixed(4)} USDT
+                    {aquaFairPrice.fairPrice.toFixed(2)} USDT
                   </span>
                   <span className="text-sm text-slate-400">
-                    ({(aquaFairPrice.fairPrice - 1) >= 0 ? '+' : ''}{((aquaFairPrice.fairPrice - 1) * 100).toFixed(2)}%)
+                    ({(aquaFairPrice.fairPrice - 1) >= 0 ? '+' : ''}{((aquaFairPrice.fairPrice - 1) * 100).toFixed(1)}%)
                   </span>
                   <Popover>
                     <PopoverTrigger asChild>

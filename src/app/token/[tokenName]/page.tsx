@@ -140,7 +140,7 @@ export default function TokenDetailPage() {
     monthly: '월간',
   };
 
-  if (!tokenInfo) {
+  if (!tokenImage) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center">
         <p className="text-white">토큰을 찾을 수 없습니다.</p>

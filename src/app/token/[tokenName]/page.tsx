@@ -276,7 +276,7 @@ export default function TokenDetailPage() {
                       <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-2 py-3">일소각량</th>
                       <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-2 py-3">일소각금</th>
                       <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-2 py-3">누적소각량</th>
-                      <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-2 py-3">누적소각금</th>
+                      <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-2 py-3">총소각가치</th>
                       <th className="text-right text-xs md:text-sm font-medium text-slate-400 px-3 py-3">소각률</th>
                     </tr>
                   </thead>

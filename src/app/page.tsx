@@ -340,16 +340,28 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-slate-700/50 mt-auto">
         <div className="max-w-4xl mx-auto px-6 py-4">
-          <p className="text-center text-sm text-slate-500">
-            Powered by{' '}
-            <a
-              href="https://pumpspace.io"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-emerald-400 hover:underline"
-            >
-              PumpSpace.io
-            </a>
+          <p className="text-center text-sm text-slate-500 flex flex-wrap items-center justify-center gap-x-2">
+            <span>
+              Powered by{' '}
+              <a
+                href="https://pumpspace.io"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-emerald-400 hover:underline"
+              >
+                PumpSpace.io
+              </a>
+            </span>
+            {walletsData && walletsData.length > 0 && walletsData[0]?.updated_at && (
+              <span className="text-slate-600">
+                | 최근 업데이트: {new Date(walletsData[0].updated_at).toLocaleString('ko-KR', { 
+                  month: 'short', 
+                  day: 'numeric', 
+                  hour: '2-digit', 
+                  minute: '2-digit' 
+                })}
+              </span>
+            )}
           </p>
         </div>
       </footer>

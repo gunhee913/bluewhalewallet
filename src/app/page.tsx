@@ -149,8 +149,8 @@ export default function Home() {
   const { data, isLoading } = useQuery({
     queryKey: ['wallets', selectedChain],
     queryFn: () => fetchCachedData(addresses),
-    staleTime: 30 * 60 * 1000, // 30분
-    refetchInterval: 30 * 60 * 1000, // 30분마다 리페치
+    staleTime: 10 * 60 * 1000, // 10분
+    refetchInterval: 10 * 60 * 1000, // 10분마다 리페치
     enabled: addresses.length > 0,
   });
 

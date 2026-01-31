@@ -125,14 +125,12 @@ function TokenCard({ name, totalSupply, burnData }: TokenCardProps) {
             )}
             <h2 className="text-lg font-semibold text-white">{name}</h2>
           </div>
-          <a
-            href={`${PUMPSPACE_BASE_URL}${BURN_ADDRESS}`}
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            href={`/token/${name}`}
             className="px-4 py-1.5 bg-slate-600 hover:bg-slate-500 text-white rounded-md transition-all duration-200 text-sm font-medium"
           >
             분석
-          </a>
+          </Link>
         </div>
 
         <div className="space-y-3">

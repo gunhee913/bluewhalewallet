@@ -303,7 +303,7 @@ export default function TokenDetailPage() {
                             {item.token_price > 0 ? `$${item.token_price.toFixed(item.token_price >= 1 ? 2 : 4)}` : '-'}
                           </td>
                           <td className="px-2 py-3 text-right text-xs md:text-sm text-yellow-400">
-                            {item.dailyValue > 0 ? `$${item.dailyValue.toLocaleString(undefined, { maximumFractionDigits: 1 })}` : '-'}
+                            {item.dailyValue > 0 ? `$${item.dailyValue.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}` : '-'}
                           </td>
                           <td className="px-2 py-3 text-right text-xs md:text-sm text-orange-400 font-mono">
                             {formatNumber(item.burned_amount, showDecimal)}

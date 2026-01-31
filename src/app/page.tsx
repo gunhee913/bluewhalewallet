@@ -126,7 +126,7 @@ function TokenCard({ name, totalSupply, burnData }: TokenCardProps) {
             href={`${PUMPSPACE_BASE_URL}${BURN_ADDRESS}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="px-4 py-1.5 bg-rose-500 hover:bg-rose-600 text-white rounded-md transition-all duration-200 text-sm font-medium"
+            className="px-4 py-1.5 bg-slate-600 hover:bg-slate-500 text-white rounded-md transition-all duration-200 text-sm font-medium"
           >
             분석
           </a>

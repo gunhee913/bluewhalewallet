@@ -99,9 +99,12 @@ function TokenCard({ name, totalSupply, burnData }: TokenCardProps) {
   const remaining = totalSupply > 0 ? totalSupply - burnedAmount : 0;
   const burnRate = totalSupply > 0 ? (burnedAmount / totalSupply) * 100 : 0;
 
-  const formatNumber = (num: number) => {
-    return num.toLocaleString(undefined, { maximumFractionDigits: 1 });
+  const formatNumber = (num: number, withDecimal: boolean = false) => {
+    return num.toLocaleString(undefined, { maximumFractionDigits: withDecimal ? 1 : 0 });
   };
+  
+  // sBWPM, sADOL만 소수점 표시
+  const showDecimal = name === 'sBWPM' || name === 'sADOL';
 
   const formatValue = (value?: string) => {
     if (!value || value === '$0') return '-';
@@ -135,12 +138,12 @@ function TokenCard({ name, totalSupply, burnData }: TokenCardProps) {
         <div className="space-y-3">
           <div className="flex justify-between">
             <span className="text-sm text-slate-400">총 발행량</span>
-            <span className="text-sm font-medium text-white">{formatNumber(totalSupply)} 개</span>
+            <span className="text-sm font-medium text-white">{formatNumber(totalSupply, showDecimal)} 개</span>
           </div>
           <div className="flex justify-between">
             <span className="text-sm text-slate-400">소각량</span>
             <span className="text-sm font-medium text-orange-400">
-              {burnedAmount > 0 ? `${formatNumber(burnedAmount)} 개` : '-'}
+              {burnedAmount > 0 ? `${formatNumber(burnedAmount, showDecimal)} 개` : '-'}
             </span>
           </div>
           <div className="flex justify-between">
@@ -150,7 +153,7 @@ function TokenCard({ name, totalSupply, burnData }: TokenCardProps) {
           <div className="flex justify-between">
             <span className="text-sm text-slate-400">남은 개수</span>
             <span className="text-sm font-medium text-white">
-              {burnedAmount > 0 ? `${formatNumber(remaining)} 개` : '-'}
+              {burnedAmount > 0 ? `${formatNumber(remaining, showDecimal)} 개` : '-'}
             </span>
           </div>
           <div className="flex justify-between items-center">

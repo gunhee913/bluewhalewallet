@@ -169,7 +169,7 @@ function TokenCard({ name, burnData }: TokenCardProps) {
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-sm text-slate-400">소각 금액</span>
+            <span className="text-sm text-slate-400">총소각가치</span>
             <span className="text-sm font-medium text-emerald-400">{formatValue(burnData?.burned_value)}</span>
           </div>
           <div className="flex justify-between">

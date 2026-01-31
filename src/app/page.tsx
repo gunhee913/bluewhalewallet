@@ -206,7 +206,9 @@ function WalletCard({ wallet, totalAssets }: WalletCardProps) {
             </a>
             {wallet.hasAnalysis && (
               <Link
-                href={`/wallet/${wallet.address}`}
+                href={wallet.address.toLowerCase() === '0x3654378aa2deb0860c2e5c7906471c8704c44c6f' 
+                  ? '/wallet/buyback' 
+                  : `/wallet/${wallet.address}`}
                 className="px-6 py-2.5 bg-slate-600 hover:bg-slate-500 text-white rounded-md transition-all duration-200 font-medium text-center"
               >
                 분석

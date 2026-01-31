@@ -32,100 +32,88 @@ function getSupabase() {
   return createClient(url, key);
 }
 
-// 토큰 소각 데이터 추출
+// 토큰 소각 데이터 추출 (새로운 로직)
 async function extractTokenBurnData(page: Page): Promise<Record<string, { units: number; value: string }>> {
-  // 페이지 로드 후 12초 대기
-  await new Promise((r) => setTimeout(r, 12000));
+  // 페이지 로드 후 10초 대기
+  await new Promise((r) => setTimeout(r, 10000));
   
   const result: Record<string, { units: number; value: string }> = {};
   const tokenNames = Object.keys(TOKEN_INFO);
   
-  // 최대 15초 동안 폴링
-  for (let attempt = 0; attempt < 15; attempt++) {
+  // 최대 10초 동안 폴링
+  for (let attempt = 0; attempt < 10; attempt++) {
     try {
-      const data = await page.evaluate((tokens: string[]) => {
-        const body = document.body.innerText;
-        const extracted: Record<string, { units: number; value: string }> = {};
+      const pageText = await page.evaluate(() => document.body.innerText);
+      const lines = pageText.split('\n').map((l) => l.trim());
+      
+      console.log(`[Attempt ${attempt + 1}] Page lines count: ${lines.length}`);
+      
+      for (const tokenName of tokenNames) {
+        // 이미 찾은 토큰은 스킵
+        if (result[tokenName]) continue;
         
-        // 디버깅: 토큰이 페이지에 있는지 확인
-        console.log('Tokens to find:', tokens);
-        console.log('Body includes sBWPM:', body.includes('sBWPM'));
-        console.log('Body includes sADOL:', body.includes('sADOL'));
-        console.log('Body includes CLAM:', body.includes('CLAM'));
-        
-        for (const tokenName of tokens) {
-          if (!body.includes(tokenName)) {
-            console.log(`Token ${tokenName} NOT found in page`);
-            continue;
-          }
-          console.log(`Token ${tokenName} found in page`);
+        // 토큰명이 있는 라인 인덱스 찾기
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i];
           
-          // 페이지에서 토큰 행 찾기
-          const lines = body.split('\n');
-          
-          for (let i = 0; i < lines.length; i++) {
-            const line = lines[i].trim();
+          // 정확히 토큰명만 있는 라인 찾기 (Held Tokens 섹션)
+          if (line === tokenName) {
+            console.log(`[${tokenName}] Found at line ${i}`);
             
-            if (line.includes(tokenName) && !line.includes('Show')) {
-              console.log(`Found line for ${tokenName}: "${line}"`);
+            // 다음 10줄에서 가격과 Units 찾기
+            let value = '$0';
+            let units = 0;
+            
+            for (let j = i + 1; j < Math.min(i + 15, lines.length); j++) {
+              const searchLine = lines[j];
               
-              // 이 줄과 주변 줄에서 Units와 Value 찾기
-              let units = 0;
-              let value = '$0';
-              
-              // 현재 줄부터 10줄 검색
-              for (let j = i; j < Math.min(i + 10, lines.length); j++) {
-                const searchLine = lines[j];
-                
-                // Units 패턴: "숫자 Units" 또는 "숫자Units"
-                const unitsMatch = searchLine.match(/([\d,]+(?:\.\d+)?)\s*Units/i);
-                if (unitsMatch && units === 0) {
-                  units = parseFloat(unitsMatch[1].replace(/,/g, ''));
-                  console.log(`Found units for ${tokenName}: ${units}`);
+              // 총 가치 패턴: "$ 숫자" (가격+변화율이 아닌 것)
+              // 가격+변화율: "$ 44.653+41.8 %" 또는 "$ 1,037.1+54.61 %"
+              // 총 가치: "$ 22,721" 또는 "$ 1,152.3"
+              if (searchLine.startsWith('$ ') && !searchLine.includes('%') && value === '$0') {
+                const numStr = searchLine.replace('$ ', '').replace(/,/g, '');
+                const num = parseFloat(numStr);
+                if (!isNaN(num) && num > 0) {
+                  value = '$' + Math.floor(num).toLocaleString();
+                  console.log(`[${tokenName}] Value: ${value}`);
                 }
+              }
+              
+              // Units 패턴: "숫자." 다음 줄에 "소수점이하" 그 다음에 "Units"
+              // 예: "508." -> "8353" -> "Units"
+              if (searchLine === 'Units' && j >= 2) {
+                // 바로 앞 두 줄에서 숫자 조합
+                const decimalPart = lines[j - 1]; // 소수점 이하
+                const integerPart = lines[j - 2]; // 정수부 + "."
                 
-                // Value 패턴: "$ 숫자" (큰 금액, 토큰 가치)
-                const valueMatches = searchLine.match(/\$\s*([\d,]+(?:\.\d+)?)/g);
-                if (valueMatches && value === '$0') {
-                  for (const match of valueMatches) {
-                    const numStr = match.replace(/[$\s,]/g, '');
-                    const num = parseFloat(numStr);
-                    // $10 이상인 값 (작은 금액도 허용)
-                    if (num >= 10) {
-                      value = '$' + num.toLocaleString();
-                      console.log(`Found value for ${tokenName}: ${value}`);
-                      break;
-                    }
+                if (integerPart && integerPart.endsWith('.') && decimalPart) {
+                  const fullNumber = integerPart + decimalPart;
+                  const parsed = parseFloat(fullNumber.replace(/,/g, ''));
+                  if (!isNaN(parsed) && parsed > 0) {
+                    units = parsed;
+                    console.log(`[${tokenName}] Units: ${units}`);
                   }
                 }
               }
-              
-              if (units > 0) {
-                extracted[tokenName] = { units, value };
-                break;
-              }
             }
+            
+            if (units > 0) {
+              result[tokenName] = { units, value };
+              console.log(`[${tokenName}] ✓ Extracted: ${units} units, ${value}`);
+            }
+            break;
           }
-        }
-        
-        return extracted;
-      }, tokenNames);
-      
-      // 결과 병합
-      for (const [token, info] of Object.entries(data)) {
-        if (info.units > 0) {
-          result[token] = info;
         }
       }
       
-      console.log(`Attempt ${attempt + 1}: Found ${Object.keys(result).length}/${tokenNames.length} tokens`, result);
+      console.log(`[Attempt ${attempt + 1}] Found ${Object.keys(result).length}/${tokenNames.length} tokens`);
       
       // 모든 토큰 찾았으면 종료
-      if (Object.keys(result).length === tokenNames.length) {
+      if (Object.keys(result).length >= tokenNames.length) {
         break;
       }
     } catch (e) {
-      console.error(`Attempt ${attempt + 1} error:`, e);
+      console.error(`[Attempt ${attempt + 1}] Error:`, e);
     }
     
     await new Promise((r) => setTimeout(r, 1000));
@@ -147,37 +135,14 @@ export async function GET() {
     });
   }
   
-  // 토큰 앞 10자리만 확인용
-  console.log('[Token Burn Save] Token prefix:', browserlessToken.slice(0, 10));
-  
   let browser = null;
   
   try {
-    console.log('[Token Burn Save] Step 1: Connecting to Browserless...');
-    try {
-      browser = await puppeteer.connect({
-        browserWSEndpoint: `wss://chrome.browserless.io?token=${browserlessToken}`,
-      });
-    } catch (connectErr: unknown) {
-      console.error('[Token Burn Save] Connect error:', connectErr);
-      
-      let details = 'Unknown';
-      if (connectErr instanceof Error) {
-        details = connectErr.message;
-      } else if (connectErr && typeof connectErr === 'object') {
-        const err = connectErr as Record<string, unknown>;
-        // ErrorEvent에서 message 추출
-        details = (err.message as string) || (err.error as string) || 'ErrorEvent';
-        if (err.type) details += ` (type: ${err.type})`;
-      }
-      
-      return NextResponse.json({
-        success: false,
-        error: 'Browserless connect failed',
-        details,
-      });
-    }
-    console.log('[Token Burn Save] Step 2: Connected!');
+    console.log('[Token Burn Save] Connecting to Browserless...');
+    browser = await puppeteer.connect({
+      browserWSEndpoint: `wss://chrome.browserless.io?token=${browserlessToken}`,
+    });
+    console.log('[Token Burn Save] Connected!');
     
     const page = await browser.newPage();
     await page.setViewport({ width: 1280, height: 720 });
@@ -221,29 +186,20 @@ export async function GET() {
       });
     }
     
-    // 디버깅: 페이지 텍스트 일부 가져오기
-    const debugPage = await browser.newPage();
-    await debugPage.goto(PUMPSPACE_URL, { waitUntil: 'networkidle2', timeout: 30000 });
-    await new Promise((r) => setTimeout(r, 8000));
-    const pageText = await debugPage.evaluate(() => document.body.innerText.slice(0, 2000));
-    await debugPage.close();
-    
     console.log('[Token Burn Save] Success!');
     return NextResponse.json({
       success: true,
       message: `Saved ${upsertData.length} tokens for ${today}`,
       data: upsertData,
       extracted: burnData,
-      debug_page_text: pageText,
     });
   } catch (error: unknown) {
-    console.error('[Token Burn Save] Error type:', typeof error);
     console.error('[Token Burn Save] Error:', error);
     
     let errorMsg = 'Unknown error';
     if (error instanceof Error) {
-      errorMsg = `${error.name}: ${error.message}`;
-    } else if (error && typeof error === 'object') {
+      errorMsg = error.message;
+    } else if (typeof error === 'object' && error !== null) {
       try {
         errorMsg = JSON.stringify(error);
       } catch {
@@ -254,7 +210,6 @@ export async function GET() {
     return NextResponse.json({
       success: false,
       error: errorMsg,
-      errorType: typeof error,
     });
   } finally {
     if (browser) {

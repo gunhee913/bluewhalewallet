@@ -139,12 +139,23 @@ export async function GET() {
       browser = await puppeteer.connect({
         browserWSEndpoint: `wss://chrome.browserless.io?token=${browserlessToken}&timeout=240000`,
       });
-    } catch (connectErr) {
+    } catch (connectErr: unknown) {
       console.error('[Token Burn Save] Connect error:', connectErr);
+      
+      let details = 'Unknown';
+      if (connectErr instanceof Error) {
+        details = connectErr.message;
+      } else if (connectErr && typeof connectErr === 'object') {
+        const err = connectErr as Record<string, unknown>;
+        // ErrorEvent에서 message 추출
+        details = (err.message as string) || (err.error as string) || 'ErrorEvent';
+        if (err.type) details += ` (type: ${err.type})`;
+      }
+      
       return NextResponse.json({
         success: false,
         error: 'Browserless connect failed',
-        details: connectErr instanceof Error ? connectErr.message : String(connectErr),
+        details,
       });
     }
     console.log('[Token Burn Save] Step 2: Connected!');

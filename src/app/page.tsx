@@ -100,6 +100,7 @@ interface TokenBurnData {
   burned_amount: number;
   burned_value: string;
   total_supply: number;
+  token_price?: number;
 }
 
 interface TokenCardProps {
@@ -149,6 +150,9 @@ function TokenCard({ name, burnData }: TokenCardProps) {
               <Flame className="w-5 h-5 text-orange-400" />
             )}
             <h2 className="text-lg font-semibold text-white">{name}</h2>
+            {burnData?.token_price && burnData.token_price > 0 && (
+              <span className="text-sm text-slate-400">${burnData.token_price.toFixed(4)}</span>
+            )}
           </div>
           <Link
             href={`/token/${name}`}

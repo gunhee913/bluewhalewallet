@@ -12,6 +12,17 @@ const PUMPSPACE_URL = `https://pumpspace.io/wallet/detail?account=${BURN_ADDRESS
 // 추적할 토큰 목록
 const TOKEN_NAMES = ['sBWPM', 'sADOL', 'CLAM', 'PEARL', 'SHELL', 'CORAL', 'AQUA1'];
 
+// 경계선으로 인식할 모든 토큰명 (소각 지갑에 있을 수 있는 토큰들)
+const ALL_TOKEN_NAMES = [
+  ...TOKEN_NAMES,
+  // 일반 토큰들
+  'AVAX', 'WAVAX', 'ETH', 'WETH', 'BTC', 'WBTC',
+  'USDT', 'USDC', 'BUSD', 'DAI', 'FRAX',
+  'ARB', 'OP', 'MATIC', 'BNB', 'SOL',
+  // 블루웨일 관련
+  'BWPM', 'ADOL', 'BWL',
+];
+
 // Supabase 클라이언트
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -66,13 +77,14 @@ async function extractTokenBurnData(page: Page): Promise<Record<string, { units:
             let units = 0;
             let tokenPrice = 0;
             
-            for (let j = i + 1; j < Math.min(i + 12, lines.length); j++) {
-              const searchLine = lines[j];
-              
-              // 다른 토큰을 만나면 중단
-              if (tokenNames.includes(searchLine) && searchLine !== tokenName) {
-                break;
-              }
+for (let j = i + 1; j < Math.min(i + 12, lines.length); j++) {
+                const searchLine = lines[j];
+                
+                // 다른 토큰을 만나면 중단 (ALL_TOKEN_NAMES로 확장된 경계 감지)
+                if (ALL_TOKEN_NAMES.includes(searchLine) && searchLine !== tokenName) {
+                  console.log(`[${tokenName}] Boundary detected: ${searchLine} at line ${j}`);
+                  break;
+                }
               
               // 토큰 가격 패턴 ($ 44.653+41.8 % 형태)
               if (searchLine.startsWith('$ ') && searchLine.includes('%') && tokenPrice === 0) {

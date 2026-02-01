@@ -152,9 +152,11 @@ function TokenCard({ name, burnData }: TokenCardProps) {
             <h2 className="text-lg font-semibold text-white">{name}</h2>
             {burnData?.token_price && burnData.token_price > 0 && (
               <span className="text-sm text-slate-400">
-                ${(name === 'sBWPM' || name === 'sADOL') 
-                  ? burnData.token_price.toFixed(1) 
-                  : burnData.token_price.toFixed(4)}
+                ${name === 'sBWPM' 
+                  ? burnData.token_price.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+                  : name === 'sADOL'
+                    ? burnData.token_price.toFixed(1) 
+                    : burnData.token_price.toFixed(4)}
               </span>
             )}
           </div>

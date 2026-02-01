@@ -310,12 +310,26 @@ function HomeContent() {
   const tabParam = searchParams.get('tab');
   const [selectedTab, setSelectedTab] = useState<'wallet' | 'token'>('wallet');
 
-  // URL 파라미터로 탭 설정
+  // 페이지 로드 시 sessionStorage에서 탭 상태 복원
   useEffect(() => {
+    // URL 파라미터가 있으면 우선
     if (tabParam === 'token') {
       setSelectedTab('token');
+      return;
+    }
+    
+    // sessionStorage에서 마지막 탭 상태 복원
+    const savedTab = sessionStorage.getItem('lastTab');
+    if (savedTab === 'token' || savedTab === 'wallet') {
+      setSelectedTab(savedTab);
     }
   }, [tabParam]);
+
+  // 탭 변경 핸들러
+  const handleTabChange = (tab: 'wallet' | 'token') => {
+    setSelectedTab(tab);
+    sessionStorage.setItem('lastTab', tab);
+  };
 
   const addresses = useMemo(
     () => [...WALLETS.map((w) => w.address), ...BUYBACK_AI_WALLETS, ...ADOL_AI_WALLETS],
@@ -492,7 +506,7 @@ function HomeContent() {
         <div className="flex items-center justify-between mb-6 border-b border-slate-700">
           <div className="flex gap-6">
             <button
-              onClick={() => setSelectedTab('wallet')}
+              onClick={() => handleTabChange('wallet')}
               className={`pb-3 text-base md:text-lg font-medium transition-colors ${
                 selectedTab === 'wallet'
                   ? 'text-white border-b-2 border-white'
@@ -502,7 +516,7 @@ function HomeContent() {
               지갑
             </button>
             <button
-              onClick={() => setSelectedTab('token')}
+              onClick={() => handleTabChange('token')}
               className={`pb-3 text-base md:text-lg font-medium transition-colors ${
                 selectedTab === 'token'
                   ? 'text-white border-b-2 border-white'

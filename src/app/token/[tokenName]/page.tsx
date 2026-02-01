@@ -56,6 +56,9 @@ export default function TokenDetailPage() {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
+    
+    // 토큰 페이지 방문 시 마지막 탭을 'token'으로 저장
+    sessionStorage.setItem('lastTab', 'token');
   }, []);
 
   const { data: history, isLoading } = useQuery({

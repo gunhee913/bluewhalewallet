@@ -79,6 +79,11 @@ const WALLETS: WalletInfo[] = [
     hasAnalysis: true,
   },
   {
+    name: 'v2 수수료 펀드',
+    address: '0x021f53A57F99413A83298187C139f647F95F5133',
+    hasAnalysis: true,
+  },
+  {
     name: '소각 지갑',
     address: '0x000000000000000000000000000000000000dEaD',
   },

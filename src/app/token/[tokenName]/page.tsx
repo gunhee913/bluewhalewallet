@@ -121,6 +121,25 @@ export default function TokenDetailPage() {
     });
   }, [filteredHistory]);
 
+  // Y축 도메인 계산 (변동폭 기준)
+  const yAxisDomain = useMemo(() => {
+    if (chartData.length === 0) return [0, 100];
+    
+    const amounts = chartData.map(d => d.amount);
+    const min = Math.min(...amounts);
+    const max = Math.max(...amounts);
+    const range = max - min;
+    
+    // 변동폭이 0이면 최소값의 5%로 패딩
+    // 변동폭이 있으면 변동폭의 50%로 패딩 (기울기가 잘 보이도록)
+    const padding = range > 0 ? range * 0.5 : min * 0.05;
+    
+    return [
+      Math.max(0, Math.floor(min - padding)),
+      Math.ceil(max + padding)
+    ];
+  }, [chartData]);
+
   // X축 간격 계산
   const xAxisInterval = useMemo(() => {
     if (timeFrame === 'daily') return Math.floor(chartData.length / 5);
@@ -225,6 +244,7 @@ export default function TokenDetailPage() {
                     fontSize={10}
                     tickFormatter={(value) => formatNumber(value, showDecimal)}
                     width={70}
+                    domain={yAxisDomain}
                   />
                   <Tooltip
                     contentStyle={{

@@ -647,11 +647,12 @@ function HomeContent() {
                       const busdcAssets = getAssets(BUSDC_WALLET);
                       const currentValue = busdcAssets ? parseAmount(busdcAssets) : 0;
                       
-                      // 경과일 계산
-                      const startDate = new Date(BUSDC_START_DATE);
-                      const today = new Date();
-                      const diffTime = today.getTime() - startDate.getTime();
-                      const diffDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+                      // 경과일 계산 (한국 시간 기준)
+                      const now = new Date();
+                      const koreaOffset = 9 * 60; // UTC+9
+                      const koreaTime = new Date(now.getTime() + (koreaOffset + now.getTimezoneOffset()) * 60000);
+                      const todayStr = koreaTime.toISOString().split('T')[0];
+                      const diffDays = Math.max(1, Math.floor((new Date(todayStr).getTime() - new Date(BUSDC_START_DATE).getTime()) / (1000 * 60 * 60 * 24)) + 1);
                       
                       // APR 계산: (현재 - 시작) / 시작 × (365 / 경과일수) × 100
                       const returnRate = currentValue > 0 ? ((currentValue - BUSDC_START_ASSETS) / BUSDC_START_ASSETS) : 0;
@@ -728,11 +729,12 @@ function HomeContent() {
                       const bausdAssets = getAssets(BAUSD_WALLET);
                       const currentValue = bausdAssets ? parseAmount(bausdAssets) : 0;
                       
-                      // 경과일 계산
-                      const startDate = new Date(BAUSD_START_DATE);
-                      const today = new Date();
-                      const diffTime = today.getTime() - startDate.getTime();
-                      const diffDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+                      // 경과일 계산 (한국 시간 기준)
+                      const now = new Date();
+                      const koreaOffset = 9 * 60; // UTC+9
+                      const koreaTime = new Date(now.getTime() + (koreaOffset + now.getTimezoneOffset()) * 60000);
+                      const todayStr = koreaTime.toISOString().split('T')[0];
+                      const diffDays = Math.max(1, Math.floor((new Date(todayStr).getTime() - new Date(BAUSD_START_DATE).getTime()) / (1000 * 60 * 60 * 24)) + 1);
                       
                       // APR 계산
                       const returnRate = currentValue > 0 ? ((currentValue - BAUSD_START_ASSETS) / BAUSD_START_ASSETS) : 0;
@@ -809,11 +811,12 @@ function HomeContent() {
                       const btcbWethAssets = getAssets(BTCB_WETH_WALLET);
                       const currentValue = btcbWethAssets ? parseAmount(btcbWethAssets) : 0;
                       
-                      // 경과일 계산
-                      const startDate = new Date(BTCB_WETH_START_DATE);
-                      const today = new Date();
-                      const diffTime = today.getTime() - startDate.getTime();
-                      const diffDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+                      // 경과일 계산 (한국 시간 기준)
+                      const now = new Date();
+                      const koreaOffset = 9 * 60; // UTC+9
+                      const koreaTime = new Date(now.getTime() + (koreaOffset + now.getTimezoneOffset()) * 60000);
+                      const todayStr = koreaTime.toISOString().split('T')[0];
+                      const diffDays = Math.max(1, Math.floor((new Date(todayStr).getTime() - new Date(BTCB_WETH_START_DATE).getTime()) / (1000 * 60 * 60 * 24)) + 1);
                       
                       // APR 계산
                       const returnRate = currentValue > 0 ? ((currentValue - BTCB_WETH_START_ASSETS) / BTCB_WETH_START_ASSETS) : 0;
@@ -890,11 +893,12 @@ function HomeContent() {
                       const btcbXautAssets = getAssets(BTCB_XAUT_WALLET);
                       const currentValue = btcbXautAssets ? parseAmount(btcbXautAssets) : 0;
                       
-                      // 경과일 계산
-                      const startDate = new Date(BTCB_XAUT_START_DATE);
-                      const today = new Date();
-                      const diffTime = today.getTime() - startDate.getTime();
-                      const diffDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+                      // 경과일 계산 (한국 시간 기준)
+                      const now = new Date();
+                      const koreaOffset = 9 * 60; // UTC+9
+                      const koreaTime = new Date(now.getTime() + (koreaOffset + now.getTimezoneOffset()) * 60000);
+                      const todayStr = koreaTime.toISOString().split('T')[0];
+                      const diffDays = Math.max(1, Math.floor((new Date(todayStr).getTime() - new Date(BTCB_XAUT_START_DATE).getTime()) / (1000 * 60 * 60 * 24)) + 1);
                       
                       // APR 계산
                       const returnRate = currentValue > 0 ? ((currentValue - BTCB_XAUT_START_ASSETS) / BTCB_XAUT_START_ASSETS) : 0;

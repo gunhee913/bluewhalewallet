@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft, Loader2, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import {
   LineChart,
@@ -16,8 +16,6 @@ import {
 } from 'recharts';
 
 const BUSDC_WALLET = '0x6A3a608213a6597aaC0d7BC08da8e7f77d6FaEdB';
-const PUMPSPACE_URL = `https://pumpspace.io/wallet/detail?account=${BUSDC_WALLET}`;
-
 interface HistoryItem {
   recorded_at: string;
   total_assets: string;
@@ -142,28 +140,17 @@ export default function BusdcAnalysisPage() {
             <ArrowLeft className="w-5 h-5" />
             <span>돌아가기</span>
           </Link>
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-3 mb-1">
-                <div className="flex items-center -space-x-2">
-                  <img src="/bUSDC.svg" alt="bUSDC" className="w-8 h-8 rounded-full border-2 border-slate-700" />
-                  <img src="/USDC.svg" alt="USDC" className="w-8 h-8 rounded-full border-2 border-slate-700" />
-                </div>
-                <h1 className="text-xl md:text-2xl font-bold text-white">bUSDC - USDC</h1>
+          <div>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="flex items-center -space-x-2">
+                <img src="/bUSDC.svg" alt="bUSDC" className="w-8 h-8 rounded-full border-2 border-slate-700" />
+                <img src="/USDC.svg" alt="USDC" className="w-8 h-8 rounded-full border-2 border-slate-700" />
               </div>
-              <code className="text-xs md:text-sm text-slate-400 font-mono">
-                {formatAddress(BUSDC_WALLET)}
-              </code>
+              <h1 className="text-xl md:text-2xl font-bold text-white">bUSDC - USDC</h1>
             </div>
-            <a
-              href={PUMPSPACE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg transition-colors flex items-center gap-2"
-            >
-              <span>이동</span>
-              <ExternalLink className="w-4 h-4" />
-            </a>
+            <code className="text-xs md:text-sm text-slate-400 font-mono">
+              {formatAddress(BUSDC_WALLET)}
+            </code>
           </div>
         </div>
       </header>

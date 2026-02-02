@@ -381,12 +381,11 @@ export default function BuybackAnalysisPage() {
                     fontSize={10}
                     tickFormatter={(value) => {
                       if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
-                      if (value >= 1000) return `$${(value / 1000).toFixed(0)}K`;
-                      return `$${value.toFixed(0)}`;
+                      if (value >= 10000) return `$${(value / 1000).toFixed(0)}K`;
+                      return `$${value.toLocaleString()}`;
                     }}
-                    width={45}
+                    width={55}
                     tickCount={5}
-                    allowDecimals={false}
                     domain={([dataMin, dataMax]) => {
                       const min = dataMin as number;
                       const max = dataMax as number;

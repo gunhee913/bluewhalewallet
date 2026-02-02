@@ -22,6 +22,8 @@ const WALLET_NAMES: Record<string, string> = {
   '0xed1b254b6c3a6785e19ba83b728ece4a6444f4d7': '아돌펀드',
   '0xd57423c54f188220862391a069a2942c725ee37b': 'Aqua1 펀드',
   '0xfd48a5ffe5127896e93baa8074ce98c5a999ea97': 'v3 수수료 펀드(40%)',
+  '0x52fb7d3ab53d5a8d348b15ea7e3f7bfe35dd35f1': 'v3 수수료 펀드(60%)',
+  '0x021f53a57f99413a83298187c139f647f95f5133': 'v2 수수료 펀드',
   '0x525e7f0a5d3fd6169d6ec35288104d52bf3bb95f': '팀 지갑',
 };
 

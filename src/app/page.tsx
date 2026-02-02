@@ -37,6 +37,9 @@ const ADOL_AI_WALLETS = [
   '0xC81A059E9A2185A97925d6B7b5D527294c439625', // AI(4)
 ];
 
+// 실험실 - bUSDC 지갑
+const BUSDC_WALLET = '0x6A3a608213a6597aaC0d7BC08da8e7f77d6FaEdB';
+
 interface WalletInfo {
   name: string;
   address: string;
@@ -328,7 +331,7 @@ function WalletCard({ wallet, totalAssets, fundDetails, aquaFairPrice }: WalletC
 function HomeContent() {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab');
-  const [selectedTab, setSelectedTab] = useState<'wallet' | 'token'>('wallet');
+  const [selectedTab, setSelectedTab] = useState<'wallet' | 'token' | 'lab'>('wallet');
 
   // 페이지 로드 시 sessionStorage에서 탭 상태 복원
   useEffect(() => {
@@ -337,22 +340,26 @@ function HomeContent() {
       setSelectedTab('token');
       return;
     }
+    if (tabParam === 'lab') {
+      setSelectedTab('lab');
+      return;
+    }
     
     // sessionStorage에서 마지막 탭 상태 복원
     const savedTab = sessionStorage.getItem('lastTab');
-    if (savedTab === 'token' || savedTab === 'wallet') {
+    if (savedTab === 'token' || savedTab === 'wallet' || savedTab === 'lab') {
       setSelectedTab(savedTab);
     }
   }, [tabParam]);
 
   // 탭 변경 핸들러
-  const handleTabChange = (tab: 'wallet' | 'token') => {
+  const handleTabChange = (tab: 'wallet' | 'token' | 'lab') => {
     setSelectedTab(tab);
     sessionStorage.setItem('lastTab', tab);
   };
 
   const addresses = useMemo(
-    () => [...WALLETS.map((w) => w.address), ...BUYBACK_AI_WALLETS, ...ADOL_AI_WALLETS],
+    () => [...WALLETS.map((w) => w.address), ...BUYBACK_AI_WALLETS, ...ADOL_AI_WALLETS, BUSDC_WALLET],
     []
   );
 
@@ -545,6 +552,16 @@ function HomeContent() {
             >
               토큰
             </button>
+            <button
+              onClick={() => handleTabChange('lab')}
+              className={`pb-3 text-base md:text-lg font-medium transition-colors ${
+                selectedTab === 'lab'
+                  ? 'text-white border-b-2 border-white'
+                  : 'text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              실험실
+            </button>
           </div>
         </div>
 
@@ -590,6 +607,57 @@ function HomeContent() {
                 />
               );
             })}
+          </div>
+        )}
+
+        {/* 실험실 탭 */}
+        {selectedTab === 'lab' && (
+          <div className="space-y-4">
+            {/* bUSDC - USDC 카드 */}
+            <Card className="bg-slate-800/50 border-slate-700/50 hover:bg-slate-800/80 transition-all duration-200 overflow-hidden group">
+              <div className="p-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="flex items-center -space-x-2">
+                        <img src="/bUSDC.svg" alt="bUSDC" className="w-8 h-8 rounded-full border-2 border-slate-700" />
+                        <img src="/USDC.svg" alt="USDC" className="w-8 h-8 rounded-full border-2 border-slate-700" />
+                      </div>
+                      <h2 className="text-lg font-semibold text-white">bUSDC - USDC</h2>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-slate-400">Total Assets:</span>
+                      {(() => {
+                        const busdcAssets = getAssets(BUSDC_WALLET);
+                        return busdcAssets ? (
+                          <span className="text-lg font-bold text-emerald-400">{busdcAssets.replace(/\.\d+/, '')}</span>
+                        ) : (
+                          <span className="text-sm text-slate-500">-</span>
+                        );
+                      })()}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <a
+                      href={`${PUMPSPACE_BASE_URL}${BUSDC_WALLET}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-6 py-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-md transition-all duration-200 font-medium text-center"
+                    >
+                      이동
+                    </a>
+                    <Link
+                      href="/wallet/busdc"
+                      className="px-6 py-2.5 bg-slate-600 hover:bg-slate-500 text-white rounded-md transition-all duration-200 font-medium text-center"
+                    >
+                      분석
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </Card>
           </div>
         )}
       </main>

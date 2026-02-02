@@ -39,6 +39,8 @@ const ADOL_AI_WALLETS = [
 
 // 실험실 - bUSDC 지갑
 const BUSDC_WALLET = '0x6A3a608213a6597aaC0d7BC08da8e7f77d6FaEdB';
+const BUSDC_START_DATE = '2026-02-02';
+const BUSDC_START_ASSETS = 1007;
 
 interface WalletInfo {
   name: string;
@@ -618,7 +620,7 @@ function HomeContent() {
               <div className="p-5">
                 <div className="flex items-center justify-between">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-2">
+                    <div className="flex items-center gap-3 mb-4">
                       <div className="flex items-center -space-x-2">
                         <img src="/bUSDC.svg" alt="bUSDC" className="w-8 h-8 rounded-full border-2 border-slate-700" />
                         <img src="/USDC.svg" alt="USDC" className="w-8 h-8 rounded-full border-2 border-slate-700" />
@@ -626,17 +628,52 @@ function HomeContent() {
                       <h2 className="text-lg font-semibold text-white">bUSDC - USDC</h2>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-slate-400">Total Assets:</span>
-                      {(() => {
-                        const busdcAssets = getAssets(BUSDC_WALLET);
-                        return busdcAssets ? (
-                          <span className="text-lg font-bold text-emerald-400">{busdcAssets.replace(/\.\d+/, '')}</span>
-                        ) : (
-                          <span className="text-sm text-slate-500">-</span>
-                        );
-                      })()}
-                    </div>
+                    {(() => {
+                      const busdcAssets = getAssets(BUSDC_WALLET);
+                      const currentValue = busdcAssets ? parseAmount(busdcAssets) : 0;
+                      
+                      // 경과일 계산
+                      const startDate = new Date(BUSDC_START_DATE);
+                      const today = new Date();
+                      const diffTime = today.getTime() - startDate.getTime();
+                      const diffDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+                      
+                      // APR 계산: (현재 - 시작) / 시작 × (365 / 경과일수) × 100
+                      const returnRate = currentValue > 0 ? ((currentValue - BUSDC_START_ASSETS) / BUSDC_START_ASSETS) : 0;
+                      const apr = returnRate * (365 / diffDays) * 100;
+                      
+                      // 시작일 포맷: 26.02.02
+                      const formattedStartDate = BUSDC_START_DATE.replace(/^20/, '').replace(/-/g, '.');
+                      
+                      return (
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-slate-400">개시일:</span>
+                            <span className="text-sm text-white">{formattedStartDate}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-slate-400">원금:</span>
+                            <span className="text-sm text-white">${BUSDC_START_ASSETS.toLocaleString()}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-slate-400">경과일:</span>
+                            <span className="text-sm text-white">{diffDays}일</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-slate-400">현재 자산:</span>
+                            <span className="text-sm font-medium text-emerald-400">
+                              {busdcAssets ? busdcAssets.replace(/\.\d+/, '') : '-'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-slate-400">예상 APR:</span>
+                            <span className={`text-sm font-medium ${apr >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                              {currentValue > 0 ? `${apr >= 0 ? '+' : ''}${apr.toFixed(1)}%` : '-'}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   <div className="flex flex-col gap-2">

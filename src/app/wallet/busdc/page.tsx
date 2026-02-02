@@ -241,7 +241,11 @@ export default function BusdcAnalysisPage() {
                   <YAxis 
                     stroke="#94a3b8"
                     fontSize={10}
-                    tickFormatter={(value) => `$${(value / 1000).toFixed(0)}K`}
+                    tickFormatter={(value) => {
+                      if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
+                      if (value >= 1000) return `$${(value / 1000).toFixed(0)}K`;
+                      return `$${value.toFixed(0)}`;
+                    }}
                     width={45}
                   />
                   <Tooltip

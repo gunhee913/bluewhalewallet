@@ -138,6 +138,40 @@ export default function WalletDetailPage() {
     return 0;
   }, [timeFrame, chartData.length]);
 
+  // Y축 Nice Number 계산
+  const yAxisConfig = useMemo(() => {
+    if (chartData.length === 0) return { domain: [0, 100], ticks: [0, 25, 50, 75, 100] };
+    
+    const values = chartData.map(d => d.amount);
+    const dataMin = Math.min(...values);
+    const dataMax = Math.max(...values);
+    const range = dataMax - dataMin;
+    const padding = range > 0 ? range * 0.5 : dataMin * 0.1;
+    
+    const rawMin = Math.max(0, dataMin - padding);
+    const rawMax = dataMax + padding;
+    const totalRange = rawMax - rawMin;
+    
+    const roughStep = totalRange / 4;
+    const magnitude = Math.pow(10, Math.floor(Math.log10(roughStep)));
+    const residual = roughStep / magnitude;
+    let niceStep;
+    if (residual <= 1.5) niceStep = magnitude;
+    else if (residual <= 3) niceStep = 2 * magnitude;
+    else if (residual <= 7) niceStep = 5 * magnitude;
+    else niceStep = 10 * magnitude;
+    
+    const niceMin = Math.floor(rawMin / niceStep) * niceStep;
+    const niceMax = Math.ceil(rawMax / niceStep) * niceStep;
+    
+    const ticks: number[] = [];
+    for (let tick = niceMin; tick <= niceMax; tick += niceStep) {
+      ticks.push(tick);
+    }
+    
+    return { domain: [niceMin, niceMax] as [number, number], ticks };
+  }, [chartData]);
+
   const timeFrameLabel = {
     daily: '일간',
     weekly: '주간',
@@ -241,23 +275,11 @@ export default function WalletDetailPage() {
                     tickFormatter={(value) => {
                       if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
                       if (value >= 10000) return `$${(value / 1000).toFixed(0)}K`;
-                      // 10K 미만: 깔끔한 단위로 반올림
-                      let rounded;
-                      if (value >= 1000) rounded = Math.round(value / 1000) * 1000;
-                      else if (value >= 100) rounded = Math.round(value / 100) * 100;
-                      else if (value >= 10) rounded = Math.round(value / 10) * 10;
-                      else rounded = Math.round(value);
-                      return `$${rounded.toLocaleString()}`;
+                      return `$${Math.round(value).toLocaleString()}`;
                     }}
                     width={55}
-                    tickCount={5}
-                    domain={([dataMin, dataMax]) => {
-                      const min = dataMin as number;
-                      const max = dataMax as number;
-                      const range = max - min;
-                      const padding = range > 0 ? range * 0.5 : min * 0.05;
-                      return [Math.max(0, min - padding), max + padding];
-                    }}
+                    domain={yAxisConfig.domain}
+                    ticks={yAxisConfig.ticks}
                   />
                   <Tooltip
                     contentStyle={{

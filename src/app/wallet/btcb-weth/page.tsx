@@ -244,7 +244,7 @@ export default function BtcbWethAnalysisPage() {
                     tickFormatter={(value) => {
                       if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
                       if (value >= 10000) return `$${(value / 1000).toFixed(0)}K`;
-                      return `$${value.toLocaleString()}`;
+                      return `$${Math.round(value).toLocaleString()}`;
                     }}
                     width={55}
                     tickCount={5}

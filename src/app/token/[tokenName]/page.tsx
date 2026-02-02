@@ -241,7 +241,7 @@ export default function TokenDetailPage() {
                   />
                   <YAxis 
                     stroke="#94a3b8"
-                    fontSize={10}
+                    fontSize={9}
                     tickFormatter={(value) => formatNumber(value, showDecimal)}
                     width={70}
                     domain={yAxisDomain}

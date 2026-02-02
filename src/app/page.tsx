@@ -686,6 +686,11 @@ function HomeContent() {
                             <span className="text-sm font-medium text-emerald-400">
                               {busdcAssets ? busdcAssets.replace(/\.\d+/, '') : '-'}
                             </span>
+                            {currentValue > 0 && (
+                              <span className={`text-sm font-medium ${returnRate >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                ({returnRate >= 0 ? '+' : ''}{(returnRate * 100).toFixed(2)}%)
+                              </span>
+                            )}
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-sm text-slate-400">예상 APR:</span>
@@ -773,6 +778,11 @@ function HomeContent() {
                             <span className="text-sm font-medium text-emerald-400">
                               {bausdAssets ? bausdAssets.replace(/\.\d+/, '') : '-'}
                             </span>
+                            {currentValue > 0 && (
+                              <span className={`text-sm font-medium ${returnRate >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                ({returnRate >= 0 ? '+' : ''}{(returnRate * 100).toFixed(2)}%)
+                              </span>
+                            )}
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-sm text-slate-400">예상 APR:</span>
@@ -860,6 +870,11 @@ function HomeContent() {
                             <span className="text-sm font-medium text-emerald-400">
                               {btcbWethAssets ? btcbWethAssets.replace(/\.\d+/, '') : '-'}
                             </span>
+                            {currentValue > 0 && (
+                              <span className={`text-sm font-medium ${returnRate >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                ({returnRate >= 0 ? '+' : ''}{(returnRate * 100).toFixed(2)}%)
+                              </span>
+                            )}
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-sm text-slate-400">예상 APR:</span>
@@ -947,6 +962,11 @@ function HomeContent() {
                             <span className="text-sm font-medium text-emerald-400">
                               {btcbXautAssets ? btcbXautAssets.replace(/\.\d+/, '') : '-'}
                             </span>
+                            {currentValue > 0 && (
+                              <span className={`text-sm font-medium ${returnRate >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                ({returnRate >= 0 ? '+' : ''}{(returnRate * 100).toFixed(2)}%)
+                              </span>
+                            )}
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-sm text-slate-400">예상 APR:</span>

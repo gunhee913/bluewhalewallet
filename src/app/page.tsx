@@ -873,7 +873,7 @@ function HomeContent() {
               </div>
             </Card>
 
-            {/* BTC.b - XAUt 카드 */}
+            {/* BTC.b - XAUt0 카드 */}
             <Card className="bg-slate-800/50 border-slate-700/50 hover:bg-slate-800/80 transition-all duration-200 overflow-hidden group">
               <div className="p-5">
                 <div className="flex items-center justify-between">
@@ -881,9 +881,9 @@ function HomeContent() {
                     <div className="flex items-center gap-3 mb-4">
                       <div className="flex items-center -space-x-2">
                         <img src="/BTC.b.png" alt="BTC.b" className="w-8 h-8 rounded-full border-2 border-slate-700" />
-                        <img src="/XAUt0.png" alt="XAUt" className="w-8 h-8 rounded-full border-2 border-slate-700" />
+                        <img src="/XAUt0.png" alt="XAUt0" className="w-8 h-8 rounded-full border-2 border-slate-700" />
                       </div>
-                      <h2 className="text-lg font-semibold text-white">BTC.b - XAUt</h2>
+                      <h2 className="text-lg font-semibold text-white">BTC.b - XAUt0</h2>
                     </div>
 
                     {(() => {

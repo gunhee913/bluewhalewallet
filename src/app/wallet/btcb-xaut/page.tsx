@@ -147,9 +147,9 @@ export default function BtcbXautAnalysisPage() {
               <div className="flex items-center gap-3 mb-1">
                 <div className="flex items-center -space-x-2">
                   <img src="/BTC.b.png" alt="BTC.b" className="w-8 h-8 rounded-full border-2 border-slate-700" />
-                  <img src="/XAUt0.png" alt="XAUt" className="w-8 h-8 rounded-full border-2 border-slate-700" />
+                  <img src="/XAUt0.png" alt="XAUt0" className="w-8 h-8 rounded-full border-2 border-slate-700" />
                 </div>
-                <h1 className="text-xl md:text-2xl font-bold text-white">BTC.b - XAUt</h1>
+                <h1 className="text-xl md:text-2xl font-bold text-white">BTC.b - XAUt0</h1>
               </div>
               <code className="text-xs md:text-sm text-slate-400 font-mono">
                 {formatAddress(BTCB_XAUT_WALLET)}

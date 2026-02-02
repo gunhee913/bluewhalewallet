@@ -13,7 +13,7 @@ const WALLET_GROUPS: Record<string, string[]> = {
   '2': ['0xEd1b254B6c3a6785e19ba83b728ECe4A6444f4d7'], // 아돌펀드 (메인)
   '3': ['0xD57423c54F188220862391A069a2942c725ee37B'], // Aqua1 펀드
   '4': ['0xfd48a5FFE5127896E93BAA8074CE98c5a999Ea97'], // v3 수수료 펀드(40%)
-  '5': ['0x52FB7d3ab53d5a8d348B15ea7E3f7bfE35dD35F1'], // v3 수수료 펀드(60%)
+  '5': ['0x52FB7d3ab53d5a8d348B15ea7E3f7bfE35dD35F1'], // v3 SHELL 펀드(60%)
   '6': ['0x000000000000000000000000000000000000dEaD'], // 소각 지갑
   '7': ['0x525e7f0a5d3fd6169d6ec35288104d52bf3bb95f'], // 팀 지갑
   '8': ['0xDf3723f75a8B3E10Fe0093991C961d58A5549fDE'], // 바이백 AI(1)

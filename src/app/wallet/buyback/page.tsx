@@ -382,7 +382,13 @@ export default function BuybackAnalysisPage() {
                     tickFormatter={(value) => {
                       if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
                       if (value >= 10000) return `$${(value / 1000).toFixed(0)}K`;
-                      return `$${Math.round(value).toLocaleString()}`;
+                      // 10K 미만: 깔끔한 단위로 반올림
+                      let rounded;
+                      if (value >= 1000) rounded = Math.round(value / 1000) * 1000;
+                      else if (value >= 100) rounded = Math.round(value / 100) * 100;
+                      else if (value >= 10) rounded = Math.round(value / 10) * 10;
+                      else rounded = Math.round(value);
+                      return `$${rounded.toLocaleString()}`;
                     }}
                     width={55}
                     tickCount={5}

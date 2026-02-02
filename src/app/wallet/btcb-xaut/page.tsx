@@ -247,6 +247,13 @@ export default function BtcbXautAnalysisPage() {
                       return `$${value.toFixed(0)}`;
                     }}
                     width={45}
+                    domain={([dataMin, dataMax]) => {
+                      const min = dataMin as number;
+                      const max = dataMax as number;
+                      const range = max - min;
+                      const padding = range > 0 ? range * 0.5 : min * 0.05;
+                      return [Math.max(0, min - padding), max + padding];
+                    }}
                   />
                   <Tooltip
                     contentStyle={{

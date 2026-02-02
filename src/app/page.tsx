@@ -47,6 +47,11 @@ const BAUSD_WALLET = '0xa7f39e0d389eCF0cADFb8b940015300D4010A58C';
 const BAUSD_START_DATE = '2026-02-02';
 const BAUSD_START_ASSETS = 1007;
 
+// 실험실 - BTC.b-WETH.e 지갑
+const BTCB_WETH_WALLET = '0x620298587246547da70B8c16d3aA0C92F38E243f';
+const BTCB_WETH_START_DATE = '2026-02-02';
+const BTCB_WETH_START_ASSETS = 1009;
+
 interface WalletInfo {
   name: string;
   address: string;
@@ -366,7 +371,7 @@ function HomeContent() {
   };
 
   const addresses = useMemo(
-    () => [...WALLETS.map((w) => w.address), ...BUYBACK_AI_WALLETS, ...ADOL_AI_WALLETS, BUSDC_WALLET, BAUSD_WALLET],
+    () => [...WALLETS.map((w) => w.address), ...BUYBACK_AI_WALLETS, ...ADOL_AI_WALLETS, BUSDC_WALLET, BAUSD_WALLET, BTCB_WETH_WALLET],
     []
   );
 
@@ -773,6 +778,87 @@ function HomeContent() {
                     </a>
                     <Link
                       href="/wallet/bausd"
+                      className="px-6 py-2.5 bg-slate-600 hover:bg-slate-500 text-white rounded-md transition-all duration-200 font-medium text-center"
+                    >
+                      분석
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* BTC.b - WETH.e 카드 */}
+            <Card className="bg-slate-800/50 border-slate-700/50 hover:bg-slate-800/80 transition-all duration-200 overflow-hidden group">
+              <div className="p-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="flex items-center -space-x-2">
+                        <img src="/BTC.b.png" alt="BTC.b" className="w-8 h-8 rounded-full border-2 border-slate-700" />
+                        <img src="/WETH.e.svg" alt="WETH.e" className="w-8 h-8 rounded-full border-2 border-slate-700" />
+                      </div>
+                      <h2 className="text-lg font-semibold text-white">BTC.b - WETH.e</h2>
+                    </div>
+
+                    {(() => {
+                      const btcbWethAssets = getAssets(BTCB_WETH_WALLET);
+                      const currentValue = btcbWethAssets ? parseAmount(btcbWethAssets) : 0;
+                      
+                      // 경과일 계산
+                      const startDate = new Date(BTCB_WETH_START_DATE);
+                      const today = new Date();
+                      const diffTime = today.getTime() - startDate.getTime();
+                      const diffDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+                      
+                      // APR 계산
+                      const returnRate = currentValue > 0 ? ((currentValue - BTCB_WETH_START_ASSETS) / BTCB_WETH_START_ASSETS) : 0;
+                      const apr = returnRate * (365 / diffDays) * 100;
+                      
+                      // 시작일 포맷
+                      const formattedStartDate = BTCB_WETH_START_DATE.replace(/^20/, '').replace(/-/g, '.');
+                      
+                      return (
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-slate-400">개시일:</span>
+                            <span className="text-sm text-white">{formattedStartDate}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-slate-400">경과일:</span>
+                            <span className="text-sm text-white">{diffDays}일</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-slate-400">원금:</span>
+                            <span className="text-sm text-white">${BTCB_WETH_START_ASSETS.toLocaleString()}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-slate-400">현재 자산:</span>
+                            <span className="text-sm font-medium text-emerald-400">
+                              {btcbWethAssets ? btcbWethAssets.replace(/\.\d+/, '') : '-'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-slate-400">예상 APR:</span>
+                            <span className={`text-sm font-medium ${apr >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                              {currentValue > 0 ? `${apr >= 0 ? '+' : ''}${apr.toFixed(1)}%` : '-'}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <a
+                      href={`${PUMPSPACE_BASE_URL}${BTCB_WETH_WALLET}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-6 py-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-md transition-all duration-200 font-medium text-center"
+                    >
+                      이동
+                    </a>
+                    <Link
+                      href="/wallet/btcb-weth"
                       className="px-6 py-2.5 bg-slate-600 hover:bg-slate-500 text-white rounded-md transition-all duration-200 font-medium text-center"
                     >
                       분석

@@ -30,6 +30,7 @@ const WALLET_GROUPS: Record<string, string[]> = {
   '19': ['0xC81A059E9A2185A97925d6B7b5D527294c439625'], // 아돌 AI(4)
   '20': ['0x021f53A57F99413A83298187C139f647F95F5133'], // v2 수수료 펀드
   '21': ['0x6A3a608213a6597aaC0d7BC08da8e7f77d6FaEdB'], // bUSDC (실험실)
+  '22': ['0xa7f39e0d389eCF0cADFb8b940015300D4010A58C'], // bAUSD (실험실)
 };
 
 // 모든 지갑 주소

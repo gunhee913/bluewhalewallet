@@ -85,6 +85,10 @@
       "schedule": "20 0-14,15,22-23 * * *"
     },
     {
+      "path": "/api/wallet/refresh?group=22",
+      "schedule": "21 0-14,15,22-23 * * *"
+    },
+    {
       "path": "/api/token/burn/save",
       "schedule": "0 0-14,15,22-23 * * *"
     }

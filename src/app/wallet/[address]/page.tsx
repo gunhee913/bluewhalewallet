@@ -244,6 +244,8 @@ export default function WalletDetailPage() {
                       return `$${value.toFixed(0)}`;
                     }}
                     width={50}
+                    tickCount={5}
+                    allowDecimals={false}
                     domain={([dataMin, dataMax]) => {
                       const min = dataMin as number;
                       const max = dataMax as number;

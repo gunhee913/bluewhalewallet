@@ -377,6 +377,8 @@ export default function AdolAnalysisPage() {
                       return `$${value.toFixed(0)}`;
                     }}
                     width={45}
+                    tickCount={5}
+                    allowDecimals={false}
                     domain={([dataMin, dataMax]) => {
                       const min = dataMin as number;
                       const max = dataMax as number;

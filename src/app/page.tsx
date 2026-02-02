@@ -652,12 +652,12 @@ function HomeContent() {
                             <span className="text-sm text-white">{formattedStartDate}</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-sm text-slate-400">원금:</span>
-                            <span className="text-sm text-white">${BUSDC_START_ASSETS.toLocaleString()}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
                             <span className="text-sm text-slate-400">경과일:</span>
                             <span className="text-sm text-white">{diffDays}일</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-slate-400">원금:</span>
+                            <span className="text-sm text-white">${BUSDC_START_ASSETS.toLocaleString()}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-sm text-slate-400">현재 자산:</span>

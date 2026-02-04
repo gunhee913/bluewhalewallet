@@ -721,7 +721,7 @@ function HomeContent() {
 
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-slate-400">총 보유량:</span>
+                        <span className="text-sm text-slate-400">홀더 보유량:</span>
                         <span className="text-sm font-medium text-emerald-400">
                           {clubLoading ? '로딩...' : 
                            shellClubData?.totalAmount ? 
@@ -729,7 +729,7 @@ function HomeContent() {
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-slate-400">총 보유가치:</span>
+                        <span className="text-sm text-slate-400">홀더 보유가치:</span>
                         <span className="text-sm font-medium text-white">
                           {clubLoading ? '로딩...' : 
                            shellClubData?.totalValue ? 

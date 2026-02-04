@@ -294,39 +294,39 @@ export default function ShellMemberPage({ params }: PageProps) {
           ) : (
             <div className="overflow-x-auto scrollbar-thin">
               <table className="w-full">
-                <thead>
-                  <tr className="border-b border-slate-700">
-                    <th className="text-left py-3 px-3 text-xs md:text-sm text-slate-400 font-medium whitespace-nowrap">날짜</th>
-                    <th className="text-right py-3 px-3 text-xs md:text-sm text-slate-400 font-medium whitespace-nowrap">보유량</th>
-                    <th className="text-right py-3 px-3 text-xs md:text-sm text-slate-400 font-medium whitespace-nowrap">증감</th>
-                    <th className="text-right py-3 px-3 text-xs md:text-sm text-slate-400 font-medium whitespace-nowrap">증감액</th>
-                    <th className="text-right py-3 px-3 text-xs md:text-sm text-slate-400 font-medium whitespace-nowrap">보유가치</th>
-                    <th className="text-right py-3 px-3 text-xs md:text-sm text-slate-400 font-medium whitespace-nowrap">지분율</th>
+                <thead className="bg-slate-800">
+                  <tr>
+                    <th className="text-left text-sm font-medium text-slate-400 px-3 py-4 whitespace-nowrap">날짜</th>
+                    <th className="text-right text-sm font-medium text-slate-400 px-3 py-4 whitespace-nowrap">보유량</th>
+                    <th className="text-right text-sm font-medium text-slate-400 px-3 py-4 whitespace-nowrap">증감</th>
+                    <th className="text-right text-sm font-medium text-slate-400 px-3 py-4 whitespace-nowrap">증감액</th>
+                    <th className="text-right text-sm font-medium text-slate-400 px-3 py-4 whitespace-nowrap">보유가치</th>
+                    <th className="text-right text-sm font-medium text-slate-400 px-3 py-4 whitespace-nowrap">지분율</th>
                   </tr>
                 </thead>
                 <tbody>
                   {chartData.map((item, index) => (
-                    <tr key={index} className="border-b border-slate-700/50 hover:bg-slate-700/30">
-                      <td className="py-3 px-3 text-xs md:text-sm text-white whitespace-nowrap">
+                    <tr key={index} className="border-t border-slate-700/50 hover:bg-slate-700/30">
+                      <td className="px-3 py-4 text-sm text-white whitespace-nowrap">
                         {item.fullDate}
                       </td>
-                      <td className="text-right py-3 px-3 text-xs md:text-sm text-emerald-400 font-medium whitespace-nowrap">
+                      <td className="text-right px-3 py-4 text-sm text-emerald-400 font-medium whitespace-nowrap">
                         {formatNumber(item.amount)}
                       </td>
-                      <td className="text-right py-3 px-3 text-xs md:text-sm whitespace-nowrap">
+                      <td className="text-right px-3 py-4 text-sm whitespace-nowrap">
                         <span className={item.change >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
                           {item.change >= 0 ? '+' : ''}{formatNumber(item.change)}
                         </span>
                       </td>
-                      <td className="text-right py-3 px-3 text-xs md:text-sm whitespace-nowrap">
+                      <td className="text-right px-3 py-4 text-sm whitespace-nowrap">
                         <span className={item.changeValue >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
                           {item.changeValue >= 0 ? '+' : ''}${Math.floor(item.changeValue).toLocaleString()}
                         </span>
                       </td>
-                      <td className="text-right py-3 px-3 text-xs md:text-sm text-white whitespace-nowrap">
+                      <td className="text-right px-3 py-4 text-sm text-white whitespace-nowrap">
                         ${Math.floor(item.value).toLocaleString()}
                       </td>
-                      <td className="text-right py-3 px-3 text-xs md:text-sm text-slate-300 whitespace-nowrap">
+                      <td className="text-right px-3 py-4 text-sm text-slate-300 whitespace-nowrap">
                         {item.share.toFixed(2)}%
                       </td>
                     </tr>

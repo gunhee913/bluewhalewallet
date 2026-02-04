@@ -1,16 +1,41 @@
 import { NextAuthOptions } from "next-auth";
-import GoogleProvider from "next-auth/providers/google";
+import CredentialsProvider from "next-auth/providers/credentials";
 
 export const authOptions: NextAuthOptions = {
   providers: [
-    // 제공자를 여기에 추가할 수 있습니다.
+    CredentialsProvider({
+      name: "Credentials",
+      credentials: {
+        email: { label: "이메일", type: "email" },
+        password: { label: "비밀번호", type: "password" },
+      },
+      async authorize(credentials) {
+        // 환경 변수에서 관리자 정보 가져오기
+        const adminEmail = process.env.ADMIN_EMAIL;
+        const adminPassword = process.env.ADMIN_PASSWORD;
+
+        if (!credentials?.email || !credentials?.password) {
+          return null;
+        }
+
+        // 이메일과 비밀번호 확인
+        if (
+          credentials.email === adminEmail &&
+          credentials.password === adminPassword
+        ) {
+          return {
+            id: "admin",
+            email: adminEmail,
+            name: "관리자",
+          };
+        }
+
+        return null;
+      },
+    }),
   ],
   pages: {
     signIn: "/auth/signin",
-    // signOut: '/auth/signout',
-    // error: '/auth/error',
-    // verifyRequest: '/auth/verify-request',
-    // newUser: '/auth/new-user'
   },
   callbacks: {
     async session({ session, token }) {

@@ -14,16 +14,12 @@ function getSupabase() {
   return createClient(url, key);
 }
 
-// 관리자 이메일 목록
-const ADMIN_EMAILS = [
-  'gunhee913@gmail.com',
-];
-
 // 관리자 체크
 async function isAdmin() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return false;
-  return ADMIN_EMAILS.includes(session.user.email);
+  const adminEmail = process.env.ADMIN_EMAIL;
+  return session.user.email === adminEmail;
 }
 
 // GET: 가입 신청 목록 조회

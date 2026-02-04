@@ -26,6 +26,37 @@ async function getShellTotalSupply(supabase: ReturnType<typeof getSupabase>): Pr
   return data?.total_supply || 10_000_000_000; // 기본값 100억
 }
 
+// DB에서 승인된 멤버 가져오기
+async function getApprovedMembers(supabase: ReturnType<typeof getSupabase>) {
+  const { data } = await supabase
+    .from('shell_club_applications')
+    .select('address, name, approved_at')
+    .eq('status', 'approved')
+    .order('approved_at', { ascending: true });
+  
+  return (data || []).map((item, index) => ({
+    name: item.name || `승인멤버(${index + 1})`,
+    address: item.address,
+  }));
+}
+
+// 전체 멤버 목록 (하드코딩 + DB 승인)
+async function getAllMembers(supabase: ReturnType<typeof getSupabase>) {
+  const approvedMembers = await getApprovedMembers(supabase);
+  
+  // 하드코딩 멤버 주소 목록
+  const hardcodedAddresses = new Set(
+    SHELL_CLUB_MEMBERS.map(m => m.address.toLowerCase())
+  );
+  
+  // DB 승인 멤버 중 하드코딩에 없는 것만 추가
+  const newMembers = approvedMembers.filter(
+    m => !hardcodedAddresses.has(m.address.toLowerCase())
+  );
+  
+  return [...SHELL_CLUB_MEMBERS, ...newMembers];
+}
+
 // GET: SHELL CLUB 데이터 조회
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -37,6 +68,9 @@ export async function GET(request: NextRequest) {
 
     // SHELL 총 발행량 가져오기
     const shellTotalSupply = await getShellTotalSupply(supabase);
+    
+    // 전체 멤버 목록 (하드코딩 + DB)
+    const allMembers = await getAllMembers(supabase);
 
     // 특정 멤버 조회
     if (address) {
@@ -83,8 +117,8 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // 전체 멤버 조회
-    const addresses = SHELL_CLUB_MEMBERS.map(m => m.address.toLowerCase());
+    // 전체 멤버 조회 (하드코딩 + DB 승인)
+    const addresses = allMembers.map(m => m.address.toLowerCase());
     
     // 각 멤버의 최신 데이터
     const { data: latestData, error } = await supabase
@@ -116,7 +150,7 @@ export async function GET(request: NextRequest) {
     );
 
     // 멤버 데이터 생성 (지분율은 총 발행량 대비)
-    const members = SHELL_CLUB_MEMBERS.map(m => {
+    const members = allMembers.map(m => {
       const data = memberLatest[m.address.toLowerCase()];
       const amount = data ? Number(data.shell_amount) : 0;
       const value = data ? Number(data.shell_value) : 0;

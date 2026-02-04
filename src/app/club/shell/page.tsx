@@ -56,8 +56,14 @@ export default function ShellClubPage() {
   };
 
   const formatCompact = (num: number) => {
-    if (num >= 1_000_000) return `${Math.round(num / 1_000_000)}M`;
-    if (num >= 1_000) return `${Math.round(num / 1_000)}K`;
+    if (num >= 1_000_000) {
+      const val = num / 1_000_000;
+      return val % 1 === 0 ? `${val}M` : `${val.toFixed(1)}M`;
+    }
+    if (num >= 1_000) {
+      const val = num / 1_000;
+      return val % 1 === 0 ? `${val}K` : `${val.toFixed(1)}K`;
+    }
     return num.toString();
   };
 

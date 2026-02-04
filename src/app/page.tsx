@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Loader2, Flame, ClipboardPaste } from 'lucide-react';
+import { Loader2, Flame } from 'lucide-react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { useState, useMemo, useEffect, Suspense } from 'react';
@@ -775,7 +775,6 @@ function HomeContent() {
                               />
                               <Button
                                 type="button"
-                                variant="outline"
                                 onClick={async () => {
                                   try {
                                     const text = await navigator.clipboard.readText();
@@ -784,9 +783,9 @@ function HomeContent() {
                                     toast({ title: '붙여넣기 권한이 필요합니다', variant: 'destructive' });
                                   }
                                 }}
-                                className="border-slate-600 text-slate-300 hover:bg-slate-700 px-3"
+                                className="bg-slate-600 hover:bg-slate-500 text-white text-sm px-3"
                               >
-                                <ClipboardPaste className="w-4 h-4" />
+                                붙여넣기
                               </Button>
                             </div>
                           </div>

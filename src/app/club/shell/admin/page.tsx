@@ -3,7 +3,7 @@
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Loader2, Check, X, Trash2, Lock } from 'lucide-react';
+import { ArrowLeft, Loader2, Check, X, Trash2, Lock, LogOut } from 'lucide-react';
 import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
@@ -255,14 +255,13 @@ export default function ShellClubAdminPage() {
                 <p className="text-sm text-slate-400">{session?.user?.email}</p>
               </div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
+            <button
               onClick={() => signOut({ callbackUrl: '/club/shell/admin' })}
-              className="border-red-600/50 text-red-400 hover:bg-red-500/10"
+              className="flex items-center gap-1 text-slate-400 hover:text-white text-sm transition-colors"
             >
-              로그아웃
-            </Button>
+              <LogOut className="w-4 h-4" />
+              <span>로그아웃</span>
+            </button>
           </div>
         </div>
       </header>

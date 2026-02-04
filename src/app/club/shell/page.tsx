@@ -130,27 +130,25 @@ export default function ShellClubPage() {
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 md:px-6 py-6 md:py-10">
         {/* 통계 카드 */}
-        <Card className="bg-slate-800/50 border-slate-700/50 px-4 py-3 mb-6">
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="flex items-center gap-2">
-              <span className="text-xs md:text-sm text-slate-400">홀더 보유량</span>
-              <span className="text-base md:text-lg font-bold text-emerald-400">
+        <Card className="bg-slate-800/50 border-slate-700/50 p-4 md:p-6 mb-6">
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <p className="text-xs md:text-sm text-slate-400 mb-1">홀더 보유량</p>
+              <p className="text-xl md:text-2xl font-bold text-emerald-400">
                 {clubData ? formatNumber(clubData.totalAmount) : '-'}
-              </span>
+              </p>
             </div>
-            <div className="h-4 w-px bg-slate-600 hidden sm:block" />
-            <div className="flex items-center gap-2">
-              <span className="text-xs md:text-sm text-slate-400">보유가치</span>
-              <span className="text-base md:text-lg font-bold text-white">
+            <div>
+              <p className="text-xs md:text-sm text-slate-400 mb-1">홀더 보유가치</p>
+              <p className="text-xl md:text-2xl font-bold text-white">
                 {clubData?.totalValue ? `$${Math.floor(clubData.totalValue).toLocaleString()}` : '-'}
-              </span>
+              </p>
             </div>
-            <div className="h-4 w-px bg-slate-600 hidden sm:block" />
-            <div className="flex items-center gap-2">
-              <span className="text-xs md:text-sm text-slate-400">멤버</span>
-              <span className="text-base md:text-lg font-bold text-white">
+            <div>
+              <p className="text-xs md:text-sm text-slate-400 mb-1">멤버 수</p>
+              <p className="text-xl md:text-2xl font-bold text-white">
                 {SHELL_CLUB_MEMBERS.length}명
-              </span>
+              </p>
             </div>
           </div>
         </Card>

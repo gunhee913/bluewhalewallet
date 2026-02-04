@@ -115,19 +115,19 @@ export default function ShellClubPage() {
         {/* 통계 카드 */}
         <Card className="bg-slate-800/50 border-slate-700/50 p-4 md:p-6 mb-6">
           <div className="grid grid-cols-3 gap-4">
-            <div>
+            <div className="text-center">
               <p className="text-xs md:text-sm text-slate-400 mb-1">멤버 보유량</p>
               <p className="text-xl md:text-2xl font-bold text-emerald-400">
                 {clubData ? formatNumber(clubData.totalAmount) : '-'}
               </p>
             </div>
-            <div>
+            <div className="text-center">
               <p className="text-xs md:text-sm text-slate-400 mb-1">멤버 보유가치</p>
               <p className="text-xl md:text-2xl font-bold text-white">
                 {clubData?.totalValue ? `$${Math.floor(clubData.totalValue).toLocaleString()}` : '-'}
               </p>
             </div>
-            <div>
+            <div className="text-center">
               <p className="text-xs md:text-sm text-slate-400 mb-1">멤버 수</p>
               <p className="text-xl md:text-2xl font-bold text-white">
                 {SHELL_CLUB_MEMBERS.length}명

@@ -3,13 +3,13 @@
 import { Card } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Loader2, Flame } from 'lucide-react';
@@ -750,42 +750,40 @@ function HomeContent() {
                     >
                       분석
                     </Link>
-                    <Dialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen}>
-                      <DialogTrigger asChild>
+                    <Sheet open={joinDialogOpen} onOpenChange={setJoinDialogOpen}>
+                      <SheetTrigger asChild>
                         <button className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-md transition-all duration-200 font-medium text-center">
                           가입
                         </button>
-                      </DialogTrigger>
-                      <DialogContent className="bg-slate-800 border-slate-700">
-                        <DialogHeader>
-                          <DialogTitle className="text-white">SHELL CLUB 가입</DialogTitle>
-                          <DialogDescription className="text-slate-400">
+                      </SheetTrigger>
+                      <SheetContent side="bottom" className="bg-slate-800 border-slate-700 rounded-t-2xl">
+                        <SheetHeader className="text-left">
+                          <SheetTitle className="text-white">SHELL CLUB 가입</SheetTitle>
+                          <SheetDescription className="text-slate-400">
                             1억개/10원 목표 쉘 홀더 클럽에 가입하세요
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4 pt-4">
+                          </SheetDescription>
+                        </SheetHeader>
+                        <div className="space-y-4 pt-4 pb-6">
                           <div>
                             <label className="text-sm text-slate-400 mb-2 block">지갑 주소</label>
-                            <div className="flex gap-2">
-                              <Input
-                                placeholder="0x..."
-                                value={joinAddress}
-                                onChange={(e) => setJoinAddress(e.target.value)}
-                                className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-base"
-                              />
-                            </div>
+                            <Input
+                              placeholder="0x..."
+                              value={joinAddress}
+                              onChange={(e) => setJoinAddress(e.target.value)}
+                              className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-base"
+                            />
                           </div>
                           <Button
                             onClick={handleJoinSubmit}
                             disabled={joinLoading}
-                            className="w-full bg-emerald-600 hover:bg-emerald-500"
+                            className="w-full bg-emerald-600 hover:bg-emerald-500 h-12 text-base"
                           >
                             {joinLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                             {joinLoading ? '신청 중...' : '가입 신청'}
                           </Button>
                         </div>
-                      </DialogContent>
-                    </Dialog>
+                      </SheetContent>
+                    </Sheet>
                   </div>
                 </div>
               </div>

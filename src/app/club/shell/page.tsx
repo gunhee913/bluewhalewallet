@@ -255,18 +255,18 @@ export default function ShellClubPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-slate-700">
-                    <th className="text-left py-3 px-2 text-xs md:text-sm text-slate-400 font-medium">지갑</th>
-                    <th className="text-right py-3 px-2 text-xs md:text-sm text-slate-400 font-medium">보유량</th>
-                    <th className="text-right py-3 px-2 text-xs md:text-sm text-slate-400 font-medium">보유가치</th>
-                    <th className="text-right py-3 px-2 text-xs md:text-sm text-slate-400 font-medium">지분율</th>
-                    <th className="text-right py-3 px-2 text-xs md:text-sm text-slate-400 font-medium">1억 달성</th>
-                    <th className="text-center py-3 px-2 text-xs md:text-sm text-slate-400 font-medium">액션</th>
+                    <th className="text-left py-3 px-3 text-xs md:text-sm text-slate-400 font-medium whitespace-nowrap">지갑</th>
+                    <th className="text-right py-3 px-3 text-xs md:text-sm text-slate-400 font-medium whitespace-nowrap">보유량</th>
+                    <th className="text-right py-3 px-3 text-xs md:text-sm text-slate-400 font-medium whitespace-nowrap">보유가치</th>
+                    <th className="text-right py-3 px-3 text-xs md:text-sm text-slate-400 font-medium whitespace-nowrap">지분율</th>
+                    <th className="text-right py-3 px-3 text-xs md:text-sm text-slate-400 font-medium whitespace-nowrap">1억 달성</th>
+                    <th className="text-center py-3 px-3 text-xs md:text-sm text-slate-400 font-medium whitespace-nowrap">액션</th>
                   </tr>
                 </thead>
                 <tbody>
                   {clubData?.members.map((member) => (
                     <tr key={member.address} className="border-b border-slate-700/50 hover:bg-slate-700/30">
-                      <td className="py-3 px-2">
+                      <td className="py-3 px-3 whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           <span className="text-xs md:text-sm text-white font-mono">
                             {formatAddress(member.address)}
@@ -281,16 +281,16 @@ export default function ShellClubPage() {
                           </a>
                         </div>
                       </td>
-                      <td className="text-right py-3 px-2 text-xs md:text-sm text-emerald-400 font-medium">
+                      <td className="text-right py-3 px-3 text-xs md:text-sm text-emerald-400 font-medium whitespace-nowrap">
                         {formatNumber(member.amount)}
                       </td>
-                      <td className="text-right py-3 px-2 text-xs md:text-sm text-white">
+                      <td className="text-right py-3 px-3 text-xs md:text-sm text-white whitespace-nowrap">
                         ${Math.floor(member.value).toLocaleString()}
                       </td>
-                      <td className="text-right py-3 px-2 text-xs md:text-sm text-slate-300">
-                        {member.share.toFixed(1)}%
+                      <td className="text-right py-3 px-3 text-xs md:text-sm text-slate-300 whitespace-nowrap">
+                        {member.share.toFixed(4)}%
                       </td>
-                      <td className="text-right py-3 px-2">
+                      <td className="text-right py-3 px-3 whitespace-nowrap">
                         <div className="flex items-center justify-end gap-2">
                           <div className="w-16 h-2 bg-slate-700 rounded-full overflow-hidden">
                             <div 
@@ -299,11 +299,11 @@ export default function ShellClubPage() {
                             />
                           </div>
                           <span className={`text-xs ${member.progress >= 100 ? 'text-emerald-400' : 'text-amber-400'}`}>
-                            {member.progress >= 100 ? '✓' : `${member.progress.toFixed(0)}%`}
+                            {member.progress >= 100 ? '✓' : `${member.progress.toFixed(2)}%`}
                           </span>
                         </div>
                       </td>
-                      <td className="text-center py-3 px-2">
+                      <td className="text-center py-3 px-3 whitespace-nowrap">
                         <Link
                           href={`/club/shell/${member.address}`}
                           className="px-3 py-1 bg-slate-600 hover:bg-slate-500 text-white text-xs rounded transition-colors"

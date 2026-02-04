@@ -19,6 +19,17 @@ const SHELL_CLUB_MEMBERS = [
 
 const TARGET_AMOUNT = 100_000_000; // 1억개
 
+// SHELL 총 발행량 가져오기
+async function getShellTotalSupply(supabase: ReturnType<typeof getSupabase>): Promise<number> {
+  const { data } = await supabase
+    .from('token_info')
+    .select('total_supply')
+    .eq('token_name', 'SHELL')
+    .single();
+  
+  return data?.total_supply || 10_000_000_000; // 기본값 100억
+}
+
 // GET: SHELL CLUB 데이터 조회
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -27,6 +38,9 @@ export async function GET(request: NextRequest) {
 
   try {
     const supabase = getSupabase();
+
+    // SHELL 총 발행량 가져오기
+    const shellTotalSupply = await getShellTotalSupply(supabase);
 
     // 특정 멤버 조회
     if (address) {
@@ -44,16 +58,8 @@ export async function GET(request: NextRequest) {
 
       // 최신 데이터
       const latest = data?.[0];
-      
-      // 전체 합계 계산 (지분율 계산용)
-      const { data: allLatest } = await supabase
-        .from('shell_club_holdings')
-        .select('shell_amount')
-        .eq('recorded_at', latest?.recorded_at || new Date().toISOString().split('T')[0]);
-      
-      const totalAmount = allLatest?.reduce((sum, item) => sum + Number(item.shell_amount), 0) || 0;
 
-      // 히스토리 데이터 가공
+      // 히스토리 데이터 가공 (지분율은 총 발행량 대비)
       const history = (data || []).map((item, index, arr) => {
         const prev = arr[index + 1];
         const change = prev ? Number(item.shell_amount) - Number(prev.shell_amount) : 0;
@@ -67,7 +73,7 @@ export async function GET(request: NextRequest) {
           change,
           changeValue,
           value: Number(item.shell_value),
-          share: totalAmount > 0 ? (Number(item.shell_amount) / totalAmount) * 100 : 0,
+          share: shellTotalSupply > 0 ? (Number(item.shell_amount) / shellTotalSupply) * 100 : 0,
         };
       }).reverse();
 
@@ -75,7 +81,7 @@ export async function GET(request: NextRequest) {
         success: true,
         currentAmount: latest ? Number(latest.shell_amount) : 0,
         currentValue: latest ? Number(latest.shell_value) : 0,
-        share: totalAmount > 0 && latest ? (Number(latest.shell_amount) / totalAmount) * 100 : 0,
+        share: shellTotalSupply > 0 && latest ? (Number(latest.shell_amount) / shellTotalSupply) * 100 : 0,
         progress: latest ? (Number(latest.shell_amount) / TARGET_AMOUNT) * 100 : 0,
         history,
       });
@@ -113,7 +119,7 @@ export async function GET(request: NextRequest) {
       (sum, item) => sum + Number(item.shell_value), 0
     );
 
-    // 멤버 데이터 생성
+    // 멤버 데이터 생성 (지분율은 총 발행량 대비)
     const members = SHELL_CLUB_MEMBERS.map(m => {
       const data = memberLatest[m.address.toLowerCase()];
       const amount = data ? Number(data.shell_amount) : 0;
@@ -124,7 +130,7 @@ export async function GET(request: NextRequest) {
         address: m.address,
         amount,
         value,
-        share: totalAmount > 0 ? (amount / totalAmount) * 100 : 0,
+        share: shellTotalSupply > 0 ? (amount / shellTotalSupply) * 100 : 0,
         progress: (amount / TARGET_AMOUNT) * 100,
       };
     });

@@ -57,6 +57,11 @@ const BTCB_XAUT_WALLET = '0xAFa948cf1e722E83572068A826f146Fbe134cF77';
 const BTCB_XAUT_START_DATE = '2026-02-02';
 const BTCB_XAUT_START_ASSETS = 1003;
 
+// SHELL CLUB 멤버 지갑들
+const SHELL_CLUB_MEMBERS: { name: string; address: string }[] = [
+  // TODO: 멤버 지갑 주소 추가
+];
+
 interface WalletInfo {
   name: string;
   address: string;
@@ -348,13 +353,17 @@ function WalletCard({ wallet, totalAssets, fundDetails, aquaFairPrice }: WalletC
 function HomeContent() {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab');
-  const [selectedTab, setSelectedTab] = useState<'wallet' | 'token' | 'lab'>('wallet');
+  const [selectedTab, setSelectedTab] = useState<'wallet' | 'token' | 'club' | 'lab'>('wallet');
 
   // 페이지 로드 시 sessionStorage에서 탭 상태 복원
   useEffect(() => {
     // URL 파라미터가 있으면 우선
     if (tabParam === 'token') {
       setSelectedTab('token');
+      return;
+    }
+    if (tabParam === 'club') {
+      setSelectedTab('club');
       return;
     }
     if (tabParam === 'lab') {
@@ -364,13 +373,13 @@ function HomeContent() {
     
     // sessionStorage에서 마지막 탭 상태 복원
     const savedTab = sessionStorage.getItem('lastTab');
-    if (savedTab === 'token' || savedTab === 'wallet' || savedTab === 'lab') {
+    if (savedTab === 'token' || savedTab === 'wallet' || savedTab === 'club' || savedTab === 'lab') {
       setSelectedTab(savedTab);
     }
   }, [tabParam]);
 
   // 탭 변경 핸들러
-  const handleTabChange = (tab: 'wallet' | 'token' | 'lab') => {
+  const handleTabChange = (tab: 'wallet' | 'token' | 'club' | 'lab') => {
     setSelectedTab(tab);
     sessionStorage.setItem('lastTab', tab);
   };
@@ -570,6 +579,16 @@ function HomeContent() {
               토큰
             </button>
             <button
+              onClick={() => handleTabChange('club')}
+              className={`pb-3 text-base md:text-lg font-medium transition-colors ${
+                selectedTab === 'club'
+                  ? 'text-white border-b-2 border-white'
+                  : 'text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              클럽
+            </button>
+            <button
               onClick={() => handleTabChange('lab')}
               className={`pb-3 text-base md:text-lg font-medium transition-colors ${
                 selectedTab === 'lab'
@@ -624,6 +643,56 @@ function HomeContent() {
                 />
               );
             })}
+          </div>
+        )}
+
+        {/* 클럽 탭 */}
+        {selectedTab === 'club' && (
+          <div className="space-y-4">
+            {/* SHELL CLUB 카드 */}
+            <Card className="bg-slate-800/50 border-slate-700/50 hover:bg-slate-800/80 transition-all duration-200 overflow-hidden group">
+              <div className="p-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 mb-4">
+                      <img src="/SHELL.svg" alt="SHELL" className="w-10 h-10 rounded-full" />
+                      <div>
+                        <h2 className="text-lg font-semibold text-white">SHELL CLUB</h2>
+                        <p className="text-xs text-slate-400">1억개 홀더 클럽</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-slate-400">총 보유량:</span>
+                        <span className="text-sm font-medium text-emerald-400">
+                          {SHELL_CLUB_MEMBERS.length > 0 ? '집계 중...' : '-'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-slate-400">총 보유가치:</span>
+                        <span className="text-sm font-medium text-white">
+                          {SHELL_CLUB_MEMBERS.length > 0 ? '집계 중...' : '-'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-slate-400">멤버 수:</span>
+                        <span className="text-sm font-medium text-white">{SHELL_CLUB_MEMBERS.length}명</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <Link
+                      href="/club/shell"
+                      className="px-6 py-2.5 bg-slate-600 hover:bg-slate-500 text-white rounded-md transition-all duration-200 font-medium text-center"
+                    >
+                      분석
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </Card>
           </div>
         )}
 

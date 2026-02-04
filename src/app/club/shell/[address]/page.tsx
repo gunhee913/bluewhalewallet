@@ -22,7 +22,7 @@ const TARGET_AMOUNT = 100_000_000;
 
 // SHELL CLUB 멤버 지갑들
 const SHELL_CLUB_MEMBERS: { name: string; address: string }[] = [
-  // TODO: 멤버 지갑 주소 추가
+  { name: '멤버1', address: '0x22BA71BB6C79cC15f3878f5dFbc262BBB28e7770' },
 ];
 
 interface PageProps {
@@ -38,26 +38,33 @@ export default function ShellMemberPage({ params }: PageProps) {
     m => m.address.toLowerCase() === address.toLowerCase()
   );
 
-  // TODO: API에서 SHELL 보유량 데이터 가져오기
+  // API에서 SHELL 보유량 데이터 가져오기
   const { data: memberData, isLoading } = useQuery({
-    queryKey: ['shell-member', address],
+    queryKey: ['shell-member', address, timeFrame],
     queryFn: async () => {
-      // 임시 데이터
-      return {
-        currentAmount: 0,
-        currentValue: 0,
-        share: 0,
-        progress: 0,
-        history: [] as { 
-          date: string; 
-          fullDate: string;
-          amount: number; 
-          change: number;
-          changeValue: number;
-          value: number;
-          share: number;
-        }[],
-      };
+      const response = await fetch(`/api/club/shell?address=${address}&timeFrame=${timeFrame}`);
+      if (!response.ok) throw new Error('Failed to fetch');
+      const data = await response.json();
+      
+      if (!data.success) {
+        return {
+          currentAmount: 0,
+          currentValue: 0,
+          share: 0,
+          progress: 0,
+          history: [] as { 
+            date: string; 
+            fullDate: string;
+            amount: number; 
+            change: number;
+            changeValue: number;
+            value: number;
+            share: number;
+          }[],
+        };
+      }
+      
+      return data;
     },
     staleTime: 30 * 60 * 1000,
   });

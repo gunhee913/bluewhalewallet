@@ -59,7 +59,7 @@ const BTCB_XAUT_START_ASSETS = 1003;
 
 // SHELL CLUB 멤버 지갑들
 const SHELL_CLUB_MEMBERS: { name: string; address: string }[] = [
-  // TODO: 멤버 지갑 주소 추가
+  { name: '멤버1', address: '0x22BA71BB6C79cC15f3878f5dFbc262BBB28e7770' },
 ];
 
 interface WalletInfo {
@@ -404,6 +404,18 @@ function HomeContent() {
     staleTime: 60 * 60 * 1000, // 1시간
   });
 
+  // SHELL CLUB 데이터 로드
+  const { data: shellClubData, isLoading: clubLoading } = useQuery({
+    queryKey: ['shell-club'],
+    queryFn: async () => {
+      const response = await fetch('/api/club/shell');
+      if (!response.ok) throw new Error('Failed to fetch');
+      return response.json();
+    },
+    staleTime: 30 * 60 * 1000,
+    enabled: selectedTab === 'club',
+  });
+
   const parseAmount = (assets: string | null): number => {
     if (!assets) return 0;
     return parseFloat(assets.replace(/[$,]/g, '')) || 0;
@@ -658,7 +670,7 @@ function HomeContent() {
                       <img src="/SHELL.svg" alt="SHELL" className="w-10 h-10 rounded-full" />
                       <div>
                         <h2 className="text-lg font-semibold text-white">SHELL CLUB</h2>
-                        <p className="text-xs text-slate-400">1억개 홀더 클럽</p>
+                        <p className="text-xs text-slate-400">1억개 목표 홀더 클럽</p>
                       </div>
                     </div>
 
@@ -666,13 +678,17 @@ function HomeContent() {
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-slate-400">총 보유량:</span>
                         <span className="text-sm font-medium text-emerald-400">
-                          {SHELL_CLUB_MEMBERS.length > 0 ? '집계 중...' : '-'}
+                          {clubLoading ? '로딩...' : 
+                           shellClubData?.totalAmount ? 
+                             `${(shellClubData.totalAmount / 1_000_000).toFixed(1)}M SHELL` : '-'}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-slate-400">총 보유가치:</span>
                         <span className="text-sm font-medium text-white">
-                          {SHELL_CLUB_MEMBERS.length > 0 ? '집계 중...' : '-'}
+                          {clubLoading ? '로딩...' : 
+                           shellClubData?.totalValue ? 
+                             `$${shellClubData.totalValue.toLocaleString()}` : '-'}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">

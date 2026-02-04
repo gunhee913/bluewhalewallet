@@ -19,7 +19,7 @@ const PUMPSPACE_BASE_URL = 'https://pumpspace.io/wallet/detail?account=';
 
 // SHELL CLUB 멤버 지갑들
 const SHELL_CLUB_MEMBERS: { name: string; address: string }[] = [
-  // TODO: 멤버 지갑 주소 추가
+  { name: '멤버1', address: '0x22BA71BB6C79cC15f3878f5dFbc262BBB28e7770' },
 ];
 
 // 목표 보유량 (1억개)
@@ -28,23 +28,31 @@ const TARGET_AMOUNT = 100_000_000;
 export default function ShellClubPage() {
   const [timeFrame, setTimeFrame] = useState<'daily' | 'weekly' | 'monthly'>('daily');
 
-  // TODO: API에서 SHELL 보유량 데이터 가져오기
+  // API에서 SHELL 보유량 데이터 가져오기
   const { data: clubData, isLoading } = useQuery({
     queryKey: ['shell-club'],
     queryFn: async () => {
-      // 임시 데이터
-      return {
-        totalAmount: 0,
-        totalValue: 0,
-        members: SHELL_CLUB_MEMBERS.map(m => ({
-          ...m,
-          amount: 0,
-          value: 0,
-          share: 0,
-          progress: 0,
-        })),
-        history: [] as { date: string; amount: number }[],
-      };
+      const response = await fetch('/api/club/shell');
+      if (!response.ok) throw new Error('Failed to fetch');
+      const data = await response.json();
+      
+      if (!data.success) {
+        // API 실패 시 기본값 반환
+        return {
+          totalAmount: 0,
+          totalValue: 0,
+          members: SHELL_CLUB_MEMBERS.map(m => ({
+            ...m,
+            amount: 0,
+            value: 0,
+            share: 0,
+            progress: 0,
+          })),
+          history: [] as { date: string; amount: number }[],
+        };
+      }
+      
+      return data;
     },
     staleTime: 30 * 60 * 1000,
   });
@@ -125,7 +133,7 @@ export default function ShellClubPage() {
             <img src="/SHELL.svg" alt="SHELL" className="w-10 h-10 rounded-full" />
             <div>
               <h1 className="text-xl md:text-2xl font-bold text-white">SHELL CLUB</h1>
-              <p className="text-sm text-slate-400">1억개 홀더 클럽 분석</p>
+              <p className="text-sm text-slate-400">1억개 목표 홀더 클럽 분석</p>
             </div>
           </div>
         </div>

@@ -270,7 +270,10 @@ export default function ShellClubPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {clubData?.members.map((member) => (
+                  {clubData?.members
+                    .slice()
+                    .sort((a, b) => b.amount - a.amount)
+                    .map((member) => (
                     <tr key={member.address} className="border-t border-slate-700/50 hover:bg-slate-700/30">
                       <td className="px-3 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">

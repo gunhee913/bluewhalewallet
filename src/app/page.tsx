@@ -389,7 +389,7 @@ function HomeContent() {
       if (data.success) {
         setJoinDialogOpen(false);
         setJoinAddress('');
-        toast({ title: '🎉 가입 신청이 완료되었습니다!', description: '승인 후 멤버로 등록됩니다.', variant: 'success' });
+        toast({ title: '가입 신청 완료', description: '승인 후 멤버로 등록됩니다.', variant: 'success' });
       } else {
         toast({ title: data.error || '신청 실패', variant: 'destructive' });
       }

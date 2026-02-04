@@ -771,22 +771,8 @@ function HomeContent() {
                                 placeholder="0x..."
                                 value={joinAddress}
                                 onChange={(e) => setJoinAddress(e.target.value)}
-                                className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-base flex-1"
+                                className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-base"
                               />
-                              <Button
-                                type="button"
-                                onClick={async () => {
-                                  try {
-                                    const text = await navigator.clipboard.readText();
-                                    setJoinAddress(text);
-                                  } catch {
-                                    toast({ title: '붙여넣기 권한이 필요합니다', variant: 'destructive' });
-                                  }
-                                }}
-                                className="bg-slate-600 hover:bg-slate-500 text-white text-sm px-3"
-                              >
-                                붙여넣기
-                              </Button>
                             </div>
                           </div>
                           <Button

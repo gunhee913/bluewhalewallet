@@ -251,7 +251,7 @@ export default function ShellClubPage() {
               아직 등록된 멤버가 없습니다
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto scrollbar-thin">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-slate-700">

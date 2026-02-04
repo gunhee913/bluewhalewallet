@@ -292,7 +292,7 @@ export default function ShellMemberPage({ params }: PageProps) {
               히스토리 데이터가 없습니다
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto scrollbar-thin">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-slate-700">

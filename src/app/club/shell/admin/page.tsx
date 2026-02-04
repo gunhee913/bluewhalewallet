@@ -3,11 +3,11 @@
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Loader2, Check, X, Trash2, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Loader2, Check, X, Trash2, RefreshCw, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession, signIn } from 'next-auth/react';
 import { useToast } from '@/hooks/use-toast';
 
 interface Application {
@@ -24,6 +24,35 @@ export default function ShellClubAdminPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [editingName, setEditingName] = useState<Record<string, string>>({});
+  
+  // 로그인 폼 상태
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginError, setLoginError] = useState('');
+
+  // 로그인 처리
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginLoading(true);
+    setLoginError('');
+
+    try {
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setLoginError('이메일 또는 비밀번호가 올바르지 않습니다');
+      }
+    } catch {
+      setLoginError('로그인 중 오류가 발생했습니다');
+    } finally {
+      setLoginLoading(false);
+    }
+  };
 
   // 신청 목록 조회
   const { data, isLoading, error, refetch } = useQuery({
@@ -117,15 +146,71 @@ export default function ShellClubAdminPage() {
     );
   }
 
-  // 미로그인
+  // 미로그인 - 로그인 폼 표시
   if (sessionStatus === 'unauthenticated') {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-        <Card className="bg-slate-800 border-slate-700 p-8 text-center">
-          <p className="text-white mb-4">로그인이 필요합니다</p>
-          <Link href="/" className="text-emerald-400 hover:underline">
-            홈으로 돌아가기
-          </Link>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md bg-slate-800/50 border-slate-700/50 p-6 md:p-8">
+          <div className="text-center mb-6">
+            <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Lock className="w-8 h-8 text-emerald-400" />
+            </div>
+            <h1 className="text-2xl font-bold text-white">관리자 로그인</h1>
+            <p className="text-slate-400 text-sm mt-2">SHELL CLUB 관리 페이지</p>
+          </div>
+
+          {loginError && (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mb-4">
+              <p className="text-red-400 text-sm text-center">{loginError}</p>
+            </div>
+          )}
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="text-sm text-slate-400 mb-1 block">이메일</label>
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="admin@example.com"
+                required
+                className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-500"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm text-slate-400 mb-1 block">비밀번호</label>
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-500"
+              />
+            </div>
+
+            <Button
+              type="submit"
+              disabled={loginLoading}
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              {loginLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  로그인 중...
+                </>
+              ) : (
+                '로그인'
+              )}
+            </Button>
+          </form>
+
+          <div className="mt-6 text-center">
+            <Link href="/club/shell" className="text-slate-400 hover:text-white text-sm transition-colors">
+              ← 클럽 페이지로 돌아가기
+            </Link>
+          </div>
         </Card>
       </div>
     );

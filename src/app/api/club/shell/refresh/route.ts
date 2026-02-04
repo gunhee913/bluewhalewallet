@@ -25,72 +25,87 @@ function getSupabase() {
 
 // SHELL 토큰 보유량 추출
 async function extractShellAmount(page: Page): Promise<{ amount: number; value: number; price: number } | null> {
-  // 페이지 로드 후 8초 대기
-  await new Promise((r) => setTimeout(r, 8000));
+  // 페이지 로드 후 10초 대기 (동적 콘텐츠 로딩)
+  await new Promise((r) => setTimeout(r, 10000));
   
-  // 최대 10초 동안 폴링 (1초 간격)
-  for (let attempt = 0; attempt < 10; attempt++) {
+  // 최대 15초 동안 폴링 (1초 간격)
+  for (let attempt = 0; attempt < 15; attempt++) {
     try {
       const result = await page.evaluate(() => {
-        const body = document.body.innerText;
-        const lines = body.split('\n').map(l => l.trim());
+        // 방법 1: 테이블/리스트에서 SHELL 행 찾기
+        const allElements = document.querySelectorAll('*');
+        let shellRow: Element | null = null;
         
-        // SHELL 토큰 찾기
-        for (let i = 0; i < lines.length; i++) {
-          const line = lines[i];
-          
-          // "SHELL" 이라는 텍스트가 있는 줄 찾기
-          if (line === 'SHELL' || line.match(/^SHELL$/i)) {
-            // SHELL 줄 근처에서 수량과 가치 찾기
-            let amount = 0;
-            let value = 0;
-            let price = 0;
-            
-            // 이전/이후 5줄 내에서 숫자 찾기
-            for (let j = Math.max(0, i - 5); j < Math.min(lines.length, i + 10); j++) {
-              const searchLine = lines[j];
-              
-              // 가격 찾기 (예: $0.0005)
-              const priceMatch = searchLine.match(/\$\s*(0\.\d+)/);
-              if (priceMatch) {
-                price = parseFloat(priceMatch[1]);
+        // SHELL 텍스트를 포함하는 요소 찾기
+        for (const el of allElements) {
+          const text = el.textContent?.trim() || '';
+          // 정확히 "SHELL"만 포함하는 작은 요소 찾기 (토큰 이름 셀)
+          if (text === 'SHELL' && el.tagName !== 'BODY' && el.tagName !== 'HTML') {
+            // 부모 행(row) 찾기 - tr, div 등
+            let parent = el.parentElement;
+            for (let i = 0; i < 5 && parent; i++) {
+              const parentText = parent.textContent || '';
+              // SHELL과 숫자가 함께 있는 부모 찾기
+              if (parentText.includes('SHELL') && /[\d,]+/.test(parentText)) {
+                shellRow = parent;
+                break;
               }
-              
-              // 수량 찾기 (큰 숫자, 콤마 포함 가능)
-              const amountMatch = searchLine.match(/^([\d,]+(?:\.\d+)?)$/);
-              if (amountMatch) {
-                const num = parseFloat(amountMatch[1].replace(/,/g, ''));
-                // 100 이상의 큰 숫자는 보유량으로 간주
-                if (num >= 100 && num > amount) {
-                  amount = num;
-                }
-              }
-              
-              // 가치 찾기 (예: $1,234.56)
-              const valueMatch = searchLine.match(/\$\s*([\d,]+(?:\.\d+)?)/);
-              if (valueMatch) {
-                const val = parseFloat(valueMatch[1].replace(/,/g, ''));
-                // $10 이상이면 가치로 간주
-                if (val >= 10 && val > value && val < 1000000000) {
-                  value = val;
-                }
-              }
+              parent = parent.parentElement;
             }
-            
-            if (amount > 0) {
-              return { amount, value, price };
-            }
+            if (shellRow) break;
           }
         }
         
-        // 정규식으로 SHELL 근처 찾기
-        const shellPattern = /SHELL[\s\S]{0,200}?([\d,]+(?:\.\d+)?)\s*(?:SHELL)?[\s\S]{0,50}?\$\s*([\d,]+(?:\.\d+)?)/i;
-        const match = body.match(shellPattern);
-        if (match) {
-          const amount = parseFloat(match[1].replace(/,/g, ''));
-          const value = parseFloat(match[2].replace(/,/g, ''));
-          if (amount >= 100) {
-            return { amount, value, price: value / amount };
+        if (shellRow) {
+          const rowText = shellRow.textContent || '';
+          console.log('Found SHELL row:', rowText);
+          
+          // 숫자들 추출 (콤마 포함)
+          const numbers = rowText.match(/[\d,]+\.?\d*/g) || [];
+          const parsedNumbers = numbers
+            .map(n => parseFloat(n.replace(/,/g, '')))
+            .filter(n => !isNaN(n) && n > 0)
+            .sort((a, b) => b - a); // 큰 순서로 정렬
+          
+          console.log('Parsed numbers:', parsedNumbers);
+          
+          // 가장 큰 숫자가 보유량, 두 번째가 가치일 가능성
+          if (parsedNumbers.length >= 1) {
+            // 10000 이상이면 보유량으로 간주
+            const amount = parsedNumbers.find(n => n >= 10000) || parsedNumbers[0];
+            // $로 시작하는 가치 찾기
+            const valueMatch = rowText.match(/\$\s*([\d,]+\.?\d*)/);
+            const value = valueMatch ? parseFloat(valueMatch[1].replace(/,/g, '')) : 0;
+            const price = value > 0 && amount > 0 ? value / amount : 0;
+            
+            return { amount, value, price };
+          }
+        }
+        
+        // 방법 2: 전체 텍스트에서 SHELL 패턴 찾기
+        const body = document.body.innerText;
+        const lines = body.split('\n').map(l => l.trim()).filter(l => l);
+        
+        for (let i = 0; i < lines.length; i++) {
+          if (lines[i] === 'SHELL') {
+            // SHELL 이후 10줄 내에서 큰 숫자 찾기
+            const nearbyText = lines.slice(i, i + 10).join(' ');
+            console.log('SHELL nearby:', nearbyText);
+            
+            const numbers = nearbyText.match(/[\d,]+\.?\d*/g) || [];
+            const parsedNumbers = numbers
+              .map(n => parseFloat(n.replace(/,/g, '')))
+              .filter(n => !isNaN(n) && n >= 1000)
+              .sort((a, b) => b - a);
+            
+            if (parsedNumbers.length > 0) {
+              const amount = parsedNumbers[0];
+              const valueMatch = nearbyText.match(/\$\s*([\d,]+\.?\d*)/);
+              const value = valueMatch ? parseFloat(valueMatch[1].replace(/,/g, '')) : 0;
+              const price = value > 0 && amount > 0 ? value / amount : 0;
+              
+              return { amount, value, price };
+            }
           }
         }
         

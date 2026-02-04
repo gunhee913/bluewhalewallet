@@ -99,6 +99,10 @@
     {
       "path": "/api/token/burn/save",
       "schedule": "0 0-14,15,22-23 * * *"
+    },
+    {
+      "path": "/api/club/shell/refresh",
+      "schedule": "0 3,15 * * *"
     }
   ]
 }

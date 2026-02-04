@@ -269,7 +269,7 @@ export default function ShellClubPage() {
                       <td className="py-3 px-2">
                         <div className="flex items-center gap-2">
                           <span className="text-xs md:text-sm text-white font-mono">
-                            {member.name || formatAddress(member.address)}
+                            {formatAddress(member.address)}
                           </span>
                           <a
                             href={`${PUMPSPACE_BASE_URL}${member.address}`}

@@ -131,15 +131,15 @@ export default function ShellClubPage() {
       <main className="max-w-4xl mx-auto px-4 md:px-6 py-6 md:py-10">
         {/* 통계 카드 */}
         <Card className="bg-slate-800/50 border-slate-700/50 p-4 md:p-6 mb-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div>
-              <p className="text-xs md:text-sm text-slate-400 mb-1">총 보유량</p>
+              <p className="text-xs md:text-sm text-slate-400 mb-1">홀더 보유량</p>
               <p className="text-xl md:text-2xl font-bold text-emerald-400">
                 {clubData ? formatNumber(clubData.totalAmount) : '-'}
               </p>
             </div>
             <div>
-              <p className="text-xs md:text-sm text-slate-400 mb-1">총 보유가치</p>
+              <p className="text-xs md:text-sm text-slate-400 mb-1">홀더 보유가치</p>
               <p className="text-xl md:text-2xl font-bold text-white">
                 {clubData?.totalValue ? `$${Math.floor(clubData.totalValue).toLocaleString()}` : '-'}
               </p>
@@ -148,14 +148,6 @@ export default function ShellClubPage() {
               <p className="text-xs md:text-sm text-slate-400 mb-1">멤버 수</p>
               <p className="text-xl md:text-2xl font-bold text-white">
                 {SHELL_CLUB_MEMBERS.length}명
-              </p>
-            </div>
-            <div>
-              <p className="text-xs md:text-sm text-slate-400 mb-1">평균 보유량</p>
-              <p className="text-xl md:text-2xl font-bold text-white">
-                {clubData && SHELL_CLUB_MEMBERS.length > 0 
-                  ? formatNumber(clubData.totalAmount / SHELL_CLUB_MEMBERS.length) 
-                  : '-'}
               </p>
             </div>
           </div>
@@ -307,7 +299,7 @@ export default function ShellClubPage() {
                               style={{ width: `${Math.min(member.progress, 100)}%` }}
                             />
                           </div>
-                          <span className={`text-sm ${member.progress >= 100 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                          <span className={`w-16 text-right text-sm ${member.progress >= 100 ? 'text-emerald-400' : 'text-amber-400'}`}>
                             {member.progress >= 100 ? '✓' : `${member.progress.toFixed(2)}%`}
                           </span>
                         </div>

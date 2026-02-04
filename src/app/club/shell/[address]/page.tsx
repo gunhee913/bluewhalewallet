@@ -71,10 +71,16 @@ export default function ShellMemberPage({ params }: PageProps) {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
   };
 
-  // 차트 데이터
+  // 차트 데이터 (날짜 형식 변환)
   const chartData = useMemo(() => {
     if (!memberData?.history) return [];
-    return memberData.history;
+    return memberData.history.map(item => {
+      const [, month, day] = item.fullDate.split('-');
+      return {
+        ...item,
+        date: `${parseInt(month)}/${parseInt(day)}`,
+      };
+    });
   }, [memberData?.history]);
 
   // Y축 Nice Number 계산
@@ -205,88 +211,104 @@ export default function ShellMemberPage({ params }: PageProps) {
           </div>
         </Card>
 
-        {/* 차트 섹션 */}
-        <Card className="bg-slate-800/50 border-slate-700/50 p-4 md:p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base md:text-lg font-semibold text-white">보유량 추이</h3>
-            <div className="flex gap-2">
-              {(['daily', 'weekly', 'monthly'] as const).map((tf) => (
-                <button
-                  key={tf}
-                  onClick={() => setTimeFrame(tf)}
-                  className={`px-3 py-1 text-xs md:text-sm rounded-md transition-colors ${
-                    timeFrame === tf
-                      ? 'bg-slate-600 text-white'
-                      : 'bg-slate-700/50 text-slate-400 hover:text-white'
-                  }`}
-                >
-                  {timeFrameLabel[tf]}
-                </button>
-              ))}
-            </div>
-          </div>
+        {/* 시간 프레임 탭 */}
+        <div className="flex gap-2 mb-4 md:mb-6">
+          {(['daily', 'weekly', 'monthly'] as const).map((tf) => (
+            <button
+              key={tf}
+              onClick={() => setTimeFrame(tf)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                timeFrame === tf
+                  ? 'bg-emerald-500 text-white'
+                  : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+              }`}
+            >
+              {timeFrameLabel[tf]}
+            </button>
+          ))}
+        </div>
 
-          {isLoading ? (
-            <div className="h-[200px] md:h-[300px] flex items-center justify-center">
+        {/* 차트 */}
+        {isLoading ? (
+          <Card className="bg-slate-800/50 border-slate-700/50 p-4 md:p-6 mb-6">
+            <div className="flex items-center justify-center h-48 md:h-64">
               <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
             </div>
-          ) : chartData.length > 0 ? (
-            <div className="h-[200px] md:h-[300px]">
+          </Card>
+        ) : chartData.length > 0 ? (
+          <Card className="bg-slate-800/50 border-slate-700/50 p-4 md:p-6 mb-6">
+            <h2 className="text-base md:text-lg font-semibold text-white mb-3 md:mb-4">
+              보유량 그래프
+            </h2>
+            <div className="h-48 md:h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData}>
+                <LineChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                   <XAxis 
                     dataKey="date" 
                     stroke="#94a3b8"
                     fontSize={10}
-                    tickMargin={10}
+                    interval={Math.floor(chartData.length / 5)}
+                    tickMargin={8}
                   />
                   <YAxis 
                     stroke="#94a3b8"
-                    fontSize={10}
+                    fontSize={9}
                     tickFormatter={(value) => formatNumber(value)}
-                    width={55}
+                    width={70}
                     domain={yAxisConfig.domain}
                     ticks={yAxisConfig.ticks}
                   />
                   <Tooltip 
                     contentStyle={{ 
                       backgroundColor: '#1e293b', 
-                      border: '1px solid #475569',
+                      border: '1px solid #334155',
                       borderRadius: '8px',
                       fontSize: '12px'
                     }}
-                    formatter={(value: number) => [formatNumber(value) + ' SHELL', '보유량']}
                     labelStyle={{ color: '#94a3b8' }}
+                    labelFormatter={(label, payload) => {
+                      if (payload && payload[0]) {
+                        return payload[0].payload.fullDate;
+                      }
+                      return label;
+                    }}
+                    formatter={(value: number) => [
+                      `${formatNumber(value)} SHELL`,
+                      '보유량'
+                    ]}
                   />
                   <Line 
                     type="monotone" 
                     dataKey="amount" 
-                    stroke="#10b981" 
+                    stroke="#34d399" 
                     strokeWidth={2}
                     dot={false}
-                    activeDot={{ r: 4, fill: '#10b981' }}
+                    activeDot={{ r: 5, fill: '#34d399', stroke: 'none' }}
                   />
                 </LineChart>
               </ResponsiveContainer>
             </div>
-          ) : (
-            <div className="h-[200px] md:h-[300px] flex items-center justify-center text-slate-500">
-              데이터가 없습니다
-            </div>
-          )}
-        </Card>
+          </Card>
+        ) : null}
 
-        {/* 히스토리 테이블 */}
-        <Card className="bg-slate-800/50 border-slate-700/50 p-4 md:p-6">
-          <h3 className="text-base md:text-lg font-semibold text-white mb-4">보유량 히스토리</h3>
+        {/* 보유 현황 테이블 */}
+        <Card className="bg-slate-800/50 border-slate-700/50 overflow-hidden">
+          <div className="p-3 md:p-4 border-b border-slate-700">
+            <h2 className="text-base md:text-lg font-semibold text-white">보유 현황</h2>
+          </div>
           
-          {chartData.length === 0 ? (
-            <div className="text-center py-10 text-slate-500">
-              히스토리 데이터가 없습니다
+          {isLoading ? (
+            <div className="flex items-center justify-center py-10">
+              <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+            </div>
+          ) : chartData.length === 0 ? (
+            <div className="text-center py-10 text-slate-400">
+              <p>아직 기록된 데이터가 없습니다</p>
+              <p className="text-sm mt-1">매일 자정에 데이터가 저장됩니다</p>
             </div>
           ) : (
-            <div className="overflow-x-auto scrollbar-thin">
+            <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-slate-800">
                   <tr>
@@ -299,32 +321,35 @@ export default function ShellMemberPage({ params }: PageProps) {
                   </tr>
                 </thead>
                 <tbody>
-                  {chartData.map((item, index) => (
-                    <tr key={index} className="border-t border-slate-700/50 hover:bg-slate-700/30">
-                      <td className="px-3 py-4 text-sm text-white whitespace-nowrap">
-                        {item.fullDate}
-                      </td>
-                      <td className="text-right px-3 py-4 text-sm text-emerald-400 font-medium whitespace-nowrap">
-                        {formatNumber(item.amount)}
-                      </td>
-                      <td className="text-right px-3 py-4 text-sm whitespace-nowrap">
-                        <span className={item.change >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
-                          {item.change >= 0 ? '+' : ''}{formatNumber(item.change)}
-                        </span>
-                      </td>
-                      <td className="text-right px-3 py-4 text-sm whitespace-nowrap">
-                        <span className={item.changeValue >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
-                          {item.changeValue >= 0 ? '+' : ''}${Math.floor(item.changeValue).toLocaleString()}
-                        </span>
-                      </td>
-                      <td className="text-right px-3 py-4 text-sm text-white whitespace-nowrap">
-                        ${Math.floor(item.value).toLocaleString()}
-                      </td>
-                      <td className="text-right px-3 py-4 text-sm text-slate-300 whitespace-nowrap">
-                        {item.share.toFixed(2)}%
-                      </td>
-                    </tr>
-                  ))}
+                  {chartData.map((item, index) => {
+                    const shortDate = item.fullDate.replace(/^20/, '').replace(/-/g, '.');
+                    return (
+                      <tr key={index} className="border-t border-slate-700/50 hover:bg-slate-700/30">
+                        <td className="px-3 py-4 text-sm text-white whitespace-nowrap">
+                          {shortDate}
+                        </td>
+                        <td className="text-right px-3 py-4 text-sm text-emerald-400 font-medium whitespace-nowrap">
+                          {formatNumber(item.amount)}
+                        </td>
+                        <td className="text-right px-3 py-4 text-sm whitespace-nowrap">
+                          <span className={item.change >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
+                            {item.change >= 0 ? '+' : ''}{formatNumber(item.change)}
+                          </span>
+                        </td>
+                        <td className="text-right px-3 py-4 text-sm whitespace-nowrap">
+                          <span className={item.changeValue >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
+                            {item.changeValue >= 0 ? '+' : ''}${Math.floor(item.changeValue).toLocaleString()}
+                          </span>
+                        </td>
+                        <td className="text-right px-3 py-4 text-sm text-white whitespace-nowrap">
+                          ${Math.floor(item.value).toLocaleString()}
+                        </td>
+                        <td className="text-right px-3 py-4 text-sm text-slate-300 whitespace-nowrap">
+                          {item.share.toFixed(2)}%
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

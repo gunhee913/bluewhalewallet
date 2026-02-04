@@ -107,6 +107,29 @@ export default function ShellMemberPage({ params }: PageProps) {
     return [...chartData].reverse();
   }, [chartData]);
 
+  // Y축 도메인 계산 (변동폭 기준)
+  const yAxisDomain = useMemo(() => {
+    if (chartData.length === 0) return [0, 100];
+    
+    const amounts = chartData.map((d: { amount: number }) => d.amount);
+    const min = Math.min(...amounts);
+    const max = Math.max(...amounts);
+    const range = max - min;
+    
+    const padding = range > 0 ? range * 0.5 : min * 0.05;
+    return [
+      Math.floor(min - padding),
+      Math.ceil(max + padding)
+    ];
+  }, [chartData]);
+
+  // X축 간격 계산
+  const xAxisInterval = useMemo(() => {
+    if (timeFrame === 'daily') return Math.floor(chartData.length / 5);
+    if (timeFrame === 'weekly') return 7;
+    if (timeFrame === 'monthly') return 1;
+    return 0;
+  }, [timeFrame, chartData.length]);
 
   const timeFrameLabel = {
     daily: '일간',
@@ -234,22 +257,21 @@ export default function ShellMemberPage({ params }: PageProps) {
             </h2>
             <div className="h-48 md:h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData} margin={{ top: 5, right: 10, left: 5, bottom: 5 }}>
+                <LineChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                   <XAxis 
                     dataKey="date" 
                     stroke="#94a3b8"
                     fontSize={10}
-                    interval={Math.max(0, Math.floor(chartData.length / 5) - 1)}
+                    interval={xAxisInterval}
                     tickMargin={8}
                   />
                   <YAxis 
                     stroke="#94a3b8"
                     fontSize={9}
                     tickFormatter={(value) => formatNumber(value)}
-                    width={85}
-                    domain={['dataMin * 0.95', 'dataMax * 1.05']}
-                    tickCount={5}
+                    width={70}
+                    domain={yAxisDomain}
                   />
                   <Tooltip 
                     contentStyle={{ 

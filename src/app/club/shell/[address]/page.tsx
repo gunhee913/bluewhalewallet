@@ -327,7 +327,7 @@ export default function ShellMemberPage({ params }: PageProps) {
                         ${Math.floor(item.value).toLocaleString()}
                       </td>
                       <td className="text-right py-3 px-3 text-xs md:text-sm text-slate-300 whitespace-nowrap">
-                        {item.share.toFixed(4)}%
+                        {item.share.toFixed(2)}%
                       </td>
                     </tr>
                   ))}

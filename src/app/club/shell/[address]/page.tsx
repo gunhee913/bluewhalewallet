@@ -83,17 +83,40 @@ export default function ShellMemberPage({ params }: PageProps) {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
   };
 
-  // 차트 데이터 (날짜 형식 변환)
+  // 차트 데이터 (timeFrame에 따른 필터링)
   const chartData = useMemo(() => {
     if (!memberData?.history) return [];
-    return memberData.history.map(item => {
+    
+    let filtered = memberData.history;
+    
+    switch (timeFrame) {
+      case 'weekly':
+        filtered = memberData.history.filter(item => {
+          const date = new Date(item.fullDate);
+          return date.getDay() === 1; // 월요일만
+        });
+        break;
+      case 'monthly':
+        filtered = memberData.history.filter(item => {
+          const date = new Date(item.fullDate);
+          return date.getDate() === 1; // 1일만
+        });
+        break;
+    }
+    
+    return filtered.map(item => {
       const [, month, day] = item.fullDate.split('-');
       return {
         ...item,
         date: `${parseInt(month)}/${parseInt(day)}`,
       };
     });
-  }, [memberData?.history]);
+  }, [memberData?.history, timeFrame]);
+
+  // 테이블용 데이터 (최신 날짜 먼저)
+  const tableData = useMemo(() => {
+    return [...chartData].reverse();
+  }, [chartData]);
 
 
   const timeFrameLabel = {
@@ -300,7 +323,7 @@ export default function ShellMemberPage({ params }: PageProps) {
                   </tr>
                 </thead>
                 <tbody>
-                  {chartData.map((item, index) => {
+                  {tableData.map((item, index) => {
                     const shortDate = item.fullDate.replace(/^20/, '').replace(/-/g, '.');
                     return (
                       <tr key={index} className="border-t border-slate-700/50 hover:bg-slate-700/30">

@@ -71,11 +71,25 @@ export default function ShellClubPage() {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
-  // 차트 데이터 (API에서 이미 변환됨)
+  // 차트 데이터 (timeFrame에 따른 필터링)
   const chartData = useMemo(() => {
     if (!clubData?.history) return [];
-    return clubData.history;
-  }, [clubData?.history]);
+    
+    switch (timeFrame) {
+      case 'weekly':
+        return clubData.history.filter((item: { fullDate: string }) => {
+          const date = new Date(item.fullDate);
+          return date.getDay() === 1; // 월요일만
+        });
+      case 'monthly':
+        return clubData.history.filter((item: { fullDate: string }) => {
+          const date = new Date(item.fullDate);
+          return date.getDate() === 1; // 1일만
+        });
+      default:
+        return clubData.history;
+    }
+  }, [clubData?.history, timeFrame]);
 
 
   const timeFrameLabel = {

@@ -67,6 +67,12 @@ export default function ShellMemberPage({ params }: PageProps) {
     return Math.floor(num).toLocaleString();
   };
 
+  const formatCompact = (num: number) => {
+    if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
+    if (num >= 1_000) return `${(num / 1_000).toFixed(0)}K`;
+    return num.toString();
+  };
+
   const formatAddress = (addr: string) => {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
   };
@@ -253,9 +259,9 @@ export default function ShellMemberPage({ params }: PageProps) {
                   />
                   <YAxis 
                     stroke="#94a3b8"
-                    fontSize={9}
-                    tickFormatter={(value) => formatNumber(value)}
-                    width={70}
+                    fontSize={10}
+                    tickFormatter={(value) => formatCompact(value)}
+                    width={45}
                     domain={yAxisConfig.domain}
                     ticks={yAxisConfig.ticks}
                   />

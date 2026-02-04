@@ -7,7 +7,7 @@ import { ArrowLeft, Loader2, Check, X, Trash2, RefreshCw, Lock } from 'lucide-re
 import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { useSession, signIn } from 'next-auth/react';
+import { useSession, signIn, signOut } from 'next-auth/react';
 import { useToast } from '@/hooks/use-toast';
 
 interface Application {
@@ -255,15 +255,25 @@ export default function ShellClubAdminPage() {
                 <p className="text-sm text-slate-400">{session?.user?.email}</p>
               </div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => refetch()}
-              className="border-slate-600 text-slate-300 hover:bg-slate-700"
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              새로고침
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => refetch()}
+                className="border-slate-600 text-slate-300 hover:bg-slate-700"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                새로고침
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => signOut({ callbackUrl: '/club/shell/admin' })}
+                className="border-red-600/50 text-red-400 hover:bg-red-500/10"
+              >
+                로그아웃
+              </Button>
+            </div>
           </div>
         </div>
       </header>

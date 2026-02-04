@@ -253,12 +253,12 @@ export default function ShellClubPage() {
               <table className="w-full">
                 <thead className="bg-slate-800">
                   <tr>
+                    <th className="text-center text-sm font-medium text-slate-400 px-3 py-4 whitespace-nowrap">액션</th>
                     <th className="text-left text-sm font-medium text-slate-400 px-3 py-4 whitespace-nowrap">지갑</th>
                     <th className="text-right text-sm font-medium text-slate-400 px-3 py-4 whitespace-nowrap">보유량</th>
                     <th className="text-right text-sm font-medium text-slate-400 px-3 py-4 whitespace-nowrap">보유가치</th>
                     <th className="text-right text-sm font-medium text-slate-400 px-3 py-4 whitespace-nowrap">지분율</th>
                     <th className="text-right text-sm font-medium text-slate-400 px-3 py-4 whitespace-nowrap">1억 달성</th>
-                    <th className="text-center text-sm font-medium text-slate-400 px-3 py-4 whitespace-nowrap">액션</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -267,6 +267,14 @@ export default function ShellClubPage() {
                     .sort((a, b) => b.amount - a.amount)
                     .map((member) => (
                     <tr key={member.address} className="border-t border-slate-700/50 hover:bg-slate-700/30">
+                      <td className="text-center px-3 py-4 whitespace-nowrap">
+                        <Link
+                          href={`/club/shell/${member.address}`}
+                          className="px-4 py-1.5 bg-slate-600 hover:bg-slate-500 text-white text-sm rounded transition-colors"
+                        >
+                          분석
+                        </Link>
+                      </td>
                       <td className="px-3 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-white font-mono">
@@ -303,14 +311,6 @@ export default function ShellClubPage() {
                             {member.progress >= 100 ? '✓' : `${member.progress.toFixed(2)}%`}
                           </span>
                         </div>
-                      </td>
-                      <td className="text-center px-3 py-4 whitespace-nowrap">
-                        <Link
-                          href={`/club/shell/${member.address}`}
-                          className="px-4 py-1.5 bg-slate-600 hover:bg-slate-500 text-white text-sm rounded transition-colors"
-                        >
-                          분석
-                        </Link>
                       </td>
                     </tr>
                   ))}

@@ -139,13 +139,13 @@ export default function ShellClubPage() {
         <Card className="bg-slate-800/50 border-slate-700/50 p-4 md:p-6 mb-6">
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <p className="text-xs md:text-sm text-slate-400 mb-1">홀더 보유량</p>
+              <p className="text-xs md:text-sm text-slate-400 mb-1">멤버 보유량</p>
               <p className="text-xl md:text-2xl font-bold text-emerald-400">
                 {clubData ? formatNumber(clubData.totalAmount) : '-'}
               </p>
             </div>
             <div>
-              <p className="text-xs md:text-sm text-slate-400 mb-1">홀더 보유가치</p>
+              <p className="text-xs md:text-sm text-slate-400 mb-1">멤버 보유가치</p>
               <p className="text-xl md:text-2xl font-bold text-white">
                 {clubData?.totalValue ? `$${Math.floor(clubData.totalValue).toLocaleString()}` : '-'}
               </p>

@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Loader2, Flame } from 'lucide-react';
+import { Loader2, Flame, ClipboardPaste } from 'lucide-react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { useState, useMemo, useEffect, Suspense } from 'react';
@@ -766,12 +766,29 @@ function HomeContent() {
                         <div className="space-y-4 pt-4">
                           <div>
                             <label className="text-sm text-slate-400 mb-2 block">지갑 주소</label>
-                            <Input
-                              placeholder="0x..."
-                              value={joinAddress}
-                              onChange={(e) => setJoinAddress(e.target.value)}
-                              className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-500"
-                            />
+                            <div className="flex gap-2">
+                              <Input
+                                placeholder="0x..."
+                                value={joinAddress}
+                                onChange={(e) => setJoinAddress(e.target.value)}
+                                className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-base flex-1"
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={async () => {
+                                  try {
+                                    const text = await navigator.clipboard.readText();
+                                    setJoinAddress(text);
+                                  } catch {
+                                    toast({ title: '붙여넣기 권한이 필요합니다', variant: 'destructive' });
+                                  }
+                                }}
+                                className="border-slate-600 text-slate-300 hover:bg-slate-700 px-3"
+                              >
+                                <ClipboardPaste className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </div>
                           <Button
                             onClick={handleJoinSubmit}

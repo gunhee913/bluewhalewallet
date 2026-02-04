@@ -91,3 +91,14 @@
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
   background: #64748b;
 }
+
+/* iOS 자동 확대 방지 */
+input, textarea, select {
+  font-size: 16px !important;
+}
+
+@supports (-webkit-touch-callout: none) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}

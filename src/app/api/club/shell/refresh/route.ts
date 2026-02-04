@@ -35,47 +35,67 @@ async function extractShellAmount(page: Page): Promise<{ amount: number; value: 
         const body = document.body.innerText;
         const lines = body.split('\n').map(l => l.trim()).filter(l => l);
         
-        // SHELL 토큰 찾기
+        // SHELL 토큰 찾기 (토큰 목록에서, "By Token" 섹션 이후의 SHELL)
         for (let i = 0; i < lines.length; i++) {
-          if (lines[i] === 'SHELL') {
-            // SHELL 이후 줄들에서 "XXX Units" 패턴 찾기
-            for (let j = i + 1; j < Math.min(i + 15, lines.length); j++) {
-              const line = lines[j];
-              
-              // "숫자 Units" 패턴 찾기 (예: "54,214 Units" 또는 "54214 Units")
-              const unitsMatch = line.match(/([\d,]+(?:\.\d+)?)\s*Units/i);
-              if (unitsMatch) {
-                const amount = parseFloat(unitsMatch[1].replace(/,/g, ''));
-                
-                // 가치($) 찾기 - Units 근처에서
-                let value = 0;
-                for (let k = j - 3; k < Math.min(j + 5, lines.length); k++) {
-                  const valueMatch = lines[k].match(/\$\s*([\d,]+(?:\.\d+)?)/);
-                  if (valueMatch) {
-                    value = parseFloat(valueMatch[1].replace(/,/g, ''));
-                    break;
-                  }
-                }
-                
-                const price = value > 0 && amount > 0 ? value / amount : 0;
-                console.log(`Found SHELL: ${amount} Units, $${value}`);
-                return { amount, value, price };
+          // 토큰 상세 정보의 SHELL (가격 정보가 바로 뒤에 오는 경우)
+          if (lines[i] === 'SHELL' && i + 1 < lines.length && lines[i + 1].includes('$')) {
+            // 구조: SHELL → 가격 → 가치 → 숫자(정수부). → 숫자(소수부) → Units
+            // [54] SHELL
+            // [55] $ 0.000453+7.59 %  (가격)
+            // [56] $ 24.527           (가치)
+            // [57] 54,214.            (보유량 정수부)
+            // [58] 9808               (보유량 소수부)
+            // [59] Units
+            
+            let price = 0;
+            let value = 0;
+            let amount = 0;
+            
+            // Units 위치 찾기
+            let unitsIndex = -1;
+            for (let j = i + 1; j < Math.min(i + 10, lines.length); j++) {
+              if (lines[j] === 'Units') {
+                unitsIndex = j;
+                break;
               }
             }
-          }
-        }
-        
-        // 방법 2: 전체 텍스트에서 "SHELL" 근처 "Units" 패턴 찾기
-        const shellIndex = body.indexOf('SHELL');
-        if (shellIndex !== -1) {
-          const nearbyText = body.substring(shellIndex, shellIndex + 500);
-          const unitsMatch = nearbyText.match(/([\d,]+(?:\.\d+)?)\s*Units/i);
-          if (unitsMatch) {
-            const amount = parseFloat(unitsMatch[1].replace(/,/g, ''));
-            const valueMatch = nearbyText.match(/\$\s*([\d,]+(?:\.\d+)?)/);
-            const value = valueMatch ? parseFloat(valueMatch[1].replace(/,/g, '')) : 0;
-            const price = value > 0 && amount > 0 ? value / amount : 0;
-            return { amount, value, price };
+            
+            if (unitsIndex === -1) continue;
+            
+            // Units 바로 앞 2줄을 합쳐서 보유량 추출
+            // 예: "54,214." + "9808" = "54214.9808"
+            const numPart1 = lines[unitsIndex - 2] || '';  // 54,214.
+            const numPart2 = lines[unitsIndex - 1] || '';  // 9808
+            
+            // 숫자 조합
+            const combinedNum = (numPart1 + numPart2).replace(/,/g, '');
+            const amountMatch = combinedNum.match(/([\d.]+)/);
+            if (amountMatch) {
+              amount = parseFloat(amountMatch[1]);
+            }
+            
+            // 가격과 가치 추출 (SHELL 이후 $ 패턴)
+            for (let j = i + 1; j < unitsIndex; j++) {
+              const line = lines[j];
+              // 가격: $ 0.000453+7.59 %
+              const priceMatch = line.match(/\$\s*([\d.]+)\s*[+-]/);
+              if (priceMatch && price === 0) {
+                price = parseFloat(priceMatch[1]);
+                continue;
+              }
+              // 가치: $ 24.527
+              const valueMatch = line.match(/^\$\s*([\d,]+\.?\d*)$/);
+              if (valueMatch) {
+                value = parseFloat(valueMatch[1].replace(/,/g, ''));
+              }
+            }
+            
+            if (amount > 0) {
+              // 소수점 이하 버리고 정수로 반환
+              const finalAmount = Math.floor(amount);
+              console.log(`Found SHELL: ${finalAmount} Units, $${value}, price: $${price}`);
+              return { amount: finalAmount, value, price };
+            }
           }
         }
         

@@ -125,17 +125,6 @@ export default function ShellMemberPage({ params }: PageProps) {
     monthly: '월간',
   };
 
-  // X축 날짜 포맷 (timeFrame에 따라 다르게)
-  const formatXAxisDate = (dateStr: string) => {
-    if (!dateStr) return '';
-    switch (timeFrame) {
-      case 'monthly':
-        const [, m] = dateStr.split('/');
-        return `${m}월`;
-      default:
-        return dateStr; // M/D 형식 그대로
-    }
-  };
 
   const remainingAmount = TARGET_AMOUNT - (memberData?.currentAmount || 0);
   const progress = ((memberData?.currentAmount || 0) / TARGET_AMOUNT) * 100;
@@ -264,7 +253,6 @@ export default function ShellMemberPage({ params }: PageProps) {
                     fontSize={10}
                     interval={Math.max(0, Math.floor(chartData.length / 5) - 1)}
                     tickMargin={8}
-                    tickFormatter={formatXAxisDate}
                   />
                   <YAxis 
                     stroke="#94a3b8"

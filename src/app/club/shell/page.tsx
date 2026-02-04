@@ -98,17 +98,6 @@ export default function ShellClubPage() {
     monthly: '월간',
   };
 
-  // X축 날짜 포맷 (timeFrame에 따라 다르게)
-  const formatXAxisDate = (dateStr: string) => {
-    if (!dateStr) return '';
-    switch (timeFrame) {
-      case 'monthly':
-        const [, m] = dateStr.split('/');
-        return `${m}월`;
-      default:
-        return dateStr; // M/D 형식 그대로
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -197,7 +186,6 @@ export default function ShellClubPage() {
                     fontSize={10}
                     interval={Math.max(0, Math.floor(chartData.length / 5) - 1)}
                     tickMargin={8}
-                    tickFormatter={formatXAxisDate}
                   />
                   <YAxis 
                     stroke="#94a3b8"

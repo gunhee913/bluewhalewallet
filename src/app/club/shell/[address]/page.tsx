@@ -70,10 +70,7 @@ export default function ShellMemberPage({ params }: PageProps) {
   });
 
   const formatNumber = (num: number) => {
-    if (num >= 1_000_000_000) return `${(num / 1_000_000_000).toFixed(1)}B`;
-    if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
-    if (num >= 1_000) return `${(num / 1_000).toFixed(1)}K`;
-    return num.toLocaleString();
+    return Math.floor(num).toLocaleString();
   };
 
   const formatAddress = (addr: string) => {
@@ -180,7 +177,7 @@ export default function ShellMemberPage({ params }: PageProps) {
             <div>
               <p className="text-xs md:text-sm text-slate-400 mb-1">보유가치</p>
               <p className="text-xl md:text-2xl font-bold text-white">
-                {memberData?.currentValue ? `$${memberData.currentValue.toLocaleString()}` : '-'}
+                {memberData?.currentValue ? `$${Math.floor(memberData.currentValue).toLocaleString()}` : '-'}
               </p>
             </div>
             <div>
@@ -323,11 +320,11 @@ export default function ShellMemberPage({ params }: PageProps) {
                       </td>
                       <td className="text-right py-3 px-2 text-xs md:text-sm">
                         <span className={item.changeValue >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
-                          {item.changeValue >= 0 ? '+' : ''}${item.changeValue.toLocaleString()}
+                          {item.changeValue >= 0 ? '+' : ''}${Math.floor(item.changeValue).toLocaleString()}
                         </span>
                       </td>
                       <td className="text-right py-3 px-2 text-xs md:text-sm text-white">
-                        ${item.value.toLocaleString()}
+                        ${Math.floor(item.value).toLocaleString()}
                       </td>
                       <td className="text-right py-3 px-2 text-xs md:text-sm text-slate-300">
                         {item.share.toFixed(2)}%

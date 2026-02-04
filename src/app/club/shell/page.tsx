@@ -58,10 +58,7 @@ export default function ShellClubPage() {
   });
 
   const formatNumber = (num: number) => {
-    if (num >= 1_000_000_000) return `${(num / 1_000_000_000).toFixed(1)}B`;
-    if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
-    if (num >= 1_000) return `${(num / 1_000).toFixed(1)}K`;
-    return num.toLocaleString();
+    return Math.floor(num).toLocaleString();
   };
 
   const formatAddress = (address: string) => {
@@ -153,7 +150,7 @@ export default function ShellClubPage() {
             <div>
               <p className="text-xs md:text-sm text-slate-400 mb-1">총 보유가치</p>
               <p className="text-xl md:text-2xl font-bold text-white">
-                {clubData?.totalValue ? `$${clubData.totalValue.toLocaleString()}` : '-'}
+                {clubData?.totalValue ? `$${Math.floor(clubData.totalValue).toLocaleString()}` : '-'}
               </p>
             </div>
             <div>
@@ -288,7 +285,7 @@ export default function ShellClubPage() {
                         {formatNumber(member.amount)}
                       </td>
                       <td className="text-right py-3 px-2 text-xs md:text-sm text-white">
-                        ${member.value.toLocaleString()}
+                        ${Math.floor(member.value).toLocaleString()}
                       </td>
                       <td className="text-right py-3 px-2 text-xs md:text-sm text-slate-300">
                         {member.share.toFixed(1)}%

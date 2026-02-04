@@ -680,7 +680,7 @@ function HomeContent() {
                         <span className="text-sm font-medium text-emerald-400">
                           {clubLoading ? '로딩...' : 
                            shellClubData?.totalAmount ? 
-                             `${(shellClubData.totalAmount / 1_000_000).toFixed(1)}M SHELL` : '-'}
+                             `${Math.floor(shellClubData.totalAmount).toLocaleString()} SHELL` : '-'}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
@@ -688,7 +688,7 @@ function HomeContent() {
                         <span className="text-sm font-medium text-white">
                           {clubLoading ? '로딩...' : 
                            shellClubData?.totalValue ? 
-                             `$${shellClubData.totalValue.toLocaleString()}` : '-'}
+                             `$${Math.floor(shellClubData.totalValue).toLocaleString()}` : '-'}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">

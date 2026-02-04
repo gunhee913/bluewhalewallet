@@ -148,10 +148,11 @@ export async function GET(request: NextRequest) {
 
     const history = Object.entries(dailyTotals)
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, amount]) => {
-        const [, month, day] = date.split('-');
+      .map(([fullDate, amount]) => {
+        const [, month, day] = fullDate.split('-');
         return {
           date: `${parseInt(month)}/${parseInt(day)}`,
+          fullDate,
           amount,
         };
       });

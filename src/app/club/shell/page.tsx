@@ -59,17 +59,10 @@ export default function ShellClubPage() {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
-  // 차트 데이터 (날짜 형식 변환)
+  // 차트 데이터 (API에서 이미 변환됨)
   const chartData = useMemo(() => {
     if (!clubData?.history) return [];
-    return clubData.history.map(item => {
-      const [, month, day] = item.date.split('-');
-      return {
-        date: `${parseInt(month)}/${parseInt(day)}`,
-        fullDate: item.date,
-        amount: item.amount,
-      };
-    });
+    return clubData.history;
   }, [clubData?.history]);
 
   // Y축 Nice Number 계산

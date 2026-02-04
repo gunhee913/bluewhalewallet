@@ -56,8 +56,8 @@ export default function ShellClubPage() {
   };
 
   const formatCompact = (num: number) => {
-    if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
-    if (num >= 1_000) return `${(num / 1_000).toFixed(0)}K`;
+    if (num >= 1_000_000) return `${Math.round(num / 1_000_000)}M`;
+    if (num >= 1_000) return `${Math.round(num / 1_000)}K`;
     return num.toString();
   };
 
@@ -190,7 +190,7 @@ export default function ShellClubPage() {
             </h2>
             <div className="h-48 md:h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+                <LineChart data={chartData} margin={{ top: 5, right: 10, left: 5, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                   <XAxis 
                     dataKey="date" 
@@ -203,7 +203,7 @@ export default function ShellClubPage() {
                     stroke="#94a3b8"
                     fontSize={10}
                     tickFormatter={(value) => formatCompact(value)}
-                    width={45}
+                    width={40}
                     domain={yAxisConfig.domain}
                     ticks={yAxisConfig.ticks}
                   />

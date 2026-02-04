@@ -4,6 +4,7 @@ import Script from 'next/script';
 import './globals.css';
 import Providers from './providers';
 import { AuthProvider } from '@/components/auth/auth-provider';
+import { Toaster } from '@/components/ui/toaster';
 
 const GA_TRACKING_ID = 'G-T75V1DJXKZ';
 const CLARITY_PROJECT_ID = 'vad2429ti4';
@@ -57,6 +58,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers><AuthProvider>{children}</AuthProvider></Providers>
+        <Toaster />
       </body>
     </html>
   );

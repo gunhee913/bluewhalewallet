@@ -2,11 +2,22 @@
 
 import { Card } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Loader2, Flame } from 'lucide-react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { useState, useMemo, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 
 const PUMPSPACE_BASE_URL = 'https://pumpspace.io/wallet/detail?account=';
 const BURN_ADDRESS = '0x000000000000000000000000000000000000dEaD';
@@ -354,6 +365,44 @@ function HomeContent() {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab');
   const [selectedTab, setSelectedTab] = useState<'wallet' | 'token' | 'club' | 'lab'>('wallet');
+  const [joinDialogOpen, setJoinDialogOpen] = useState(false);
+  const [joinAddress, setJoinAddress] = useState('');
+  const [joinLoading, setJoinLoading] = useState(false);
+  const { toast } = useToast();
+
+  // 클럽 가입 신청
+  const handleJoinSubmit = async () => {
+    if (!joinAddress.trim()) {
+      toast({ title: '지갑 주소를 입력해주세요', variant: 'destructive' });
+      return;
+    }
+    if (!/^0x[a-fA-F0-9]{40}$/.test(joinAddress.trim())) {
+      toast({ title: '올바른 지갑 주소 형식이 아닙니다', variant: 'destructive' });
+      return;
+    }
+
+    setJoinLoading(true);
+    try {
+      const response = await fetch('/api/club/shell/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address: joinAddress.trim() }),
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        toast({ title: '가입 신청이 완료되었습니다!' });
+        setJoinDialogOpen(false);
+        setJoinAddress('');
+      } else {
+        toast({ title: data.error || '신청 실패', variant: 'destructive' });
+      }
+    } catch (error) {
+      toast({ title: '오류가 발생했습니다', variant: 'destructive' });
+    } finally {
+      setJoinLoading(false);
+    }
+  };
 
   // 페이지 로드 시 sessionStorage에서 탭 상태 복원
   useEffect(() => {
@@ -705,6 +754,40 @@ function HomeContent() {
                     >
                       분석
                     </Link>
+                    <Dialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen}>
+                      <DialogTrigger asChild>
+                        <button className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-md transition-all duration-200 font-medium text-center">
+                          가입
+                        </button>
+                      </DialogTrigger>
+                      <DialogContent className="bg-slate-800 border-slate-700">
+                        <DialogHeader>
+                          <DialogTitle className="text-white">SHELL CLUB 가입</DialogTitle>
+                          <DialogDescription className="text-slate-400">
+                            1억개/10원 목표 쉘 홀더 클럽에 가입하세요
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 pt-4">
+                          <div>
+                            <label className="text-sm text-slate-400 mb-2 block">지갑 주소</label>
+                            <Input
+                              placeholder="0x..."
+                              value={joinAddress}
+                              onChange={(e) => setJoinAddress(e.target.value)}
+                              className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-500"
+                            />
+                          </div>
+                          <Button
+                            onClick={handleJoinSubmit}
+                            disabled={joinLoading}
+                            className="w-full bg-emerald-600 hover:bg-emerald-500"
+                          >
+                            {joinLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                            {joinLoading ? '신청 중...' : '가입 신청'}
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                   </div>
                 </div>
               </div>

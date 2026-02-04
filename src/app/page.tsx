@@ -670,7 +670,7 @@ function HomeContent() {
                       <img src="/SHELL.svg" alt="SHELL" className="w-10 h-10 rounded-full" />
                       <div>
                         <h2 className="text-lg font-semibold text-white">SHELL CLUB</h2>
-                        <p className="text-xs text-slate-400">1억개 목표 홀더 클럽</p>
+                        <p className="text-xs text-slate-400">1억개/10원 목표 쉘 홀더 클럽</p>
                       </div>
                     </div>
 

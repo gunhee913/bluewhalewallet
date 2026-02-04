@@ -130,7 +130,7 @@ export default function ShellClubPage() {
             <img src="/SHELL.svg" alt="SHELL" className="w-10 h-10 rounded-full" />
             <div>
               <h1 className="text-xl md:text-2xl font-bold text-white">SHELL CLUB</h1>
-              <p className="text-sm text-slate-400">1억개 목표 홀더 클럽 분석</p>
+              <p className="text-sm text-slate-400">1억개/10원 목표 쉘 홀더 클럽 분석</p>
             </div>
           </div>
         </div>

@@ -95,39 +95,6 @@ export default function ShellMemberPage({ params }: PageProps) {
     });
   }, [memberData?.history]);
 
-  // Y축 Nice Number 계산
-  const yAxisConfig = useMemo(() => {
-    if (chartData.length === 0) return { domain: [0, 100], ticks: [0, 25, 50, 75, 100] };
-    
-    const values = chartData.map(d => d.amount);
-    const dataMin = Math.min(...values);
-    const dataMax = Math.max(...values);
-    const range = dataMax - dataMin;
-    const padding = range > 0 ? range * 0.5 : dataMin * 0.1;
-    
-    const rawMin = Math.max(0, dataMin - padding);
-    const rawMax = dataMax + padding;
-    const totalRange = rawMax - rawMin;
-    
-    const roughStep = totalRange / 4;
-    const magnitude = Math.pow(10, Math.floor(Math.log10(roughStep)));
-    const residual = roughStep / magnitude;
-    let niceStep;
-    if (residual <= 1.5) niceStep = magnitude;
-    else if (residual <= 3) niceStep = 2 * magnitude;
-    else if (residual <= 7) niceStep = 5 * magnitude;
-    else niceStep = 10 * magnitude;
-    
-    const niceMin = Math.floor(rawMin / niceStep) * niceStep;
-    const niceMax = Math.ceil(rawMax / niceStep) * niceStep;
-    
-    const ticks: number[] = [];
-    for (let tick = niceMin; tick <= niceMax; tick += niceStep) {
-      ticks.push(tick);
-    }
-    
-    return { domain: [niceMin, niceMax] as [number, number], ticks };
-  }, [chartData]);
 
   const timeFrameLabel = {
     daily: '일간',
@@ -267,9 +234,9 @@ export default function ShellMemberPage({ params }: PageProps) {
                     stroke="#94a3b8"
                     fontSize={10}
                     tickFormatter={(value) => formatCompact(value)}
-                    width={40}
-                    domain={yAxisConfig.domain}
-                    ticks={yAxisConfig.ticks}
+                    width={50}
+                    domain={['dataMin * 0.95', 'dataMax * 1.05']}
+                    tickCount={5}
                   />
                   <Tooltip 
                     contentStyle={{ 

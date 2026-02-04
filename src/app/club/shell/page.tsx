@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   LineChart,
   Line,
@@ -21,6 +21,11 @@ const TARGET_AMOUNT = SHELL_TARGET_AMOUNT;
 
 export default function ShellClubPage() {
   const [timeFrame, setTimeFrame] = useState<'daily' | 'weekly' | 'monthly'>('daily');
+
+  // 클럽 페이지 방문 시 마지막 탭을 'club'으로 저장
+  useEffect(() => {
+    sessionStorage.setItem('lastTab', 'club');
+  }, []);
 
   // API에서 SHELL 보유량 데이터 가져오기
   const { data: clubData, isLoading } = useQuery({
@@ -117,7 +122,7 @@ export default function ShellClubPage() {
       <header className="border-b border-slate-700/50 backdrop-blur-sm">
         <div className="max-w-4xl mx-auto px-4 md:px-6 py-4 md:py-5">
           <Link
-            href="/?tab=club"
+            href="/"
             className="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-3"
           >
             <ArrowLeft className="w-5 h-5" />

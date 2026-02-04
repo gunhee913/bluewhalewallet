@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { ArrowLeft, Loader2, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { useMemo, useState, use } from 'react';
+import { useEffect, useMemo, useState, use } from 'react';
 import {
   LineChart,
   Line,
@@ -26,6 +26,11 @@ interface PageProps {
 export default function ShellMemberPage({ params }: PageProps) {
   const { address } = use(params);
   const [timeFrame, setTimeFrame] = useState<'daily' | 'weekly' | 'monthly'>('daily');
+
+  // 클럽 페이지 방문 시 마지막 탭을 'club'으로 저장
+  useEffect(() => {
+    sessionStorage.setItem('lastTab', 'club');
+  }, []);
 
   // 멤버 정보 찾기
   const memberInfo = SHELL_CLUB_MEMBERS.find(

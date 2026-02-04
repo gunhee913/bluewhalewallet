@@ -14,16 +14,10 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
+import { SHELL_CLUB_MEMBERS, SHELL_TARGET_AMOUNT } from '@/constants/shell-club';
 
 const PUMPSPACE_BASE_URL = 'https://pumpspace.io/wallet/detail?account=';
-
-// 목표 보유량 (1억개)
-const TARGET_AMOUNT = 100_000_000;
-
-// SHELL CLUB 멤버 지갑들
-const SHELL_CLUB_MEMBERS: { name: string; address: string }[] = [
-  { name: '홀더(1)', address: '0x22BA71BB6C79cC15f3878f5dFbc262BBB28e7770' },
-];
+const TARGET_AMOUNT = SHELL_TARGET_AMOUNT;
 
 interface PageProps {
   params: Promise<{ address: string }>;

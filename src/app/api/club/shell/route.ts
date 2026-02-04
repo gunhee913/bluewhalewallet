@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { SHELL_CLUB_MEMBERS, SHELL_TARGET_AMOUNT } from '@/constants/shell-club';
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -12,12 +13,7 @@ function getSupabase() {
   return createClient(url, key);
 }
 
-// SHELL CLUB 멤버 목록
-const SHELL_CLUB_MEMBERS = [
-  { name: '홀더(1)', address: '0x22BA71BB6C79cC15f3878f5dFbc262BBB28e7770' },
-];
-
-const TARGET_AMOUNT = 100_000_000; // 1억개
+const TARGET_AMOUNT = SHELL_TARGET_AMOUNT;
 
 // SHELL 총 발행량 가져오기
 async function getShellTotalSupply(supabase: ReturnType<typeof getSupabase>): Promise<number> {

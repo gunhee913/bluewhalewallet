@@ -18,6 +18,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useState, useMemo, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { SHELL_CLUB_MEMBERS } from '@/constants/shell-club';
 
 const PUMPSPACE_BASE_URL = 'https://pumpspace.io/wallet/detail?account=';
 const BURN_ADDRESS = '0x000000000000000000000000000000000000dEaD';
@@ -67,11 +68,6 @@ const BTCB_WETH_START_ASSETS = 1009;
 const BTCB_XAUT_WALLET = '0xAFa948cf1e722E83572068A826f146Fbe134cF77';
 const BTCB_XAUT_START_DATE = '2026-02-02';
 const BTCB_XAUT_START_ASSETS = 1003;
-
-// SHELL CLUB 멤버 지갑들
-const SHELL_CLUB_MEMBERS: { name: string; address: string }[] = [
-  { name: '홀더(1)', address: '0x22BA71BB6C79cC15f3878f5dFbc262BBB28e7770' },
-];
 
 interface WalletInfo {
   name: string;

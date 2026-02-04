@@ -1,16 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import puppeteer, { Page } from 'puppeteer-core';
 import { createClient } from '@supabase/supabase-js';
+import { SHELL_CLUB_MEMBERS } from '@/constants/shell-club';
 
 const PUMPSPACE_URL = 'https://pumpspace.io/wallet/detail?account=';
 
 // Vercel Pro 최대 300초
 export const maxDuration = 300;
-
-// SHELL CLUB 멤버 지갑들
-const SHELL_CLUB_MEMBERS = [
-  { name: '홀더(1)', address: '0x22BA71BB6C79cC15f3878f5dFbc262BBB28e7770' },
-];
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

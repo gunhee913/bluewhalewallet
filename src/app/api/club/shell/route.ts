@@ -14,7 +14,7 @@ function getSupabase() {
 
 // SHELL CLUB 멤버 목록
 const SHELL_CLUB_MEMBERS = [
-  { name: '멤버1', address: '0x22BA71BB6C79cC15f3878f5dFbc262BBB28e7770' },
+  { name: '홀더(1)', address: '0x22BA71BB6C79cC15f3878f5dFbc262BBB28e7770' },
 ];
 
 const TARGET_AMOUNT = 100_000_000; // 1억개

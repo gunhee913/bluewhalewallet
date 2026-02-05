@@ -2,7 +2,8 @@
 CREATE TABLE IF NOT EXISTS token_supply (
   id SERIAL PRIMARY KEY,
   token_name TEXT NOT NULL UNIQUE,
-  circulating_supply BIGINT,
+  circulating_supply NUMERIC,
+  avalanche_balance NUMERIC,
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 

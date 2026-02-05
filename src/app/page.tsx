@@ -726,9 +726,12 @@ function HomeContent() {
               </div>
               {(() => {
                 const totalSupply = 7000;
-                const sbwpmSupply = tokenSupplyData?.tokens?.find(
+                const sbwpmData = tokenSupplyData?.tokens?.find(
                   (t: { token_name: string }) => t.token_name === 'sBWPM'
-                )?.circulating_supply || 0;
+                );
+                const sbwpmSupply = sbwpmData?.circulating_supply || 0;
+                const avalancheBalance = sbwpmData?.avalanche_balance || 0;
+                const kaiaBalance = sbwpmSupply - avalancheBalance;
                 const burnData = tokenData?.tokens?.find(
                   (t: { token_name: string }) => t.token_name === 'sBWPM'
                 );
@@ -736,11 +739,13 @@ function HomeContent() {
                 const sbwpmCirculating = sbwpmSupply - burnedAmount;
                 const bwpmNft = totalSupply - sbwpmSupply; // BWPM NFT = 7,000 - sBWPM크롤링값
                 
+                const formatNum = (n: number) => n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 1 });
+                
                 const rows = [
-                  { label: '총 발행량', value: totalSupply, link: null },
-                  { label: 'BWPM NFT', value: bwpmNft, link: '#' },
-                  { label: 'sBWPM', value: sbwpmCirculating, link: '#' },
-                  { label: '소각량', value: burnedAmount, link: '/token/sBWPM' },
+                  { label: '총 발행량', value: totalSupply, extra: null, link: '#' },
+                  { label: 'BWPM NFT', value: bwpmNft, extra: null, link: '#' },
+                  { label: 'sBWPM', value: sbwpmCirculating, extra: `(카이아: ${formatNum(kaiaBalance - burnedAmount)}개, 아발란체: ${formatNum(avalancheBalance)}개)`, link: '#' },
+                  { label: '소각량', value: burnedAmount, extra: null, link: '/token/sBWPM' },
                 ];
                 
                 return (
@@ -750,11 +755,16 @@ function HomeContent() {
                         key={row.label}
                         className="flex items-center justify-between bg-slate-700/30 rounded-lg px-4 py-3"
                       >
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-4 flex-wrap">
                           <span className="text-slate-400 text-sm w-20">{row.label}</span>
                           <span className="text-white font-medium">
-                            {row.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 1 })}개
+                            {formatNum(row.value)}개
                           </span>
+                          {row.extra && (
+                            <span className="text-slate-500 text-xs">
+                              {row.extra}
+                            </span>
+                          )}
                         </div>
                         {row.link && (
                           <Link

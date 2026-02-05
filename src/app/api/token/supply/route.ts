@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 
 // KaiaScan 토큰 페이지 URL
 const KAIASCAN_URL = 'https://kaiascan.io/token/';
+const KAIASCAN_HOLDER_URL = 'https://kaiascan.io/token/';
 
 // Vercel Pro 최대 300초
 export const maxDuration = 300;
@@ -12,6 +13,9 @@ export const maxDuration = 300;
 const TOKEN_CONTRACTS: Record<string, string> = {
   'sBWPM': '0xf4546e1d3ad590a3c6d178d671b3bc0e8a81e27d',
 };
+
+// 아발란체 브릿지 지갑 주소 (sBWPM)
+const AVALANCHE_BRIDGE_WALLET = '0x316091d3bd7bf9a77640d9807e3d6b5a30cbf6bb';
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -22,6 +26,56 @@ function getSupabase() {
   }
   
   return createClient(url, key);
+}
+
+// 특정 지갑의 토큰 잔액 추출
+async function extractWalletBalance(page: Page, walletAddress: string): Promise<number | null> {
+  // 페이지 로드 후 5초 대기
+  await new Promise((r) => setTimeout(r, 5000));
+  
+  // 최대 10초 동안 폴링
+  for (let attempt = 0; attempt < 10; attempt++) {
+    try {
+      const result = await page.evaluate((targetWallet) => {
+        const body = document.body.innerText;
+        const lines = body.split('\n').map(l => l.trim()).filter(l => l);
+        
+        // 지갑 주소 찾기 (대소문자 구분 없이)
+        const walletLower = targetWallet.toLowerCase();
+        for (let i = 0; i < lines.length; i++) {
+          if (lines[i].toLowerCase().includes(walletLower) || 
+              lines[i].toLowerCase().includes(walletLower.slice(0, 10))) {
+            // 주소 근처에서 숫자 찾기 (잔액)
+            for (let j = Math.max(0, i - 3); j < Math.min(lines.length, i + 5); j++) {
+              // 숫자,소수점 패턴 찾기 (예: 1,576.895477)
+              const match = lines[j].match(/([\d,]+\.?\d*)\s*sBWPM/i);
+              if (match && match[1]) {
+                return parseFloat(match[1].replace(/,/g, ''));
+              }
+              // 숫자만 있는 경우
+              const numMatch = lines[j].match(/^([\d,]+\.?\d*)$/);
+              if (numMatch && numMatch[1] && parseFloat(numMatch[1].replace(/,/g, '')) > 100) {
+                return parseFloat(numMatch[1].replace(/,/g, ''));
+              }
+            }
+          }
+        }
+        
+        return null;
+      }, walletAddress);
+
+      if (result && result > 0) {
+        console.log(`Found wallet balance: ${result} (attempt ${attempt + 1})`);
+        return result;
+      }
+    } catch (e) {
+      console.error(`Attempt ${attempt + 1} error:`, e);
+    }
+
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+
+  return null;
 }
 
 // 총 공급량 추출
@@ -70,6 +124,58 @@ async function extractTotalSupply(page: Page): Promise<number | null> {
   }
 
   return null;
+}
+
+// 아발란체 브릿지 지갑 잔액 크롤링
+async function fetchAvalancheBalance(
+  contractAddress: string,
+  browserlessToken: string,
+  retryCount: number = 0
+): Promise<number | null> {
+  let browser = null;
+  let page = null;
+  
+  try {
+    console.log(`[Avalanche] Connecting... (attempt ${retryCount + 1})`);
+    browser = await puppeteer.connect({
+      browserWSEndpoint: `wss://chrome.browserless.io?token=${browserlessToken}`,
+    });
+    
+    page = await browser.newPage();
+    await page.setViewport({ width: 1280, height: 720 });
+    
+    // 토큰 홀더 페이지로 이동
+    const url = `${KAIASCAN_HOLDER_URL}${contractAddress}?tabId=tokenHolder&page=1`;
+    console.log(`[Avalanche] Navigating to: ${url}`);
+    
+    await page.goto(url, { 
+      waitUntil: 'networkidle2',
+      timeout: 45000 
+    });
+
+    const balance = await extractWalletBalance(page, AVALANCHE_BRIDGE_WALLET);
+    console.log(`[Avalanche] Result: ${balance}`);
+    
+    return balance;
+
+  } catch (err) {
+    console.error(`[Avalanche] Error:`, err);
+    
+    if (retryCount < 2) {
+      console.log(`[Avalanche] Retrying...`);
+      await new Promise((r) => setTimeout(r, 3000));
+      return fetchAvalancheBalance(contractAddress, browserlessToken, retryCount + 1);
+    }
+    
+    return null;
+  } finally {
+    if (page) {
+      try { await page.close(); } catch (e) { /* ignore */ }
+    }
+    if (browser) {
+      try { await browser.close(); } catch (e) { /* ignore */ }
+    }
+  }
 }
 
 // 단일 토큰 크롤링
@@ -146,11 +252,18 @@ export async function GET(request: NextRequest) {
         : TOKEN_CONTRACTS;
       
       const results: Record<string, number | null> = {};
+      let avalancheBalance: number | null = null;
       
       for (const [name, address] of Object.entries(tokensToFetch)) {
         if (!address) continue;
         const supply = await fetchTokenSupply(name, address, browserlessToken);
         results[name] = supply;
+        
+        // sBWPM인 경우 아발란체 브릿지 잔액도 크롤링
+        if (name === 'sBWPM') {
+          await new Promise((r) => setTimeout(r, 10000)); // 대기
+          avalancheBalance = await fetchAvalancheBalance(address, browserlessToken);
+        }
         
         // 다음 요청 전 대기
         if (Object.keys(tokensToFetch).length > 1) {
@@ -165,6 +278,7 @@ export async function GET(request: NextRequest) {
         .map(([name, supply]) => ({
           token_name: name,
           circulating_supply: supply,
+          avalanche_balance: name === 'sBWPM' ? avalancheBalance : null,
           updated_at: now,
         }));
       
@@ -178,7 +292,7 @@ export async function GET(request: NextRequest) {
         }
       }
       
-      return NextResponse.json({ success: true, results });
+      return NextResponse.json({ success: true, results, avalancheBalance });
     }
     
     // 캐시된 데이터 조회

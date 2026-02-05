@@ -734,6 +734,7 @@ function HomeContent() {
                 const avalancheBalance = sbwpmData?.avalanche_balance || 0;
                 const buybackGofun = sbwpmData?.buyback_gofun || 0;
                 const buybackDolfun = sbwpmData?.buyback_dolfun || 0;
+                const buybackGofunKaia = sbwpmData?.buyback_gofun_kaia || 0;
                 const liquidityTotal = sbwpmData?.liquidity_total || 0;
                 const kaiaBalance = sbwpmSupply - avalancheBalance;
                 const burnData = tokenData?.tokens?.find(
@@ -810,7 +811,7 @@ function HomeContent() {
                             {(() => {
                               // 지갑보유 = 합계 - 바이백(고펀) - 바이백(돌펀) - 유동성
                               const avaxWalletHolding = avalancheBalance - buybackGofun - buybackDolfun - liquidityTotal;
-                              const kaiaWalletHolding = kaiaBalance - burnedAmount; // 카이아는 바이백/유동성 없음
+                              const kaiaWalletHolding = kaiaBalance - burnedAmount - buybackGofunKaia;
                               const totalWalletHolding = avaxWalletHolding + kaiaWalletHolding;
                               
                               return (
@@ -825,7 +826,7 @@ function HomeContent() {
                                   </tr>
                                   <tr className="border-b border-slate-700/50">
                                     <td className="text-slate-300 py-2 px-2">카이아</td>
-                                    <td className="text-right text-slate-500 py-2 px-2">-</td>
+                                    <td className="text-right text-white py-2 px-2 font-mono">{formatNum(buybackGofunKaia)}</td>
                                     <td className="text-right text-slate-500 py-2 px-2">-</td>
                                     <td className="text-right text-slate-500 py-2 px-2">-</td>
                                     <td className="text-right text-white py-2 px-2 font-mono">{formatNum(kaiaWalletHolding)}</td>
@@ -833,7 +834,7 @@ function HomeContent() {
                                   </tr>
                                   <tr className="bg-slate-700/20">
                                     <td className="text-slate-300 font-medium py-2 px-2">합계</td>
-                                    <td className="text-right text-white font-medium py-2 px-2 font-mono">{formatNum(buybackGofun)}</td>
+                                    <td className="text-right text-white font-medium py-2 px-2 font-mono">{formatNum(buybackGofun + buybackGofunKaia)}</td>
                                     <td className="text-right text-white font-medium py-2 px-2 font-mono">{formatNum(buybackDolfun)}</td>
                                     <td className="text-right text-white font-medium py-2 px-2 font-mono">{formatNum(liquidityTotal)}</td>
                                     <td className="text-right text-white font-medium py-2 px-2 font-mono">{formatNum(totalWalletHolding)}</td>

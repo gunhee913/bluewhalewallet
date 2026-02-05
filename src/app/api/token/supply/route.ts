@@ -9,6 +9,9 @@ const KAIASCAN_HOLDER_URL = 'https://kaiascan.io/token/';
 // PumpSpace 지갑 페이지 URL
 const PUMPSPACE_URL = 'https://pumpspace.io/wallet/detail?account=';
 
+// bwpm.io 지갑 페이지 URL (카이아)
+const BWPM_IO_URL = 'https://bwpm.io/#/wallet/detail?account=';
+
 // Vercel Pro 최대 300초
 export const maxDuration = 300;
 
@@ -23,6 +26,9 @@ const AVALANCHE_BRIDGE_WALLET = '0x316091d3bd7bf9a77640d9807e3d6b5a30cbf6bb';
 // 바이백 지갑 주소 (아발란체)
 const BUYBACK_GOFUN = '0x3654378AA2DEb0860c2e5C7906471C8704c44c6F'; // 고펀
 const BUYBACK_DOLFUN = '0xEd1b254B6c3a6785e19ba83b728ECe4A6444f4d7'; // 돌펀
+
+// 바이백 지갑 주소 (카이아) - bwpm.io에서 크롤링
+const BUYBACK_GOFUN_KAIA = '0x3654378AA2DEb0860c2e5C7906471C8704c44c6F'; // 고펀 (카이아)
 
 // LP 지갑 주소 (유동성) - PumpSpace에서 sBWPM 잔액 크롤링
 const LP_WALLETS: Record<string, string> = {
@@ -140,6 +146,104 @@ async function fetchBuybackSbwpm(
       console.log(`[Buyback] Retrying...`);
       await new Promise((r) => setTimeout(r, 3000));
       return fetchBuybackSbwpm(walletAddress, browserlessToken, retryCount + 1);
+    }
+    
+    return null;
+  } finally {
+    if (page) {
+      try { await page.close(); } catch (e) { /* ignore */ }
+    }
+    if (browser) {
+      try { await browser.close(); } catch (e) { /* ignore */ }
+    }
+  }
+}
+
+// bwpm.io에서 sBWPM 토큰 보유량 추출 (카이아)
+async function extractSbwpmAmountBwpmIo(page: Page): Promise<number | null> {
+  // 페이지 로드 후 10초 대기 (동적 콘텐츠 로딩)
+  await new Promise((r) => setTimeout(r, 10000));
+  
+  // 최대 15초 동안 폴링 (1초 간격)
+  for (let attempt = 0; attempt < 15; attempt++) {
+    try {
+      const result = await page.evaluate(() => {
+        const body = document.body.innerText;
+        const lines = body.split('\n').map(l => l.trim()).filter(l => l);
+        
+        // sBWPM 토큰 찾기
+        for (let i = 0; i < lines.length; i++) {
+          if (lines[i] === 'sBWPM') {
+            // sBWPM 이후 숫자 찾기
+            for (let j = i + 1; j < Math.min(i + 10, lines.length); j++) {
+              // 소수점 포함 숫자 패턴 (예: 64.7232)
+              const match = lines[j].match(/^([\d,]+\.?\d*)$/);
+              if (match && match[1]) {
+                const amount = parseFloat(match[1].replace(/,/g, ''));
+                if (amount > 0 && amount < 10000) { // 합리적인 범위 체크
+                  console.log(`Found sBWPM on bwpm.io: ${amount}`);
+                  return amount;
+                }
+              }
+            }
+          }
+        }
+        
+        return null;
+      });
+
+      if (result && result > 0) {
+        console.log(`Found sBWPM on bwpm.io: ${result} (attempt ${attempt + 1})`);
+        return result;
+      }
+    } catch (e) {
+      console.error(`bwpm.io attempt ${attempt + 1} error:`, e);
+    }
+
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+
+  return null;
+}
+
+// bwpm.io에서 카이아 바이백 지갑의 sBWPM 보유량 크롤링
+async function fetchBuybackSbwpmKaia(
+  walletAddress: string,
+  browserlessToken: string,
+  retryCount: number = 0
+): Promise<number | null> {
+  let browser = null;
+  let page = null;
+  
+  try {
+    console.log(`[Kaia Buyback ${walletAddress.slice(0, 8)}] Connecting... (attempt ${retryCount + 1})`);
+    browser = await puppeteer.connect({
+      browserWSEndpoint: `wss://chrome.browserless.io?token=${browserlessToken}`,
+    });
+    
+    page = await browser.newPage();
+    await page.setViewport({ width: 1280, height: 720 });
+    
+    const url = `${BWPM_IO_URL}${walletAddress}`;
+    console.log(`[Kaia Buyback] Navigating to: ${url}`);
+    
+    await page.goto(url, { 
+      waitUntil: 'networkidle2',
+      timeout: 45000 
+    });
+
+    const amount = await extractSbwpmAmountBwpmIo(page);
+    console.log(`[Kaia Buyback ${walletAddress.slice(0, 8)}] Result: ${amount}`);
+    
+    return amount;
+
+  } catch (err) {
+    console.error(`[Kaia Buyback] Error:`, err);
+    
+    if (retryCount < 2) {
+      console.log(`[Kaia Buyback] Retrying...`);
+      await new Promise((r) => setTimeout(r, 3000));
+      return fetchBuybackSbwpmKaia(walletAddress, browserlessToken, retryCount + 1);
     }
     
     return null;
@@ -454,6 +558,7 @@ export async function GET(request: NextRequest) {
       let avalancheBalance: number | null = null;
       let buybackGofun: number | null = null;
       let buybackDolfun: number | null = null;
+      let buybackGofunKaia: number | null = null;
       
       for (const [name, address] of Object.entries(tokensToFetch)) {
         if (!address) continue;
@@ -474,6 +579,11 @@ export async function GET(request: NextRequest) {
           await new Promise((r) => setTimeout(r, 10000));
           buybackDolfun = await fetchBuybackSbwpm(BUYBACK_DOLFUN, browserlessToken);
           console.log(`Buyback Dolfun: ${buybackDolfun}`);
+          
+          // 카이아 바이백(고펀) 크롤링 - bwpm.io
+          await new Promise((r) => setTimeout(r, 10000));
+          buybackGofunKaia = await fetchBuybackSbwpmKaia(BUYBACK_GOFUN_KAIA, browserlessToken);
+          console.log(`Buyback Gofun Kaia: ${buybackGofunKaia}`);
         }
         
         // 다음 요청 전 대기
@@ -494,6 +604,7 @@ export async function GET(request: NextRequest) {
           avalanche_balance: name === 'sBWPM' ? avalancheBalance : null,
           buyback_gofun: name === 'sBWPM' ? buybackGofun : null,
           buyback_dolfun: name === 'sBWPM' ? buybackDolfun : null,
+          buyback_gofun_kaia: name === 'sBWPM' ? buybackGofunKaia : null,
           buyback_amount: name === 'sBWPM' && totalBuyback > 0 ? totalBuyback : null,
           updated_at: now,
         }));
@@ -557,6 +668,7 @@ export async function GET(request: NextRequest) {
         avalancheBalance, 
         buybackGofun, 
         buybackDolfun, 
+        buybackGofunKaia,
         buybackAmount: totalBuyback
       });
     }

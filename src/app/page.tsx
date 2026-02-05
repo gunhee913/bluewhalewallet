@@ -79,13 +79,13 @@ interface WalletInfo {
 
 const WALLETS: WalletInfo[] = [
   {
-    name: '바이백펀드',
+    name: '바이백 펀드',
     address: '0x3654378aa2deb0860c2e5c7906471c8704c44c6f',
     hasAnalysis: true,
     isBuybackTotal: true,
   },
   {
-    name: '아돌펀드',
+    name: '아돌 펀드',
     address: '0xEd1b254B6c3a6785e19ba83b728ECe4A6444f4d7',
     hasAnalysis: true,
     isAdolTotal: true,
@@ -96,28 +96,28 @@ const WALLETS: WalletInfo[] = [
     hasAnalysis: true,
   },
   {
-    name: '팀 지갑',
-    address: '0x525e7f0a5d3fd6169d6ec35288104d52bf3bb95f',
-    hasAnalysis: true,
-  },
-  {
     name: 'SHELL 펀드',
     address: '0xfd48a5FFE5127896E93BAA8074CE98c5a999Ea97',
     hasAnalysis: true,
   },
   {
-    name: 'v3 수수료 펀드(60%)',
-    address: '0x52FB7d3ab53d5a8d348B15ea7E3f7bfE35dD35F1',
+    name: 'CORAL 펀드',
+    address: '0xdA6C0aFb267072F8fF6FC4F207b992729F4a4e15',
     hasAnalysis: true,
   },
   {
-    name: 'v2 수수료 펀드',
+    name: 'V2 수수료 펀드',
     address: '0x021f53A57F99413A83298187C139f647F95F5133',
     hasAnalysis: true,
   },
   {
-    name: 'CORAL 펀드',
-    address: '0xdA6C0aFb267072F8fF6FC4F207b992729F4a4e15',
+    name: 'V3 수수료 펀드',
+    address: '0x52FB7d3ab53d5a8d348B15ea7E3f7bfE35dD35F1',
+    hasAnalysis: true,
+  },
+  {
+    name: '팀 지갑',
+    address: '0x525e7f0a5d3fd6169d6ec35288104d52bf3bb95f',
     hasAnalysis: true,
   },
   {

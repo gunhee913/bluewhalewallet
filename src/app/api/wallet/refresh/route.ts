@@ -33,6 +33,7 @@ const WALLET_GROUPS: Record<string, string[]> = {
   '22': ['0xa7f39e0d389eCF0cADFb8b940015300D4010A58C'], // bAUSD (실험실)
   '23': ['0x620298587246547da70B8c16d3aA0C92F38E243f'], // BTC.b-WETH.e (실험실)
   '24': ['0xAFa948cf1e722E83572068A826f146Fbe134cF77'], // BTC.b-XAUt (실험실)
+  '25': ['0xdA6C0aFb267072F8fF6FC4F207b992729F4a4e15'], // CORAL 펀드
 };
 
 // 모든 지갑 주소

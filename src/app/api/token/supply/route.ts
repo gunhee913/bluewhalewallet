@@ -174,16 +174,16 @@ async function extractSbwpmAmountBwpmIo(page: Page): Promise<number | null> {
         // sBWPM 토큰 찾기
         for (let i = 0; i < lines.length; i++) {
           if (lines[i] === 'sBWPM') {
-            // sBWPM 이후 숫자 찾기
-            for (let j = i + 1; j < Math.min(i + 10, lines.length); j++) {
-              // 소수점 포함 숫자 패턴 (예: 64.7232)
-              const match = lines[j].match(/^([\d,]+\.?\d*)$/);
-              if (match && match[1]) {
-                const amount = parseFloat(match[1].replace(/,/g, ''));
-                if (amount > 0 && amount < 10000) { // 합리적인 범위 체크
-                  console.log(`Found sBWPM on bwpm.io: ${amount}`);
-                  return amount;
-                }
+            // sBWPM 이후 여러 줄을 합쳐서 소수점 숫자 찾기
+            const nextLines = lines.slice(i + 1, i + 10).join(' ');
+            
+            // 소수점 포함 숫자 패턴 (예: 64.7232, 1,036.3855)
+            const match = nextLines.match(/([\d,]+\.\d{2,})/);
+            if (match && match[1]) {
+              const amount = parseFloat(match[1].replace(/,/g, ''));
+              if (amount > 0 && amount < 10000) {
+                console.log(`Found sBWPM on bwpm.io: ${amount}`);
+                return amount;
               }
             }
           }

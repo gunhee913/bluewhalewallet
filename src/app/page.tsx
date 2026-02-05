@@ -737,10 +737,10 @@ function HomeContent() {
                 const bwpmNft = totalSupply - sbwpmSupply; // BWPM NFT = 7,000 - sBWPM크롤링값
                 
                 const rows = [
-                  { label: '총 발행량', value: totalSupply, link: '#' },
+                  { label: '총 발행량', value: totalSupply, link: null },
                   { label: 'BWPM NFT', value: bwpmNft, link: '#' },
                   { label: 'sBWPM', value: sbwpmCirculating, link: '#' },
-                  { label: '소각량', value: burnedAmount, link: '#' },
+                  { label: '소각량', value: burnedAmount, link: '/token/sBWPM' },
                 ];
                 
                 return (
@@ -756,12 +756,14 @@ function HomeContent() {
                             {row.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 1 })}개
                           </span>
                         </div>
-                        <Link
-                          href={row.link}
-                          className="px-4 py-1.5 text-sm bg-slate-600 hover:bg-slate-500 text-white rounded transition-colors"
-                        >
-                          분석
-                        </Link>
+                        {row.link && (
+                          <Link
+                            href={row.link}
+                            className="px-4 py-1.5 text-sm bg-slate-600 hover:bg-slate-500 text-white rounded transition-colors"
+                          >
+                            분석
+                          </Link>
+                        )}
                       </div>
                     ))}
                   </div>

@@ -719,6 +719,12 @@ function HomeContent() {
         {/* 토큰 탭 - 토큰 정보 */}
         {selectedTab === 'tokenInfo' && (
           <div className="space-y-4">
+            {/* 개발 중 안내 배너 */}
+            <div className="bg-amber-500/20 border border-amber-500/50 rounded-lg px-4 py-3 flex items-center gap-2">
+              <span className="text-amber-400">⚠️</span>
+              <span className="text-amber-200 text-sm">개발 중인 기능입니다. 일부 데이터가 정확하지 않을 수 있습니다.</span>
+            </div>
+            
             {/* sBWPM 카드 */}
             <Card className="bg-slate-800/50 border-slate-700 p-4">
               <div className="flex items-center gap-3 mb-4">

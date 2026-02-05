@@ -510,6 +510,41 @@ export async function GET(request: NextRequest) {
       }
       
       console.log('[Liquidity Only] Starting...');
+      
+      // 디버그: 페이지 내용도 반환
+      let browser = null;
+      let page = null;
+      let pagePreview = '';
+      
+      try {
+        browser = await puppeteer.connect({
+          browserWSEndpoint: `wss://chrome.browserless.io?token=${browserlessToken}`,
+        });
+        page = await browser.newPage();
+        await page.setViewport({ width: 1280, height: 720 });
+        
+        await page.goto(SNOWTRACE_URL, { 
+          waitUntil: 'networkidle2',
+          timeout: 60000 
+        });
+        
+        // 15초 대기
+        await new Promise((r) => setTimeout(r, 15000));
+        
+        // 페이지 내용 일부 추출
+        pagePreview = await page.evaluate(() => {
+          return document.body.innerText.substring(0, 5000);
+        });
+        
+        console.log('[Liquidity] Page preview:', pagePreview);
+        
+      } catch (e) {
+        console.error('[Liquidity] Error:', e);
+      } finally {
+        if (page) try { await page.close(); } catch (e) { /* ignore */ }
+        if (browser) try { await browser.close(); } catch (e) { /* ignore */ }
+      }
+      
       const liquidityBalances = await fetchLiquidityBalances(browserlessToken);
       console.log('[Liquidity Only] Result:', liquidityBalances);
       
@@ -544,6 +579,7 @@ export async function GET(request: NextRequest) {
         type: 'liquidity',
         liquidityBalances,
         liquidityTotal,
+        debug_pagePreview: pagePreview.substring(0, 2000), // 첫 2000자
       });
     }
     

@@ -764,7 +764,7 @@ function HomeContent() {
                 
                 return (
                   <div className="space-y-2">
-                    <RowItem label="총 발행량" value={totalSupply} link="/token/sBWPM/supply" />
+                    <RowItem label="총 발행량" value={totalSupply} link="#" />
                     <RowItem label="BWPM NFT" value={bwpmNft} link="#" />
                     
                     {/* sBWPM 행 - 클릭하면 펼침/접힘 */}

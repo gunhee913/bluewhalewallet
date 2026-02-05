@@ -744,7 +744,8 @@ function HomeContent() {
                         (t: { token_name: string }) => t.token_name === 'sBWPM'
                       );
                       const burnedAmount = burnData?.burned_amount || 0;
-                      const bwpmNft = totalSupply - (sbwpmSupply - burnedAmount);
+                      const sbwpmCirculating = sbwpmSupply - burnedAmount; // sBWPM 유통량 = 크롤링값 - 소각량
+                      const bwpmNft = totalSupply - sbwpmCirculating; // BWPM NFT = 7,000 - sBWPM 유통량
                       
                       return (
                         <tr>
@@ -752,13 +753,13 @@ function HomeContent() {
                             {totalSupply.toLocaleString()}개
                           </td>
                           <td className="text-center text-white px-4 py-3 font-medium">
-                            {bwpmNft.toLocaleString()}개
+                            {bwpmNft.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 1 })}개
                           </td>
                           <td className="text-center text-white px-4 py-3 font-medium">
-                            {sbwpmSupply.toLocaleString()}개
+                            {sbwpmCirculating.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 1 })}개
                           </td>
                           <td className="text-center text-white px-4 py-3 font-medium">
-                            {burnedAmount.toLocaleString()}개
+                            {burnedAmount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 1 })}개
                           </td>
                         </tr>
                       );

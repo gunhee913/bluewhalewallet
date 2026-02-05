@@ -308,8 +308,8 @@ async function fetchAvalancheBalance(
 
 // Snowtrace에서 LP 풀 잔액 추출
 async function extractLpBalances(page: Page): Promise<Record<string, number>> {
-  // 페이지 로드 후 5초 대기
-  await new Promise((r) => setTimeout(r, 5000));
+  // 페이지 로드 후 8초 대기
+  await new Promise((r) => setTimeout(r, 8000));
   
   const results: Record<string, number> = {};
   
@@ -318,25 +318,27 @@ async function extractLpBalances(page: Page): Promise<Record<string, number>> {
     try {
       const lpData = await page.evaluate((lpNames) => {
         const body = document.body.innerText;
-        const lines = body.split('\n').map(l => l.trim()).filter(l => l);
         const found: Record<string, number> = {};
         
+        // 각 LP 이름에 대해 검색
         for (const lpName of lpNames) {
-          for (let i = 0; i < lines.length; i++) {
-            if (lines[i].includes(lpName)) {
-              // LP 이름 근처에서 숫자 찾기
-              for (let j = Math.max(0, i - 3); j < Math.min(lines.length, i + 5); j++) {
-                // 숫자 패턴 (예: 136.371 또는 1,234.56)
-                const match = lines[j].match(/^([\d,]+\.?\d*)$/);
-                if (match && match[1]) {
-                  const value = parseFloat(match[1].replace(/,/g, ''));
-                  if (value > 0 && value < 100000) {
-                    found[lpName] = value;
-                    break;
-                  }
+          // LP 이름이 포함된 위치 찾기
+          const index = body.indexOf(lpName);
+          if (index !== -1) {
+            // LP 이름 주변 텍스트 추출 (앞뒤 200자)
+            const surroundingText = body.substring(Math.max(0, index - 200), index + lpName.length + 200);
+            
+            // 숫자 패턴 찾기 (소수점 포함, 콤마 포함)
+            const numbers = surroundingText.match(/[\d,]+\.\d+/g);
+            if (numbers) {
+              for (const numStr of numbers) {
+                const value = parseFloat(numStr.replace(/,/g, ''));
+                // LP 잔액으로 합리적인 범위 (0.1 ~ 10000)
+                if (value >= 0.1 && value <= 10000) {
+                  found[lpName] = value;
+                  break;
                 }
               }
-              if (found[lpName]) break;
             }
           }
         }
@@ -355,7 +357,7 @@ async function extractLpBalances(page: Page): Promise<Record<string, number>> {
       
       // 일부라도 찾았으면 로그
       if (Object.keys(results).length > 0) {
-        console.log(`Found ${Object.keys(results).length}/${LP_POOLS.length} LP balances (attempt ${attempt + 1})`);
+        console.log(`Found ${Object.keys(results).length}/${LP_POOLS.length} LP balances (attempt ${attempt + 1}):`, results);
       }
     } catch (e) {
       console.error(`LP extraction attempt ${attempt + 1} error:`, e);
@@ -391,6 +393,10 @@ async function fetchLiquidityBalances(
       waitUntil: 'networkidle2',
       timeout: 60000 
     });
+    
+    // 디버그: 페이지 내용 일부 출력
+    const pageContent = await page.evaluate(() => document.body.innerText.substring(0, 3000));
+    console.log(`[Liquidity] Page content preview:`, pageContent);
 
     const balances = await extractLpBalances(page);
     console.log(`[Liquidity] Result:`, balances);

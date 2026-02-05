@@ -403,6 +403,12 @@ export async function GET(request: NextRequest) {
       // Supabase에 저장
       const now = new Date().toISOString();
       const totalBuyback = (buybackGofun || 0) + (buybackDolfun || 0);
+      
+      console.log('=== DEBUG: Before upsert ===');
+      console.log('buybackGofun:', buybackGofun);
+      console.log('buybackDolfun:', buybackDolfun);
+      console.log('totalBuyback:', totalBuyback);
+      
       const upsertData = Object.entries(results)
         .filter(([, supply]) => supply !== null)
         .map(([name, supply]) => ({
@@ -415,13 +421,20 @@ export async function GET(request: NextRequest) {
           updated_at: now,
         }));
       
+      console.log('=== DEBUG: upsertData ===');
+      console.log(JSON.stringify(upsertData, null, 2));
+      
       if (upsertData.length > 0) {
-        const { error } = await supabase
+        const { data: upsertResult, error } = await supabase
           .from('token_supply')
-          .upsert(upsertData, { onConflict: 'token_name' });
+          .upsert(upsertData, { onConflict: 'token_name' })
+          .select();
+        
+        console.log('=== DEBUG: Upsert result ===');
+        console.log('upsertResult:', JSON.stringify(upsertResult, null, 2));
         
         if (error) {
-          console.error('Supabase error:', error);
+          console.error('Supabase upsert error:', error);
         }
         
         // 히스토리 저장 (sBWPM인 경우)

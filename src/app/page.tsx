@@ -684,7 +684,7 @@ function HomeContent() {
                   wallet.isAdolTotal ? getAdolDetails() : 
                   undefined
                 }
-                aquaFairPrice={wallet.name === 'Aqua1 펀드' ? getAquaFairPrice() : undefined}
+                aquaFairPrice={wallet.name === 'AQUA1 펀드' ? getAquaFairPrice() : undefined}
               />
             ))}
           </div>

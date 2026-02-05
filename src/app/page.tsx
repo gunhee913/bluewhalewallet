@@ -734,7 +734,7 @@ function HomeContent() {
                 );
                 const burnedAmount = burnData?.burned_amount || 0;
                 const sbwpmCirculating = sbwpmSupply - burnedAmount;
-                const bwpmNft = totalSupply - sbwpmCirculating;
+                const bwpmNft = totalSupply - sbwpmSupply; // BWPM NFT = 7,000 - sBWPM크롤링값
                 
                 const rows = [
                   { label: '총 발행량', value: totalSupply, link: '#' },
@@ -758,7 +758,7 @@ function HomeContent() {
                         </div>
                         <Link
                           href={row.link}
-                          className="px-3 py-1 text-xs bg-slate-600 hover:bg-slate-500 text-white rounded transition-colors"
+                          className="px-4 py-1.5 text-sm bg-slate-600 hover:bg-slate-500 text-white rounded transition-colors"
                         >
                           분석
                         </Link>

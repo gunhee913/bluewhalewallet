@@ -141,7 +141,7 @@ async function fetchTokenBurnData() {
 }
 
 // 토큰 목록 (순서만 정의, 총 발행량은 API에서 가져옴)
-const TOKEN_NAMES = ['sBWPM', 'sADOL', 'AQUA1', 'CLAM', 'PEARL', 'SHELL', 'CORAL'];
+const TOKEN_NAMES = ['sBWPM', 'sADOL', 'CLAM', 'PEARL', 'SHELL', 'AQUA1', 'CORAL'];
 
 interface TokenBurnData {
   burned_amount: number;

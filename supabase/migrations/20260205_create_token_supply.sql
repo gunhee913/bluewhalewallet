@@ -4,6 +4,9 @@ CREATE TABLE IF NOT EXISTS token_supply (
   token_name TEXT NOT NULL UNIQUE,
   circulating_supply NUMERIC,
   avalanche_balance NUMERIC,
+  buyback_gofun NUMERIC,
+  buyback_dolfun NUMERIC,
+  buyback_amount NUMERIC,
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 

@@ -6,6 +6,9 @@ import { createClient } from '@supabase/supabase-js';
 const KAIASCAN_URL = 'https://kaiascan.io/token/';
 const KAIASCAN_HOLDER_URL = 'https://kaiascan.io/token/';
 
+// PumpSpace 지갑 페이지 URL
+const PUMPSPACE_URL = 'https://pumpspace.io/wallet/detail?account=';
+
 // Vercel Pro 최대 300초
 export const maxDuration = 300;
 
@@ -17,6 +20,10 @@ const TOKEN_CONTRACTS: Record<string, string> = {
 // 아발란체 브릿지 지갑 주소 (sBWPM)
 const AVALANCHE_BRIDGE_WALLET = '0x316091d3bd7bf9a77640d9807e3d6b5a30cbf6bb';
 
+// 바이백 지갑 주소 (아발란체)
+const BUYBACK_GOFUN = '0x3654378AA2DEb0860c2e5C7906471C8704c44c6F'; // 고펀
+const BUYBACK_DOLFUN = '0xEd1b254B6c3a6785e19ba83b728ECe4A6444f4d7'; // 돌펀
+
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -26,6 +33,116 @@ function getSupabase() {
   }
   
   return createClient(url, key);
+}
+
+// PumpSpace에서 sBWPM 토큰 보유량 추출
+async function extractSbwpmAmount(page: Page): Promise<number | null> {
+  // 페이지 로드 후 10초 대기 (동적 콘텐츠 로딩)
+  await new Promise((r) => setTimeout(r, 10000));
+  
+  // 최대 15초 동안 폴링 (1초 간격)
+  for (let attempt = 0; attempt < 15; attempt++) {
+    try {
+      const result = await page.evaluate(() => {
+        const body = document.body.innerText;
+        const lines = body.split('\n').map(l => l.trim()).filter(l => l);
+        
+        // sBWPM 토큰 찾기
+        for (let i = 0; i < lines.length; i++) {
+          if (lines[i] === 'sBWPM' && i + 1 < lines.length && lines[i + 1].includes('$')) {
+            // Units 위치 찾기
+            let unitsIndex = -1;
+            for (let j = i + 1; j < Math.min(i + 10, lines.length); j++) {
+              if (lines[j] === 'Units') {
+                unitsIndex = j;
+                break;
+              }
+            }
+            
+            if (unitsIndex === -1) continue;
+            
+            // Units 바로 앞 2줄을 합쳐서 보유량 추출
+            const numPart1 = lines[unitsIndex - 2] || '';
+            const numPart2 = lines[unitsIndex - 1] || '';
+            
+            const combinedNum = (numPart1 + numPart2).replace(/,/g, '');
+            const amountMatch = combinedNum.match(/([\d.]+)/);
+            if (amountMatch) {
+              const amount = parseFloat(amountMatch[1]);
+              if (amount > 0) {
+                console.log(`Found sBWPM: ${amount} Units`);
+                return amount;
+              }
+            }
+          }
+        }
+        
+        return null;
+      });
+
+      if (result && result > 0) {
+        console.log(`Found sBWPM: ${result} (attempt ${attempt + 1})`);
+        return result;
+      }
+    } catch (e) {
+      console.error(`Attempt ${attempt + 1} error:`, e);
+    }
+
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+
+  return null;
+}
+
+// PumpSpace에서 바이백 지갑의 sBWPM 보유량 크롤링
+async function fetchBuybackSbwpm(
+  walletAddress: string,
+  browserlessToken: string,
+  retryCount: number = 0
+): Promise<number | null> {
+  let browser = null;
+  let page = null;
+  
+  try {
+    console.log(`[Buyback ${walletAddress.slice(0, 8)}] Connecting... (attempt ${retryCount + 1})`);
+    browser = await puppeteer.connect({
+      browserWSEndpoint: `wss://chrome.browserless.io?token=${browserlessToken}`,
+    });
+    
+    page = await browser.newPage();
+    await page.setViewport({ width: 1280, height: 720 });
+    
+    const url = `${PUMPSPACE_URL}${walletAddress}`;
+    console.log(`[Buyback] Navigating to: ${url}`);
+    
+    await page.goto(url, { 
+      waitUntil: 'networkidle2',
+      timeout: 45000 
+    });
+
+    const amount = await extractSbwpmAmount(page);
+    console.log(`[Buyback ${walletAddress.slice(0, 8)}] Result: ${amount}`);
+    
+    return amount;
+
+  } catch (err) {
+    console.error(`[Buyback] Error:`, err);
+    
+    if (retryCount < 2) {
+      console.log(`[Buyback] Retrying...`);
+      await new Promise((r) => setTimeout(r, 3000));
+      return fetchBuybackSbwpm(walletAddress, browserlessToken, retryCount + 1);
+    }
+    
+    return null;
+  } finally {
+    if (page) {
+      try { await page.close(); } catch (e) { /* ignore */ }
+    }
+    if (browser) {
+      try { await browser.close(); } catch (e) { /* ignore */ }
+    }
+  }
 }
 
 // 특정 지갑의 토큰 잔액 추출
@@ -253,6 +370,8 @@ export async function GET(request: NextRequest) {
       
       const results: Record<string, number | null> = {};
       let avalancheBalance: number | null = null;
+      let buybackGofun: number | null = null;
+      let buybackDolfun: number | null = null;
       
       for (const [name, address] of Object.entries(tokensToFetch)) {
         if (!address) continue;
@@ -263,6 +382,16 @@ export async function GET(request: NextRequest) {
         if (name === 'sBWPM') {
           await new Promise((r) => setTimeout(r, 10000)); // 대기
           avalancheBalance = await fetchAvalancheBalance(address, browserlessToken);
+          
+          // 바이백(고펀) 크롤링
+          await new Promise((r) => setTimeout(r, 10000));
+          buybackGofun = await fetchBuybackSbwpm(BUYBACK_GOFUN, browserlessToken);
+          console.log(`Buyback Gofun: ${buybackGofun}`);
+          
+          // 바이백(돌펀) 크롤링
+          await new Promise((r) => setTimeout(r, 10000));
+          buybackDolfun = await fetchBuybackSbwpm(BUYBACK_DOLFUN, browserlessToken);
+          console.log(`Buyback Dolfun: ${buybackDolfun}`);
         }
         
         // 다음 요청 전 대기
@@ -273,12 +402,16 @@ export async function GET(request: NextRequest) {
       
       // Supabase에 저장
       const now = new Date().toISOString();
+      const totalBuyback = (buybackGofun || 0) + (buybackDolfun || 0);
       const upsertData = Object.entries(results)
         .filter(([, supply]) => supply !== null)
         .map(([name, supply]) => ({
           token_name: name,
           circulating_supply: supply,
           avalanche_balance: name === 'sBWPM' ? avalancheBalance : null,
+          buyback_gofun: name === 'sBWPM' ? buybackGofun : null,
+          buyback_dolfun: name === 'sBWPM' ? buybackDolfun : null,
+          buyback_amount: name === 'sBWPM' && totalBuyback > 0 ? totalBuyback : null,
           updated_at: now,
         }));
       
@@ -290,9 +423,52 @@ export async function GET(request: NextRequest) {
         if (error) {
           console.error('Supabase error:', error);
         }
+        
+        // 히스토리 저장 (sBWPM인 경우)
+        if (results['sBWPM']) {
+          const koreaDate = new Date(Date.now() + 9 * 60 * 60 * 1000);
+          const today = koreaDate.toISOString().split('T')[0];
+          
+          const sbwpmTotal = results['sBWPM'];
+          const avaxBalance = avalancheBalance || 0;
+          const kaiaBalance = sbwpmTotal - avaxBalance;
+          
+          // 소각량 가져오기
+          const { data: burnData } = await supabase
+            .from('token_burn')
+            .select('burned_amount')
+            .eq('token_name', 'sBWPM')
+            .order('recorded_at', { ascending: false })
+            .limit(1)
+            .single();
+          
+          const burnedAmount = burnData?.burned_amount || 0;
+          const bwpmNft = 7000 - sbwpmTotal;
+          
+          const historyData = {
+            recorded_at: today,
+            bwpm_nft: bwpmNft,
+            sbwpm_kaia: kaiaBalance - burnedAmount,
+            sbwpm_avalanche: avaxBalance,
+            burned_amount: burnedAmount,
+            buyback_gofun: buybackGofun || 0,
+            buyback_dolfun: buybackDolfun || 0,
+            buyback_amount: totalBuyback || 0,
+          };
+          
+          const { error: historyError } = await supabase
+            .from('token_supply_history')
+            .upsert(historyData, { onConflict: 'recorded_at' });
+          
+          if (historyError) {
+            console.error('History save error:', historyError);
+          } else {
+            console.log('History saved:', historyData);
+          }
+        }
       }
       
-      return NextResponse.json({ success: true, results, avalancheBalance });
+      return NextResponse.json({ success: true, results, avalancheBalance, buybackGofun, buybackDolfun, buybackAmount: totalBuyback });
     }
     
     // 캐시된 데이터 조회

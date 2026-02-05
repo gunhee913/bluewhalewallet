@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Loader2, Flame, Info } from 'lucide-react';
+import { Loader2, Flame, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { useState, useMemo, useEffect, Suspense } from 'react';
@@ -376,6 +376,7 @@ function HomeContent() {
   const [joinDialogOpen, setJoinDialogOpen] = useState(false);
   const [joinAddress, setJoinAddress] = useState('');
   const [joinLoading, setJoinLoading] = useState(false);
+  const [sbwpmExpanded, setSbwpmExpanded] = useState(false);
   const { toast } = useToast();
 
   // 클럽 가입 신청
@@ -731,64 +732,110 @@ function HomeContent() {
                 );
                 const sbwpmSupply = sbwpmData?.circulating_supply || 0;
                 const avalancheBalance = sbwpmData?.avalanche_balance || 0;
+                const buybackGofun = sbwpmData?.buyback_gofun || 0;
+                const buybackDolfun = sbwpmData?.buyback_dolfun || 0;
                 const kaiaBalance = sbwpmSupply - avalancheBalance;
                 const burnData = tokenData?.tokens?.find(
                   (t: { token_name: string }) => t.token_name === 'sBWPM'
                 );
                 const burnedAmount = burnData?.burned_amount || 0;
                 const sbwpmCirculating = sbwpmSupply - burnedAmount;
-                const bwpmNft = totalSupply - sbwpmSupply; // BWPM NFT = 7,000 - sBWPM크롤링값
+                const bwpmNft = totalSupply - sbwpmSupply;
                 
-                const formatNum = (n: number, forceDecimal = false) => n.toLocaleString(undefined, { minimumFractionDigits: forceDecimal ? 1 : 0, maximumFractionDigits: 1 });
+                const formatNum = (n: number) => n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 1 });
                 
-                const rows = [
-                  { label: '총 발행량', value: totalSupply, extra: null, link: '#' },
-                  { label: 'BWPM NFT', value: bwpmNft, extra: null, link: '#' },
-                  { label: 'sBWPM', value: sbwpmCirculating, extra: `(카이아: ${formatNum(kaiaBalance - burnedAmount)}개, 아발란체: ${formatNum(avalancheBalance)}개)`, link: '#' },
-                  { label: '소각량', value: burnedAmount, extra: null, link: '/token/sBWPM' },
-                ];
+                const RowItem = ({ label, value, link }: { label: string; value: number; link: string | null }) => (
+                  <div className="flex items-center justify-between bg-slate-700/30 rounded-lg px-4 py-3">
+                    <div className="flex items-center gap-4">
+                      <span className="text-slate-400 text-sm w-20 shrink-0">{label}</span>
+                      <span className="text-white font-medium">{formatNum(value)}개</span>
+                    </div>
+                    {link && (
+                      <Link
+                        href={link}
+                        className="px-4 py-1.5 text-sm bg-slate-600 hover:bg-slate-500 text-white rounded transition-colors whitespace-nowrap shrink-0 ml-2"
+                      >
+                        분석
+                      </Link>
+                    )}
+                  </div>
+                );
                 
                 return (
                   <div className="space-y-2">
-                    {rows.map((row) => (
-                      <div
-                        key={row.label}
-                        className="flex items-center justify-between bg-slate-700/30 rounded-lg px-4 py-3"
-                      >
-                        <div className="flex items-center gap-4">
-                          <span className="text-slate-400 text-sm w-20 shrink-0">{row.label}</span>
-                          <span className="text-white font-medium">
-                            {formatNum(row.value)}개
-                          </span>
-                          {row.extra && (
-                            <>
-                              {/* PC: 인라인 텍스트 */}
-                              <span className="hidden md:inline text-slate-500 text-xs">
-                                {row.extra}
-                              </span>
-                              {/* 모바일: 정보 아이콘 + Popover */}
-                              <Popover>
-                                <PopoverTrigger className="md:hidden">
-                                  <Info className="w-4 h-4 text-slate-400 hover:text-white transition-colors" />
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto bg-slate-800 border-slate-700 p-3">
-                                  <p className="text-xs text-slate-300">카이아: {formatNum(kaiaBalance - burnedAmount)}개</p>
-                                  <p className="text-xs text-slate-300">아발란체: {formatNum(avalancheBalance)}개</p>
-                                </PopoverContent>
-                              </Popover>
-                            </>
-                          )}
-                        </div>
-                        {row.link && (
-                          <Link
-                            href={row.link}
-                            className="px-4 py-1.5 text-sm bg-slate-600 hover:bg-slate-500 text-white rounded transition-colors whitespace-nowrap shrink-0 ml-2"
-                          >
-                            분석
-                          </Link>
-                        )}
+                    <RowItem label="총 발행량" value={totalSupply} link="/token/sBWPM/supply" />
+                    <RowItem label="BWPM NFT" value={bwpmNft} link="#" />
+                    
+                    {/* sBWPM 행 - 클릭하면 펼침/접힘 */}
+                    <div
+                      onClick={() => setSbwpmExpanded(!sbwpmExpanded)}
+                      className="flex items-center justify-between bg-slate-700/30 rounded-lg px-4 py-3 cursor-pointer hover:bg-slate-700/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-4">
+                        <span className="text-slate-400 text-sm w-20 shrink-0">sBWPM</span>
+                        <span className="text-white font-medium">{formatNum(sbwpmCirculating)}개</span>
+                        <ChevronDown 
+                          className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${sbwpmExpanded ? 'rotate-180' : ''}`} 
+                        />
                       </div>
-                    ))}
+                      <Link
+                        href="#"
+                        onClick={(e) => e.stopPropagation()}
+                        className="px-4 py-1.5 text-sm bg-slate-600 hover:bg-slate-500 text-white rounded transition-colors whitespace-nowrap shrink-0 ml-2"
+                      >
+                        분석
+                      </Link>
+                    </div>
+                    
+                    {/* sBWPM 분포 테이블 - 펼침/접힘 애니메이션 */}
+                    <div 
+                      className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                        sbwpmExpanded ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
+                      }`}
+                    >
+                      <div className="overflow-x-auto scrollbar-thin ml-4 mr-0 md:ml-6 pb-1">
+                        <table className="w-full min-w-[480px] text-sm">
+                          <thead>
+                            <tr className="border-b border-slate-600">
+                              <th className="text-left text-slate-400 font-medium py-2 px-2">구분</th>
+                              <th className="text-right text-slate-400 font-medium py-2 px-2">바이백(고펀)</th>
+                              <th className="text-right text-slate-400 font-medium py-2 px-2">바이백(돌펀)</th>
+                              <th className="text-right text-slate-400 font-medium py-2 px-2">유동성</th>
+                              <th className="text-right text-slate-400 font-medium py-2 px-2">지갑보유</th>
+                              <th className="text-right text-slate-400 font-medium py-2 px-2">합계</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr className="border-b border-slate-700/50">
+                              <td className="text-slate-300 py-2 px-2">아발란체</td>
+                              <td className="text-right text-white py-2 px-2 font-mono">{formatNum(buybackGofun)}</td>
+                              <td className="text-right text-white py-2 px-2 font-mono">{formatNum(buybackDolfun)}</td>
+                              <td className="text-right text-slate-500 py-2 px-2">-</td>
+                              <td className="text-right text-slate-500 py-2 px-2">-</td>
+                              <td className="text-right text-white py-2 px-2 font-mono">{formatNum(avalancheBalance)}</td>
+                            </tr>
+                            <tr className="border-b border-slate-700/50">
+                              <td className="text-slate-300 py-2 px-2">카이아</td>
+                              <td className="text-right text-slate-500 py-2 px-2">-</td>
+                              <td className="text-right text-slate-500 py-2 px-2">-</td>
+                              <td className="text-right text-slate-500 py-2 px-2">-</td>
+                              <td className="text-right text-slate-500 py-2 px-2">-</td>
+                              <td className="text-right text-white py-2 px-2 font-mono">{formatNum(kaiaBalance - burnedAmount)}</td>
+                            </tr>
+                            <tr className="bg-slate-700/20">
+                              <td className="text-slate-300 font-medium py-2 px-2">합계</td>
+                              <td className="text-right text-white font-medium py-2 px-2 font-mono">{formatNum(buybackGofun)}</td>
+                              <td className="text-right text-white font-medium py-2 px-2 font-mono">{formatNum(buybackDolfun)}</td>
+                              <td className="text-right text-slate-500 py-2 px-2">-</td>
+                              <td className="text-right text-slate-500 py-2 px-2">-</td>
+                              <td className="text-right text-white font-medium py-2 px-2 font-mono">{formatNum(sbwpmCirculating)}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                    
+                    <RowItem label="소각량" value={burnedAmount} link="/token/sBWPM" />
                   </div>
                 );
               })()}

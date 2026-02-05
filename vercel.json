@@ -107,6 +107,10 @@
     {
       "path": "/api/club/shell/refresh",
       "schedule": "0 3,15 * * *"
+    },
+    {
+      "path": "/api/token/supply?refresh=true",
+      "schedule": "0 3,15 * * *"
     }
   ]
 }

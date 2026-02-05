@@ -25,6 +25,7 @@ const WALLET_NAMES: Record<string, string> = {
   '0x52fb7d3ab53d5a8d348b15ea7e3f7bfe35dd35f1': 'v3 수수료 펀드(60%)',
   '0x021f53a57f99413a83298187c139f647f95f5133': 'v2 수수료 펀드',
   '0x525e7f0a5d3fd6169d6ec35288104d52bf3bb95f': '팀 지갑',
+  '0xda6c0afb267072f8ff6fc4f207b992729f4a4e15': '코랄펀드',
 };
 
 interface HistoryItem {

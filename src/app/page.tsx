@@ -116,6 +116,11 @@ const WALLETS: WalletInfo[] = [
     hasAnalysis: true,
   },
   {
+    name: '코랄펀드',
+    address: '0xdA6C0aFb267072F8fF6FC4F207b992729F4a4e15',
+    hasAnalysis: true,
+  },
+  {
     name: '소각 지갑',
     address: '0x000000000000000000000000000000000000dEaD',
   },

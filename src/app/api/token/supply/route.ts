@@ -424,14 +424,21 @@ export async function GET(request: NextRequest) {
       console.log('=== DEBUG: upsertData ===');
       console.log(JSON.stringify(upsertData, null, 2));
       
+      let upsertError = null;
+      let upsertResult = null;
+      
       if (upsertData.length > 0) {
-        const { data: upsertResult, error } = await supabase
+        const { data, error } = await supabase
           .from('token_supply')
           .upsert(upsertData, { onConflict: 'token_name' })
           .select();
         
+        upsertResult = data;
+        upsertError = error;
+        
         console.log('=== DEBUG: Upsert result ===');
-        console.log('upsertResult:', JSON.stringify(upsertResult, null, 2));
+        console.log('upsertResult:', JSON.stringify(data, null, 2));
+        console.log('upsertError:', JSON.stringify(error, null, 2));
         
         if (error) {
           console.error('Supabase upsert error:', error);
@@ -495,7 +502,10 @@ export async function GET(request: NextRequest) {
         buybackGofun, 
         buybackDolfun, 
         buybackAmount: totalBuyback,
-        // 디버그: DB에 실제 저장된 값
+        // 디버그
+        debug_upsertData: upsertData,
+        debug_upsertResult: upsertResult,
+        debug_upsertError: upsertError,
         debug_db_saved: verifyData
       });
     }

@@ -724,49 +724,49 @@ function HomeContent() {
                 <img src="/sBWPM.svg" alt="sBWPM" className="w-10 h-10" />
                 <h3 className="text-lg font-semibold text-white">sBWPM</h3>
               </div>
-              <div className="overflow-x-auto scrollbar-thin">
-                <table className="w-full min-w-[500px]">
-                  <thead>
-                    <tr className="border-b border-slate-700">
-                      <th className="text-center text-sm font-medium text-slate-400 px-4 py-3">총 발행량</th>
-                      <th className="text-center text-sm font-medium text-slate-400 px-4 py-3">BWPM NFT</th>
-                      <th className="text-center text-sm font-medium text-slate-400 px-4 py-3">sBWPM</th>
-                      <th className="text-center text-sm font-medium text-slate-400 px-4 py-3">소각량</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(() => {
-                      const totalSupply = 7000;
-                      const sbwpmSupply = tokenSupplyData?.tokens?.find(
-                        (t: { token_name: string }) => t.token_name === 'sBWPM'
-                      )?.circulating_supply || 0;
-                      const burnData = tokenData?.tokens?.find(
-                        (t: { token_name: string }) => t.token_name === 'sBWPM'
-                      );
-                      const burnedAmount = burnData?.burned_amount || 0;
-                      const sbwpmCirculating = sbwpmSupply - burnedAmount; // sBWPM 유통량 = 크롤링값 - 소각량
-                      const bwpmNft = totalSupply - sbwpmCirculating; // BWPM NFT = 7,000 - sBWPM 유통량
-                      
-                      return (
-                        <tr>
-                          <td className="text-center text-white px-4 py-3 font-medium">
-                            {totalSupply.toLocaleString()}개
-                          </td>
-                          <td className="text-center text-white px-4 py-3 font-medium">
-                            {bwpmNft.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 1 })}개
-                          </td>
-                          <td className="text-center text-white px-4 py-3 font-medium">
-                            {sbwpmCirculating.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 1 })}개
-                          </td>
-                          <td className="text-center text-white px-4 py-3 font-medium">
-                            {burnedAmount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 1 })}개
-                          </td>
-                        </tr>
-                      );
-                    })()}
-                  </tbody>
-                </table>
-              </div>
+              {(() => {
+                const totalSupply = 7000;
+                const sbwpmSupply = tokenSupplyData?.tokens?.find(
+                  (t: { token_name: string }) => t.token_name === 'sBWPM'
+                )?.circulating_supply || 0;
+                const burnData = tokenData?.tokens?.find(
+                  (t: { token_name: string }) => t.token_name === 'sBWPM'
+                );
+                const burnedAmount = burnData?.burned_amount || 0;
+                const sbwpmCirculating = sbwpmSupply - burnedAmount;
+                const bwpmNft = totalSupply - sbwpmCirculating;
+                
+                const rows = [
+                  { label: '총 발행량', value: totalSupply, link: '#' },
+                  { label: 'BWPM NFT', value: bwpmNft, link: '#' },
+                  { label: 'sBWPM', value: sbwpmCirculating, link: '#' },
+                  { label: '소각량', value: burnedAmount, link: '#' },
+                ];
+                
+                return (
+                  <div className="space-y-2">
+                    {rows.map((row) => (
+                      <div
+                        key={row.label}
+                        className="flex items-center justify-between bg-slate-700/30 rounded-lg px-4 py-3"
+                      >
+                        <div className="flex items-center gap-4">
+                          <span className="text-slate-400 text-sm w-20">{row.label}</span>
+                          <span className="text-white font-medium">
+                            {row.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 1 })}개
+                          </span>
+                        </div>
+                        <Link
+                          href={row.link}
+                          className="px-3 py-1 text-xs bg-slate-600 hover:bg-slate-500 text-white rounded transition-colors"
+                        >
+                          분석
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
             </Card>
           </div>
         )}

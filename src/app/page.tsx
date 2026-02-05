@@ -739,7 +739,7 @@ function HomeContent() {
                 const sbwpmCirculating = sbwpmSupply - burnedAmount;
                 const bwpmNft = totalSupply - sbwpmSupply; // BWPM NFT = 7,000 - sBWPM크롤링값
                 
-                const formatNum = (n: number) => n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 1 });
+                const formatNum = (n: number, forceDecimal = false) => n.toLocaleString(undefined, { minimumFractionDigits: forceDecimal ? 1 : 0, maximumFractionDigits: 1 });
                 
                 const rows = [
                   { label: '총 발행량', value: totalSupply, extra: null, link: '#' },
@@ -755,21 +755,23 @@ function HomeContent() {
                         key={row.label}
                         className="flex items-center justify-between bg-slate-700/30 rounded-lg px-4 py-3"
                       >
-                        <div className="flex items-center gap-4 flex-wrap">
-                          <span className="text-slate-400 text-sm w-20">{row.label}</span>
-                          <span className="text-white font-medium">
-                            {formatNum(row.value)}개
-                          </span>
-                          {row.extra && (
-                            <span className="text-slate-500 text-xs">
-                              {row.extra}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-4">
+                            <span className="text-slate-400 text-sm w-20 shrink-0">{row.label}</span>
+                            <span className="text-white font-medium">
+                              {formatNum(row.value)}개
                             </span>
+                          </div>
+                          {row.extra && (
+                            <div className="text-slate-500 text-xs mt-1 ml-24">
+                              {row.extra}
+                            </div>
                           )}
                         </div>
                         {row.link && (
                           <Link
                             href={row.link}
-                            className="px-4 py-1.5 text-sm bg-slate-600 hover:bg-slate-500 text-white rounded transition-colors"
+                            className="px-4 py-1.5 text-sm bg-slate-600 hover:bg-slate-500 text-white rounded transition-colors whitespace-nowrap shrink-0 ml-2"
                           >
                             분석
                           </Link>

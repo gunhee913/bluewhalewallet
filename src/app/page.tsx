@@ -734,6 +734,7 @@ function HomeContent() {
                 const avalancheBalance = sbwpmData?.avalanche_balance || 0;
                 const buybackGofun = sbwpmData?.buyback_gofun || 0;
                 const buybackDolfun = sbwpmData?.buyback_dolfun || 0;
+                const liquidityTotal = sbwpmData?.liquidity_total || 0;
                 const kaiaBalance = sbwpmSupply - avalancheBalance;
                 const burnData = tokenData?.tokens?.find(
                   (t: { token_name: string }) => t.token_name === 'sBWPM'
@@ -810,7 +811,7 @@ function HomeContent() {
                               <td className="text-slate-300 py-2 px-2">아발란체</td>
                               <td className="text-right text-white py-2 px-2 font-mono">{formatNum(buybackGofun)}</td>
                               <td className="text-right text-white py-2 px-2 font-mono">{formatNum(buybackDolfun)}</td>
-                              <td className="text-right text-slate-500 py-2 px-2">-</td>
+                              <td className="text-right text-white py-2 px-2 font-mono">{formatNum(liquidityTotal)}</td>
                               <td className="text-right text-slate-500 py-2 px-2">-</td>
                               <td className="text-right text-white py-2 px-2 font-mono">{formatNum(avalancheBalance)}</td>
                             </tr>
@@ -826,7 +827,7 @@ function HomeContent() {
                               <td className="text-slate-300 font-medium py-2 px-2">합계</td>
                               <td className="text-right text-white font-medium py-2 px-2 font-mono">{formatNum(buybackGofun)}</td>
                               <td className="text-right text-white font-medium py-2 px-2 font-mono">{formatNum(buybackDolfun)}</td>
-                              <td className="text-right text-slate-500 py-2 px-2">-</td>
+                              <td className="text-right text-white font-medium py-2 px-2 font-mono">{formatNum(liquidityTotal)}</td>
                               <td className="text-right text-slate-500 py-2 px-2">-</td>
                               <td className="text-right text-white font-medium py-2 px-2 font-mono">{formatNum(sbwpmCirculating)}</td>
                             </tr>

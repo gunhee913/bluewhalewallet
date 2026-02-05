@@ -24,6 +24,17 @@ const AVALANCHE_BRIDGE_WALLET = '0x316091d3bd7bf9a77640d9807e3d6b5a30cbf6bb';
 const BUYBACK_GOFUN = '0x3654378AA2DEb0860c2e5C7906471C8704c44c6F'; // 고펀
 const BUYBACK_DOLFUN = '0xEd1b254B6c3a6785e19ba83b728ECe4A6444f4d7'; // 돌펀
 
+// Snowtrace (아발란체) - sBWPM 토큰 홀더 페이지
+const SNOWTRACE_URL = 'https://snowtrace.io/token/0x6c960648d5F16f9e12895C28655cc6Dd73B660f7/balances?type=erc20&chainid=43114';
+
+// LP 풀 이름 (유동성)
+const LP_POOLS = [
+  'AquaLP CLAM-sBWPM',
+  'AquaLP sBWPM-SHELL',
+  'AquaLP PEARL-sBWPM',
+  'AquaLP bUSDT-sBWPM',
+];
+
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -295,6 +306,117 @@ async function fetchAvalancheBalance(
   }
 }
 
+// Snowtrace에서 LP 풀 잔액 추출
+async function extractLpBalances(page: Page): Promise<Record<string, number>> {
+  // 페이지 로드 후 5초 대기
+  await new Promise((r) => setTimeout(r, 5000));
+  
+  const results: Record<string, number> = {};
+  
+  // 최대 15초 동안 폴링
+  for (let attempt = 0; attempt < 15; attempt++) {
+    try {
+      const lpData = await page.evaluate((lpNames) => {
+        const body = document.body.innerText;
+        const lines = body.split('\n').map(l => l.trim()).filter(l => l);
+        const found: Record<string, number> = {};
+        
+        for (const lpName of lpNames) {
+          for (let i = 0; i < lines.length; i++) {
+            if (lines[i].includes(lpName)) {
+              // LP 이름 근처에서 숫자 찾기
+              for (let j = Math.max(0, i - 3); j < Math.min(lines.length, i + 5); j++) {
+                // 숫자 패턴 (예: 136.371 또는 1,234.56)
+                const match = lines[j].match(/^([\d,]+\.?\d*)$/);
+                if (match && match[1]) {
+                  const value = parseFloat(match[1].replace(/,/g, ''));
+                  if (value > 0 && value < 100000) {
+                    found[lpName] = value;
+                    break;
+                  }
+                }
+              }
+              if (found[lpName]) break;
+            }
+          }
+        }
+        
+        return found;
+      }, LP_POOLS);
+
+      // 결과 병합
+      Object.assign(results, lpData);
+      
+      // 모든 LP를 찾았으면 종료
+      if (Object.keys(results).length >= LP_POOLS.length) {
+        console.log(`Found all LP balances (attempt ${attempt + 1}):`, results);
+        return results;
+      }
+      
+      // 일부라도 찾았으면 로그
+      if (Object.keys(results).length > 0) {
+        console.log(`Found ${Object.keys(results).length}/${LP_POOLS.length} LP balances (attempt ${attempt + 1})`);
+      }
+    } catch (e) {
+      console.error(`LP extraction attempt ${attempt + 1} error:`, e);
+    }
+
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+
+  console.log('Final LP balances:', results);
+  return results;
+}
+
+// Snowtrace에서 LP 유동성 크롤링
+async function fetchLiquidityBalances(
+  browserlessToken: string,
+  retryCount: number = 0
+): Promise<Record<string, number>> {
+  let browser = null;
+  let page = null;
+  
+  try {
+    console.log(`[Liquidity] Connecting... (attempt ${retryCount + 1})`);
+    browser = await puppeteer.connect({
+      browserWSEndpoint: `wss://chrome.browserless.io?token=${browserlessToken}`,
+    });
+    
+    page = await browser.newPage();
+    await page.setViewport({ width: 1280, height: 720 });
+    
+    console.log(`[Liquidity] Navigating to: ${SNOWTRACE_URL}`);
+    
+    await page.goto(SNOWTRACE_URL, { 
+      waitUntil: 'networkidle2',
+      timeout: 60000 
+    });
+
+    const balances = await extractLpBalances(page);
+    console.log(`[Liquidity] Result:`, balances);
+    
+    return balances;
+
+  } catch (err) {
+    console.error(`[Liquidity] Error:`, err);
+    
+    if (retryCount < 2) {
+      console.log(`[Liquidity] Retrying...`);
+      await new Promise((r) => setTimeout(r, 3000));
+      return fetchLiquidityBalances(browserlessToken, retryCount + 1);
+    }
+    
+    return {};
+  } finally {
+    if (page) {
+      try { await page.close(); } catch (e) { /* ignore */ }
+    }
+    if (browser) {
+      try { await browser.close(); } catch (e) { /* ignore */ }
+    }
+  }
+}
+
 // 단일 토큰 크롤링
 async function fetchTokenSupply(
   tokenName: string,
@@ -372,6 +494,7 @@ export async function GET(request: NextRequest) {
       let avalancheBalance: number | null = null;
       let buybackGofun: number | null = null;
       let buybackDolfun: number | null = null;
+      let liquidityBalances: Record<string, number> = {};
       
       for (const [name, address] of Object.entries(tokensToFetch)) {
         if (!address) continue;
@@ -392,6 +515,11 @@ export async function GET(request: NextRequest) {
           await new Promise((r) => setTimeout(r, 10000));
           buybackDolfun = await fetchBuybackSbwpm(BUYBACK_DOLFUN, browserlessToken);
           console.log(`Buyback Dolfun: ${buybackDolfun}`);
+          
+          // 유동성(LP) 크롤링
+          await new Promise((r) => setTimeout(r, 10000));
+          liquidityBalances = await fetchLiquidityBalances(browserlessToken);
+          console.log(`Liquidity:`, liquidityBalances);
         }
         
         // 다음 요청 전 대기
@@ -404,6 +532,13 @@ export async function GET(request: NextRequest) {
       const now = new Date().toISOString();
       const totalBuyback = (buybackGofun || 0) + (buybackDolfun || 0);
       
+      // LP 잔액 추출
+      const lpClamSbwpm = liquidityBalances['AquaLP CLAM-sBWPM'] || null;
+      const lpSbwpmShell = liquidityBalances['AquaLP sBWPM-SHELL'] || null;
+      const lpPearlSbwpm = liquidityBalances['AquaLP PEARL-sBWPM'] || null;
+      const lpBusdtSbwpm = liquidityBalances['AquaLP bUSDT-sBWPM'] || null;
+      const liquidityTotal = Object.values(liquidityBalances).reduce((sum, v) => sum + (v || 0), 0) || null;
+      
       const upsertData = Object.entries(results)
         .filter(([, supply]) => supply !== null)
         .map(([name, supply]) => ({
@@ -413,6 +548,11 @@ export async function GET(request: NextRequest) {
           buyback_gofun: name === 'sBWPM' ? buybackGofun : null,
           buyback_dolfun: name === 'sBWPM' ? buybackDolfun : null,
           buyback_amount: name === 'sBWPM' && totalBuyback > 0 ? totalBuyback : null,
+          lp_clam_sbwpm: name === 'sBWPM' ? lpClamSbwpm : null,
+          lp_sbwpm_shell: name === 'sBWPM' ? lpSbwpmShell : null,
+          lp_pearl_sbwpm: name === 'sBWPM' ? lpPearlSbwpm : null,
+          lp_busdt_sbwpm: name === 'sBWPM' ? lpBusdtSbwpm : null,
+          liquidity_total: name === 'sBWPM' ? liquidityTotal : null,
           updated_at: now,
         }));
       
@@ -475,7 +615,9 @@ export async function GET(request: NextRequest) {
         avalancheBalance, 
         buybackGofun, 
         buybackDolfun, 
-        buybackAmount: totalBuyback
+        buybackAmount: totalBuyback,
+        liquidityBalances,
+        liquidityTotal
       });
     }
     

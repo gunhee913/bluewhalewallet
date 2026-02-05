@@ -7,6 +7,11 @@ CREATE TABLE IF NOT EXISTS token_supply (
   buyback_gofun NUMERIC,
   buyback_dolfun NUMERIC,
   buyback_amount NUMERIC,
+  lp_clam_sbwpm NUMERIC,
+  lp_sbwpm_shell NUMERIC,
+  lp_pearl_sbwpm NUMERIC,
+  lp_busdt_sbwpm NUMERIC,
+  liquidity_total NUMERIC,
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 

@@ -306,84 +306,43 @@ async function fetchAvalancheBalance(
   }
 }
 
-// Snowtrace에서 LP 풀 잔액 추출
+// Snowtrace에서 LP 풀 잔액 추출 - 단순화
 async function extractLpBalances(page: Page): Promise<Record<string, number>> {
-  // 페이지 로드 후 10초 대기 (테이블 로딩)
+  // 페이지 로드 후 10초 대기
   await new Promise((r) => setTimeout(r, 10000));
   
-  const results: Record<string, number> = {};
-  
-  // 최대 20초 동안 폴링
-  for (let attempt = 0; attempt < 20; attempt++) {
-    try {
-      const lpData = await page.evaluate((lpNames) => {
-        const found: Record<string, number> = {};
+  try {
+    const lpData = await page.evaluate((lpNames) => {
+      const found: Record<string, number> = {};
+      const body = document.body.innerText;
+      
+      for (const lpName of lpNames) {
+        // LP 이름 위치 찾기
+        const idx = body.indexOf(lpName);
+        if (idx === -1) continue;
         
-        // 테이블 행에서 LP 찾기
-        const rows = document.querySelectorAll('tr');
+        // LP 이름 뒤 100자 내에서 첫 번째 소수점 숫자 찾기
+        const afterText = body.substring(idx + lpName.length, idx + lpName.length + 100);
         
-        for (const row of rows) {
-          const rowText = row.innerText;
-          
-          for (const lpName of lpNames) {
-            if (rowText.includes(lpName) && !found[lpName]) {
-              // 행에서 숫자 패턴 찾기 (Quantity 열)
-              const cells = row.querySelectorAll('td');
-              for (const cell of cells) {
-                const cellText = cell.innerText.trim();
-                // 숫자만 있는 셀 찾기 (예: 136.371 또는 1,036.386)
-                const match = cellText.match(/^([\d,]+\.?\d*)$/);
-                if (match) {
-                  const value = parseFloat(match[1].replace(/,/g, ''));
-                  if (value > 0 && value < 10000) {
-                    found[lpName] = value;
-                    break;
-                  }
-                }
-              }
-            }
+        // 소수점 포함 숫자 패턴 (예: 136.371, 1,036.386)
+        const match = afterText.match(/([\d,]+\.\d+)/);
+        if (match) {
+          const value = parseFloat(match[1].replace(/,/g, ''));
+          if (value > 0) {
+            found[lpName] = value;
           }
         }
-        
-        // fallback: innerText에서 직접 찾기
-        if (Object.keys(found).length < lpNames.length) {
-          const body = document.body.innerText;
-          for (const lpName of lpNames) {
-            if (found[lpName]) continue;
-            
-            const regex = new RegExp(lpName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[^\\d]*(\\d+\\.\\d+)', 'i');
-            const match = body.match(regex);
-            if (match && match[1]) {
-              found[lpName] = parseFloat(match[1]);
-            }
-          }
-        }
-        
-        return found;
-      }, LP_POOLS);
-
-      // 결과 병합
-      Object.assign(results, lpData);
-      
-      // 모든 LP를 찾았으면 종료
-      if (Object.keys(results).length >= LP_POOLS.length) {
-        console.log(`Found all LP balances (attempt ${attempt + 1}):`, results);
-        return results;
       }
       
-      // 일부라도 찾았으면 로그
-      if (Object.keys(results).length > 0) {
-        console.log(`Found ${Object.keys(results).length}/${LP_POOLS.length} LP balances (attempt ${attempt + 1}):`, results);
-      }
-    } catch (e) {
-      console.error(`LP extraction attempt ${attempt + 1} error:`, e);
-    }
+      return found;
+    }, LP_POOLS);
 
-    await new Promise((r) => setTimeout(r, 1000));
+    console.log('LP balances found:', lpData);
+    return lpData;
+  } catch (e) {
+    console.error('LP extraction error:', e);
+    return {};
   }
-
-  console.log('Final LP balances:', results);
-  return results;
 }
 
 // Snowtrace에서 LP 유동성 크롤링

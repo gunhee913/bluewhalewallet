@@ -308,37 +308,53 @@ async function fetchAvalancheBalance(
 
 // Snowtrace에서 LP 풀 잔액 추출
 async function extractLpBalances(page: Page): Promise<Record<string, number>> {
-  // 페이지 로드 후 8초 대기
-  await new Promise((r) => setTimeout(r, 8000));
+  // 페이지 로드 후 10초 대기 (테이블 로딩)
+  await new Promise((r) => setTimeout(r, 10000));
   
   const results: Record<string, number> = {};
   
-  // 최대 15초 동안 폴링
-  for (let attempt = 0; attempt < 15; attempt++) {
+  // 최대 20초 동안 폴링
+  for (let attempt = 0; attempt < 20; attempt++) {
     try {
       const lpData = await page.evaluate((lpNames) => {
-        const body = document.body.innerText;
         const found: Record<string, number> = {};
         
-        // 각 LP 이름에 대해 검색
-        for (const lpName of lpNames) {
-          // LP 이름이 포함된 위치 찾기
-          const index = body.indexOf(lpName);
-          if (index !== -1) {
-            // LP 이름 주변 텍스트 추출 (앞뒤 200자)
-            const surroundingText = body.substring(Math.max(0, index - 200), index + lpName.length + 200);
-            
-            // 숫자 패턴 찾기 (소수점 포함, 콤마 포함)
-            const numbers = surroundingText.match(/[\d,]+\.\d+/g);
-            if (numbers) {
-              for (const numStr of numbers) {
-                const value = parseFloat(numStr.replace(/,/g, ''));
-                // LP 잔액으로 합리적인 범위 (0.1 ~ 10000)
-                if (value >= 0.1 && value <= 10000) {
-                  found[lpName] = value;
-                  break;
+        // 테이블 행에서 LP 찾기
+        const rows = document.querySelectorAll('tr');
+        
+        for (const row of rows) {
+          const rowText = row.innerText;
+          
+          for (const lpName of lpNames) {
+            if (rowText.includes(lpName) && !found[lpName]) {
+              // 행에서 숫자 패턴 찾기 (Quantity 열)
+              const cells = row.querySelectorAll('td');
+              for (const cell of cells) {
+                const cellText = cell.innerText.trim();
+                // 숫자만 있는 셀 찾기 (예: 136.371 또는 1,036.386)
+                const match = cellText.match(/^([\d,]+\.?\d*)$/);
+                if (match) {
+                  const value = parseFloat(match[1].replace(/,/g, ''));
+                  if (value > 0 && value < 10000) {
+                    found[lpName] = value;
+                    break;
+                  }
                 }
               }
+            }
+          }
+        }
+        
+        // fallback: innerText에서 직접 찾기
+        if (Object.keys(found).length < lpNames.length) {
+          const body = document.body.innerText;
+          for (const lpName of lpNames) {
+            if (found[lpName]) continue;
+            
+            const regex = new RegExp(lpName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[^\\d]*(\\d+\\.\\d+)', 'i');
+            const match = body.match(regex);
+            if (match && match[1]) {
+              found[lpName] = parseFloat(match[1]);
             }
           }
         }

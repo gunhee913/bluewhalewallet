@@ -481,7 +481,23 @@ export async function GET(request: NextRequest) {
         }
       }
       
-      return NextResponse.json({ success: true, results, avalancheBalance, buybackGofun, buybackDolfun, buybackAmount: totalBuyback });
+      // DB에서 저장된 값 다시 조회해서 확인
+      const { data: verifyData } = await supabase
+        .from('token_supply')
+        .select('*')
+        .eq('token_name', 'sBWPM')
+        .single();
+      
+      return NextResponse.json({ 
+        success: true, 
+        results, 
+        avalancheBalance, 
+        buybackGofun, 
+        buybackDolfun, 
+        buybackAmount: totalBuyback,
+        // 디버그: DB에 실제 저장된 값
+        debug_db_saved: verifyData
+      });
     }
     
     // 캐시된 데이터 조회

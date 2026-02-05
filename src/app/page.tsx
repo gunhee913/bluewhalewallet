@@ -91,7 +91,7 @@ const WALLETS: WalletInfo[] = [
     isAdolTotal: true,
   },
   {
-    name: 'Aqua1 펀드',
+    name: 'AQUA1 펀드',
     address: '0xD57423c54F188220862391A069a2942c725ee37B',
     hasAnalysis: true,
   },
@@ -101,7 +101,7 @@ const WALLETS: WalletInfo[] = [
     hasAnalysis: true,
   },
   {
-    name: 'v3 SHELL 펀드(40%)',
+    name: 'SHELL 펀드',
     address: '0xfd48a5FFE5127896E93BAA8074CE98c5a999Ea97',
     hasAnalysis: true,
   },
@@ -116,7 +116,7 @@ const WALLETS: WalletInfo[] = [
     hasAnalysis: true,
   },
   {
-    name: '코랄펀드',
+    name: 'CORAL 펀드',
     address: '0xdA6C0aFb267072F8fF6FC4F207b992729F4a4e15',
     hasAnalysis: true,
   },

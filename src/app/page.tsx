@@ -744,7 +744,7 @@ function HomeContent() {
                 const sbwpmCirculating = sbwpmSupply - burnedAmount;
                 const bwpmNft = totalSupply - sbwpmSupply;
                 
-                const formatNum = (n: number) => n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 1 });
+                const formatNum = (n: number) => n.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
                 
                 const RowItem = ({ label, value, link }: { label: string; value: number; link: string | null }) => (
                   <div className="flex items-center justify-between bg-slate-700/30 rounded-lg px-4 py-3">

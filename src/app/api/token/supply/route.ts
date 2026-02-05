@@ -193,8 +193,9 @@ async function extractSbwpmAmountBwpmIo(page: Page): Promise<number | null> {
       });
 
       if (result && result > 0) {
-        console.log(`Found sBWPM on bwpm.io: ${result} (attempt ${attempt + 1})`);
-        return result;
+        const rounded = Math.round(result * 10) / 10; // 소수점 1자리
+        console.log(`Found sBWPM on bwpm.io: ${rounded} (attempt ${attempt + 1})`);
+        return rounded;
       }
     } catch (e) {
       console.error(`bwpm.io attempt ${attempt + 1} error:`, e);

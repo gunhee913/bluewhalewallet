@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Loader2, Flame } from 'lucide-react';
+import { Loader2, Flame, Info } from 'lucide-react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { useState, useMemo, useEffect, Suspense } from 'react';
@@ -755,17 +755,28 @@ function HomeContent() {
                         key={row.label}
                         className="flex items-center justify-between bg-slate-700/30 rounded-lg px-4 py-3"
                       >
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-4">
-                            <span className="text-slate-400 text-sm w-20 shrink-0">{row.label}</span>
-                            <span className="text-white font-medium">
-                              {formatNum(row.value)}개
-                            </span>
-                          </div>
+                        <div className="flex items-center gap-4">
+                          <span className="text-slate-400 text-sm w-20 shrink-0">{row.label}</span>
+                          <span className="text-white font-medium">
+                            {formatNum(row.value)}개
+                          </span>
                           {row.extra && (
-                            <div className="text-slate-500 text-xs mt-1 ml-24">
-                              {row.extra}
-                            </div>
+                            <>
+                              {/* PC: 인라인 텍스트 */}
+                              <span className="hidden md:inline text-slate-500 text-xs">
+                                {row.extra}
+                              </span>
+                              {/* 모바일: 정보 아이콘 + Popover */}
+                              <Popover>
+                                <PopoverTrigger className="md:hidden">
+                                  <Info className="w-4 h-4 text-slate-400 hover:text-white transition-colors" />
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto bg-slate-800 border-slate-700 p-3">
+                                  <p className="text-xs text-slate-300">카이아: {formatNum(kaiaBalance - burnedAmount)}개</p>
+                                  <p className="text-xs text-slate-300">아발란체: {formatNum(avalancheBalance)}개</p>
+                                </PopoverContent>
+                              </Popover>
+                            </>
                           )}
                         </div>
                         {row.link && (

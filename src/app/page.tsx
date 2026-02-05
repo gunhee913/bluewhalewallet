@@ -140,6 +140,13 @@ async function fetchTokenBurnData() {
   return response.json();
 }
 
+// 토큰 공급량 데이터 가져오기
+async function fetchTokenSupplyData() {
+  const response = await fetch('/api/token/supply');
+  if (!response.ok) throw new Error('Failed to fetch');
+  return response.json();
+}
+
 // 토큰 목록 (순서만 정의, 총 발행량은 API에서 가져옴)
 const TOKEN_NAMES = ['sBWPM', 'sADOL', 'CLAM', 'PEARL', 'SHELL', 'AQUA1', 'CORAL'];
 
@@ -365,7 +372,7 @@ function WalletCard({ wallet, totalAssets, fundDetails, aquaFairPrice }: WalletC
 function HomeContent() {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab');
-  const [selectedTab, setSelectedTab] = useState<'wallet' | 'token' | 'club' | 'lab'>('wallet');
+  const [selectedTab, setSelectedTab] = useState<'wallet' | 'tokenInfo' | 'token' | 'club' | 'lab'>('wallet');
   const [joinDialogOpen, setJoinDialogOpen] = useState(false);
   const [joinAddress, setJoinAddress] = useState('');
   const [joinLoading, setJoinLoading] = useState(false);
@@ -423,13 +430,13 @@ function HomeContent() {
     
     // sessionStorage에서 마지막 탭 상태 복원
     const savedTab = sessionStorage.getItem('lastTab');
-    if (savedTab === 'token' || savedTab === 'wallet' || savedTab === 'club' || savedTab === 'lab') {
+    if (savedTab === 'token' || savedTab === 'tokenInfo' || savedTab === 'wallet' || savedTab === 'club' || savedTab === 'lab') {
       setSelectedTab(savedTab);
     }
   }, [tabParam]);
 
   // 탭 변경 핸들러
-  const handleTabChange = (tab: 'wallet' | 'token' | 'club' | 'lab') => {
+  const handleTabChange = (tab: 'wallet' | 'tokenInfo' | 'token' | 'club' | 'lab') => {
     setSelectedTab(tab);
     sessionStorage.setItem('lastTab', tab);
   };
@@ -452,6 +459,14 @@ function HomeContent() {
     queryKey: ['token-burn'],
     queryFn: fetchTokenBurnData,
     staleTime: 60 * 60 * 1000, // 1시간
+  });
+
+  // 토큰 공급량 데이터 로드
+  const { data: tokenSupplyData } = useQuery({
+    queryKey: ['token-supply'],
+    queryFn: fetchTokenSupplyData,
+    staleTime: 60 * 60 * 1000, // 1시간
+    enabled: selectedTab === 'tokenInfo',
   });
 
   // SHELL CLUB 데이터 로드
@@ -631,6 +646,16 @@ function HomeContent() {
               지갑
             </button>
             <button
+              onClick={() => handleTabChange('tokenInfo')}
+              className={`pb-3 text-base md:text-lg font-medium transition-colors ${
+                selectedTab === 'tokenInfo'
+                  ? 'text-white border-b-2 border-white'
+                  : 'text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              토큰
+            </button>
+            <button
               onClick={() => handleTabChange('token')}
               className={`pb-3 text-base md:text-lg font-medium transition-colors ${
                 selectedTab === 'token'
@@ -638,7 +663,7 @@ function HomeContent() {
                   : 'text-slate-500 hover:text-slate-300'
               }`}
             >
-              토큰
+              소각
             </button>
             <button
               onClick={() => handleTabChange('club')}
@@ -687,6 +712,61 @@ function HomeContent() {
                 aquaFairPrice={wallet.name === 'AQUA1 펀드' ? getAquaFairPrice() : undefined}
               />
             ))}
+          </div>
+        )}
+
+        {/* 토큰 탭 - 토큰 정보 */}
+        {selectedTab === 'tokenInfo' && (
+          <div className="space-y-4">
+            {/* sBWPM 카드 */}
+            <Card className="bg-slate-800/50 border-slate-700 p-4">
+              <div className="flex items-center gap-3 mb-4">
+                <img src="/sBWPM.svg" alt="sBWPM" className="w-10 h-10" />
+                <h3 className="text-lg font-semibold text-white">sBWPM</h3>
+              </div>
+              <div className="overflow-x-auto scrollbar-thin">
+                <table className="w-full min-w-[500px]">
+                  <thead>
+                    <tr className="border-b border-slate-700">
+                      <th className="text-center text-sm font-medium text-slate-400 px-4 py-3">총 발행량</th>
+                      <th className="text-center text-sm font-medium text-slate-400 px-4 py-3">BWPM NFT</th>
+                      <th className="text-center text-sm font-medium text-slate-400 px-4 py-3">sBWPM</th>
+                      <th className="text-center text-sm font-medium text-slate-400 px-4 py-3">소각량</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(() => {
+                      const totalSupply = 7000;
+                      const sbwpmSupply = tokenSupplyData?.tokens?.find(
+                        (t: { token_name: string }) => t.token_name === 'sBWPM'
+                      )?.circulating_supply || 0;
+                      const burnData = tokenData?.tokens?.find(
+                        (t: { token_name: string }) => t.token_name === 'sBWPM'
+                      );
+                      const burnedAmount = burnData?.burned_amount || 0;
+                      const bwpmNft = totalSupply - (sbwpmSupply - burnedAmount);
+                      
+                      return (
+                        <tr>
+                          <td className="text-center text-white px-4 py-3 font-medium">
+                            {totalSupply.toLocaleString()}개
+                          </td>
+                          <td className="text-center text-white px-4 py-3 font-medium">
+                            {bwpmNft.toLocaleString()}개
+                          </td>
+                          <td className="text-center text-white px-4 py-3 font-medium">
+                            {sbwpmSupply.toLocaleString()}개
+                          </td>
+                          <td className="text-center text-white px-4 py-3 font-medium">
+                            {burnedAmount.toLocaleString()}개
+                          </td>
+                        </tr>
+                      );
+                    })()}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
           </div>
         )}
 

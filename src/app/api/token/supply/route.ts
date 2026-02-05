@@ -497,11 +497,57 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const refresh = searchParams.get('refresh') === 'true';
   const tokenName = searchParams.get('token');
+  const crawlType = searchParams.get('type'); // 'liquidity' for LP only
   
   try {
     const supabase = getSupabase();
     
-    // refresh=true면 크롤링 실행
+    // type=liquidity면 유동성만 크롤링
+    if (crawlType === 'liquidity') {
+      const browserlessToken = process.env.BROWSERLESS_TOKEN;
+      if (!browserlessToken) {
+        return NextResponse.json({ success: false, error: 'BROWSERLESS_TOKEN not configured' });
+      }
+      
+      console.log('[Liquidity Only] Starting...');
+      const liquidityBalances = await fetchLiquidityBalances(browserlessToken);
+      console.log('[Liquidity Only] Result:', liquidityBalances);
+      
+      // LP 잔액 추출
+      const lpClamSbwpm = liquidityBalances['AquaLP CLAM-sBWPM'] || null;
+      const lpSbwpmShell = liquidityBalances['AquaLP sBWPM-SHELL'] || null;
+      const lpPearlSbwpm = liquidityBalances['AquaLP PEARL-sBWPM'] || null;
+      const lpBusdtSbwpm = liquidityBalances['AquaLP bUSDT-sBWPM'] || null;
+      const liquidityTotal = Object.values(liquidityBalances).reduce((sum, v) => sum + (v || 0), 0) || null;
+      
+      // Supabase 업데이트 (유동성만)
+      if (liquidityTotal && liquidityTotal > 0) {
+        const { error } = await supabase
+          .from('token_supply')
+          .update({
+            lp_clam_sbwpm: lpClamSbwpm,
+            lp_sbwpm_shell: lpSbwpmShell,
+            lp_pearl_sbwpm: lpPearlSbwpm,
+            lp_busdt_sbwpm: lpBusdtSbwpm,
+            liquidity_total: liquidityTotal,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('token_name', 'sBWPM');
+        
+        if (error) {
+          console.error('Supabase update error:', error);
+        }
+      }
+      
+      return NextResponse.json({
+        success: true,
+        type: 'liquidity',
+        liquidityBalances,
+        liquidityTotal,
+      });
+    }
+    
+    // refresh=true면 크롤링 실행 (유동성 제외)
     if (refresh) {
       const browserlessToken = process.env.BROWSERLESS_TOKEN;
       if (!browserlessToken) {
@@ -516,7 +562,6 @@ export async function GET(request: NextRequest) {
       let avalancheBalance: number | null = null;
       let buybackGofun: number | null = null;
       let buybackDolfun: number | null = null;
-      let liquidityBalances: Record<string, number> = {};
       
       for (const [name, address] of Object.entries(tokensToFetch)) {
         if (!address) continue;
@@ -537,11 +582,6 @@ export async function GET(request: NextRequest) {
           await new Promise((r) => setTimeout(r, 10000));
           buybackDolfun = await fetchBuybackSbwpm(BUYBACK_DOLFUN, browserlessToken);
           console.log(`Buyback Dolfun: ${buybackDolfun}`);
-          
-          // 유동성(LP) 크롤링
-          await new Promise((r) => setTimeout(r, 10000));
-          liquidityBalances = await fetchLiquidityBalances(browserlessToken);
-          console.log(`Liquidity:`, liquidityBalances);
         }
         
         // 다음 요청 전 대기
@@ -554,13 +594,6 @@ export async function GET(request: NextRequest) {
       const now = new Date().toISOString();
       const totalBuyback = (buybackGofun || 0) + (buybackDolfun || 0);
       
-      // LP 잔액 추출
-      const lpClamSbwpm = liquidityBalances['AquaLP CLAM-sBWPM'] || null;
-      const lpSbwpmShell = liquidityBalances['AquaLP sBWPM-SHELL'] || null;
-      const lpPearlSbwpm = liquidityBalances['AquaLP PEARL-sBWPM'] || null;
-      const lpBusdtSbwpm = liquidityBalances['AquaLP bUSDT-sBWPM'] || null;
-      const liquidityTotal = Object.values(liquidityBalances).reduce((sum, v) => sum + (v || 0), 0) || null;
-      
       const upsertData = Object.entries(results)
         .filter(([, supply]) => supply !== null)
         .map(([name, supply]) => ({
@@ -570,11 +603,6 @@ export async function GET(request: NextRequest) {
           buyback_gofun: name === 'sBWPM' ? buybackGofun : null,
           buyback_dolfun: name === 'sBWPM' ? buybackDolfun : null,
           buyback_amount: name === 'sBWPM' && totalBuyback > 0 ? totalBuyback : null,
-          lp_clam_sbwpm: name === 'sBWPM' ? lpClamSbwpm : null,
-          lp_sbwpm_shell: name === 'sBWPM' ? lpSbwpmShell : null,
-          lp_pearl_sbwpm: name === 'sBWPM' ? lpPearlSbwpm : null,
-          lp_busdt_sbwpm: name === 'sBWPM' ? lpBusdtSbwpm : null,
-          liquidity_total: name === 'sBWPM' ? liquidityTotal : null,
           updated_at: now,
         }));
       
@@ -637,9 +665,7 @@ export async function GET(request: NextRequest) {
         avalancheBalance, 
         buybackGofun, 
         buybackDolfun, 
-        buybackAmount: totalBuyback,
-        liquidityBalances,
-        liquidityTotal
+        buybackAmount: totalBuyback
       });
     }
     

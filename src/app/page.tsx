@@ -676,16 +676,19 @@ function HomeContent() {
             >
               클럽
             </button>
-            <button
-              onClick={() => handleTabChange('lab')}
-              className={`pb-3 text-base md:text-lg font-medium transition-colors ${
-                selectedTab === 'lab'
-                  ? 'text-white border-b-2 border-white'
-                  : 'text-slate-500 hover:text-slate-300'
-              }`}
-            >
-              실험실
-            </button>
+            {/* 실험실 탭 일시적으로 숨김 */}
+            {false && (
+              <button
+                onClick={() => handleTabChange('lab')}
+                className={`pb-3 text-base md:text-lg font-medium transition-colors ${
+                  selectedTab === 'lab'
+                    ? 'text-white border-b-2 border-white'
+                    : 'text-slate-500 hover:text-slate-300'
+                }`}
+              >
+                실험실
+              </button>
+            )}
           </div>
         </div>
 
@@ -968,8 +971,8 @@ function HomeContent() {
           </div>
         )}
 
-        {/* 실험실 탭 */}
-        {selectedTab === 'lab' && (
+        {/* 실험실 탭 - 일시적으로 숨김 */}
+        {false && selectedTab === 'lab' && (
           <div className="space-y-4">
             {/* bUSDC - USDC 카드 */}
             <Card className="bg-slate-800/50 border-slate-700/50 hover:bg-slate-800/80 transition-all duration-200 overflow-hidden group">

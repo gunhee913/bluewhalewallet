@@ -181,3 +181,6 @@ Apply these principles judiciously, considering project and team needs.
 ## Next-Auth
 
 - always use next-auth session for authenticating
+## Next-Auth
+
+- always use next-auth session for authenticating

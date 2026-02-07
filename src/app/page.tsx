@@ -804,7 +804,15 @@ function HomeContent() {
                         }`}
                       >
                         <div className="overflow-x-auto scrollbar-thin ml-4 mr-0 md:ml-6 pb-1">
-                          <table className="w-full min-w-[480px] text-xs">
+                          <table className="w-full min-w-[480px] text-xs table-fixed">
+                            <colgroup>
+                              <col className="w-[12%]" />
+                              <col className="w-[17.6%]" />
+                              <col className="w-[17.6%]" />
+                              <col className="w-[17.6%]" />
+                              <col className="w-[17.6%]" />
+                              <col className="w-[17.6%]" />
+                            </colgroup>
                             <thead>
                               <tr className="border-b border-slate-600">
                                 <th className="text-left text-slate-400 font-medium py-2 px-2">구분</th>

@@ -21,11 +21,11 @@ function getSupabase() {
 
 // SHELL 토큰 보유량 추출
 async function extractShellAmount(page: Page): Promise<{ amount: number; value: number; price: number } | null> {
-  // 페이지 로드 후 10초 대기 (동적 콘텐츠 로딩)
-  await new Promise((r) => setTimeout(r, 10000));
+  // 페이지 로드 후 7초 대기 (동적 콘텐츠 로딩)
+  await new Promise((r) => setTimeout(r, 7000));
   
-  // 최대 15초 동안 폴링 (1초 간격)
-  for (let attempt = 0; attempt < 15; attempt++) {
+  // 최대 10초 동안 폴링 (1초 간격)
+  for (let attempt = 0; attempt < 10; attempt++) {
     try {
       const result = await page.evaluate(() => {
         const body = document.body.innerText;
@@ -135,7 +135,7 @@ async function fetchShellForWallet(
     
     await page.goto(url, { 
       waitUntil: 'networkidle2',
-      timeout: 45000 
+      timeout: 30000 
     });
 
     const shellData = await extractShellAmount(page);
@@ -146,10 +146,10 @@ async function fetchShellForWallet(
   } catch (err) {
     console.error(`[SHELL] ${address} Error:`, err);
     
-    // 재시도 (최대 2회)
-    if (retryCount < 2) {
+    // 재시도 (최대 1회)
+    if (retryCount < 1) {
       console.log(`[SHELL] ${address} Retrying...`);
-      await new Promise((r) => setTimeout(r, 3000));
+      await new Promise((r) => setTimeout(r, 2000));
       return fetchShellForWallet(address, browserlessToken, retryCount + 1);
     }
     
@@ -165,7 +165,7 @@ async function fetchShellForWallet(
 }
 
 // 그룹 크기 (한 번에 크롤링할 멤버 수)
-const GROUP_SIZE = 4;
+const GROUP_SIZE = 2;
 
 // GET: SHELL CLUB 새로고침 (Cron에서 호출)
 export async function GET(request: NextRequest) {
@@ -217,16 +217,16 @@ export async function GET(request: NextRequest) {
       failedAddresses.push(address);
     }
     
-    // 다음 요청 전 15초 대기
+    // 다음 요청 전 10초 대기
     if (addresses.length > 1) {
-      await new Promise((r) => setTimeout(r, 15000));
+      await new Promise((r) => setTimeout(r, 10000));
     }
   }
 
-  // 실패한 멤버 재시도 (10초 대기 후)
+  // 실패한 멤버 재시도 (5초 대기 후)
   if (failedAddresses.length > 0) {
     console.log(`[SHELL] Retrying ${failedAddresses.length} failed members...`);
-    await new Promise((r) => setTimeout(r, 10000));
+    await new Promise((r) => setTimeout(r, 5000));
     
     for (const address of failedAddresses) {
       const shellData = await fetchShellForWallet(address, browserlessToken);
@@ -238,7 +238,7 @@ export async function GET(request: NextRequest) {
       }
       
       if (failedAddresses.length > 1) {
-        await new Promise((r) => setTimeout(r, 15000));
+        await new Promise((r) => setTimeout(r, 10000));
       }
     }
   }

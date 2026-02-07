@@ -110,7 +110,15 @@
     },
     {
       "path": "/api/club/shell/refresh?group=2",
-      "schedule": "2 3,15 * * *"
+      "schedule": "3 3,15 * * *"
+    },
+    {
+      "path": "/api/club/shell/refresh?group=3",
+      "schedule": "6 3,15 * * *"
+    },
+    {
+      "path": "/api/club/shell/refresh?group=4",
+      "schedule": "9 3,15 * * *"
     },
     {
       "path": "/api/token/supply?refresh=true",

@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import {
   LineChart,
@@ -16,6 +16,7 @@ import {
 } from 'recharts';
 
 const BUSDC_WALLET = '0x6A3a608213a6597aaC0d7BC08da8e7f77d6FaEdB';
+const PUMPSPACE_URL = `https://pumpspace.io/wallet/detail?account=${BUSDC_WALLET}`;
 interface HistoryItem {
   recorded_at: string;
   total_assets: string;
@@ -176,17 +177,28 @@ export default function BusdcAnalysisPage() {
             <ArrowLeft className="w-5 h-5" />
             <span>돌아가기</span>
           </Link>
-          <div>
-            <div className="flex items-center gap-3 mb-1">
-              <div className="flex items-center -space-x-2">
-                <img src="/bUSDC.svg" alt="bUSDC" className="w-8 h-8 rounded-full border-2 border-slate-700" />
-                <img src="/USDC.svg" alt="USDC" className="w-8 h-8 rounded-full border-2 border-slate-700" />
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-1">
+                <div className="flex items-center -space-x-2">
+                  <img src="/bUSDC.svg" alt="bUSDC" className="w-8 h-8 rounded-full border-2 border-slate-700" />
+                  <img src="/USDC.svg" alt="USDC" className="w-8 h-8 rounded-full border-2 border-slate-700" />
+                </div>
+                <h1 className="text-xl md:text-2xl font-bold text-white">bUSDC - USDC</h1>
               </div>
-              <h1 className="text-xl md:text-2xl font-bold text-white">bUSDC - USDC</h1>
+              <code className="text-xs md:text-sm text-slate-400 font-mono">
+                {formatAddress(BUSDC_WALLET)}
+              </code>
             </div>
-            <code className="text-xs md:text-sm text-slate-400 font-mono">
-              {formatAddress(BUSDC_WALLET)}
-            </code>
+            <a
+              href={PUMPSPACE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg transition-colors flex items-center gap-2"
+            >
+              <span>이동</span>
+              <ExternalLink className="w-4 h-4" />
+            </a>
           </div>
         </div>
       </header>
@@ -195,28 +207,11 @@ export default function BusdcAnalysisPage() {
       <main className="max-w-4xl mx-auto px-4 md:px-6 py-6 md:py-10">
         {/* 현재 자산 카드 */}
         <Card className="bg-slate-800/50 border-slate-700/50 p-4 md:p-6 mb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs md:text-sm text-slate-400 mb-1">현재 Total Assets</p>
-              <p className="text-2xl md:text-3xl font-bold text-emerald-400">
-                {formatAssets(currentAssets)}
-              </p>
-            </div>
-            {history && history.length >= 2 && (
-              <div className="text-right">
-                <p className="text-xs md:text-sm text-slate-400 mb-1">전일 대비</p>
-                {(() => {
-                  const change = calculateChange(history[0]?.total_assets, history[1]?.total_assets);
-                  if (change === null) return <p className="text-slate-500">-</p>;
-                  const isPositive = change >= 0;
-                  return (
-                    <span className={`text-lg md:text-xl font-bold ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
-                      {isPositive ? '+' : ''}{change.toFixed(2)}%
-                    </span>
-                  );
-                })()}
-              </div>
-            )}
+          <div>
+            <p className="text-xs md:text-sm text-slate-400 mb-1">현재 Total Assets</p>
+            <p className="text-2xl md:text-3xl font-bold text-emerald-400">
+              {formatAssets(currentAssets)}
+            </p>
           </div>
         </Card>
 

@@ -206,28 +206,11 @@ export default function BausdAnalysisPage() {
       <main className="max-w-4xl mx-auto px-4 md:px-6 py-6 md:py-10">
         {/* 현재 자산 카드 */}
         <Card className="bg-slate-800/50 border-slate-700/50 p-4 md:p-6 mb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs md:text-sm text-slate-400 mb-1">현재 Total Assets</p>
-              <p className="text-2xl md:text-3xl font-bold text-emerald-400">
-                {formatAssets(currentAssets)}
-              </p>
-            </div>
-            {history && history.length >= 2 && (
-              <div className="text-right">
-                <p className="text-xs md:text-sm text-slate-400 mb-1">전일 대비</p>
-                {(() => {
-                  const change = calculateChange(history[0]?.total_assets, history[1]?.total_assets);
-                  if (change === null) return <p className="text-slate-500">-</p>;
-                  const isPositive = change >= 0;
-                  return (
-                    <span className={`text-lg md:text-xl font-bold ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
-                      {isPositive ? '+' : ''}{change.toFixed(2)}%
-                    </span>
-                  );
-                })()}
-              </div>
-            )}
+          <div>
+            <p className="text-xs md:text-sm text-slate-400 mb-1">현재 Total Assets</p>
+            <p className="text-2xl md:text-3xl font-bold text-emerald-400">
+              {formatAssets(currentAssets)}
+            </p>
           </div>
         </Card>
 

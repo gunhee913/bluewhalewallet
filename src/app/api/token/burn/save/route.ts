@@ -86,25 +86,22 @@ for (let j = i + 1; j < Math.min(i + 12, lines.length); j++) {
                   break;
                 }
               
-              // 토큰 가격 패턴 ($ 44.653+41.8 % 형태)
-              if (searchLine.startsWith('$ ') && searchLine.includes('%') && tokenPrice === 0) {
-                const priceMatch = searchLine.match(/\$ ([\d,.]+)/);
-                if (priceMatch) {
-                  const price = parseFloat(priceMatch[1].replace(/,/g, ''));
-                  if (!isNaN(price) && price > 0) {
-                    tokenPrice = price;
-                    console.log(`[${tokenName}] Token Price: $${tokenPrice}`);
-                  }
-                }
-              }
-              
-              // 총 가치 패턴 ($ 22,721 형태, % 없음)
-              if (searchLine.startsWith('$ ') && !searchLine.includes('%') && value === '$0') {
-                const numStr = searchLine.replace('$ ', '').replace(/,/g, '');
-                const num = parseFloat(numStr);
+              // $ 로 시작하는 줄 처리 (가격 vs 총 가치 구분)
+              if (searchLine.startsWith('$ ') && searchLine.length > 2) {
+                const numPart = searchLine.replace('$ ', '').split(/[+\-]/)[0].replace(/,/g, '').replace(/%/g, '').trim();
+                const num = parseFloat(numPart);
+                
                 if (!isNaN(num) && num > 0) {
-                  value = '$' + Math.floor(num).toLocaleString();
-                  console.log(`[${tokenName}] Value: ${value}`);
+                  // 가격 판단: % 포함 또는 소수점 3자리 이상 (예: 0.0001, 44.653)
+                  const isPrice = searchLine.includes('%') || (numPart.includes('.') && numPart.split('.')[1].length >= 3);
+                  
+                  if (isPrice && tokenPrice === 0) {
+                    tokenPrice = num;
+                    console.log(`[${tokenName}] Token Price: $${tokenPrice}`);
+                  } else if (!isPrice && value === '$0') {
+                    value = '$' + Math.floor(num).toLocaleString();
+                    console.log(`[${tokenName}] Value: ${value}`);
+                  }
                 }
               }
               

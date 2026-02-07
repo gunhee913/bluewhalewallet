@@ -325,7 +325,7 @@ export default function TokenDetailPage() {
                             {formatNumber(item.dailyBurn, showDecimal)}
                           </td>
                           <td className="px-3 py-4 text-right text-sm text-slate-300">
-                            {item.token_price > 0 ? `$${item.token_price.toFixed(item.token_price >= 1 ? 2 : 4)}` : '-'}
+                            {item.token_price > 0 ? `$${item.token_price.toFixed(item.token_price >= 1 ? 2 : 5)}` : '-'}
                           </td>
                           <td className="px-3 py-4 text-right text-sm text-yellow-400">
                             {item.dailyValue > 0 ? `$${item.dailyValue.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}` : '-'}

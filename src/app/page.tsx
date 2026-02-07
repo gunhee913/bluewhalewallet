@@ -210,7 +210,7 @@ function TokenCard({ name, burnData }: TokenCardProps) {
                   ? burnData.token_price.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })
                   : name === 'sADOL'
                     ? burnData.token_price.toFixed(1) 
-                    : burnData.token_price.toFixed(4)}
+                    : burnData.token_price.toFixed(5)}
               </span>
             )}
           </div>

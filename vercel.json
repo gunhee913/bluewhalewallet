@@ -101,6 +101,10 @@
       "schedule": "24 0-14,15,22-23 * * *"
     },
     {
+      "path": "/api/wallet/refresh?group=26",
+      "schedule": "25 0-14,15,22-23 * * *"
+    },
+    {
       "path": "/api/token/burn/save",
       "schedule": "0 0-14,15,22-23 * * *"
     },

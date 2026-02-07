@@ -69,6 +69,15 @@ const BTCB_XAUT_WALLET = '0xAFa948cf1e722E83572068A826f146Fbe134cF77';
 const BTCB_XAUT_START_DATE = '2026-02-02';
 const BTCB_XAUT_START_ASSETS = 1003;
 
+// 실험실 - BTC 펀드
+const BTC_FUND_WALLET = '0x22BA71BB6C79cC15f3878f5dFbc262BBB28e7770';
+const BTC_FUND_START_DATE = '2026-02-07';
+const BTC_FUND_START_ASSETS = 10058; // 원금
+const BTC_FUND_BTC_AMOUNT = 0.1474; // BTC 담보 수량
+const BTC_FUND_BTC_PRICE = 68878; // BTC 매입가
+const BTC_FUND_LOAN = 6700; // 대출금
+const BTC_FUND_LOAN_RATE = 0.055; // 대출 이율 5.5%
+
 interface WalletInfo {
   name: string;
   address: string;
@@ -443,7 +452,7 @@ function HomeContent() {
   };
 
   const addresses = useMemo(
-    () => [...WALLETS.map((w) => w.address), ...BUYBACK_AI_WALLETS, ...ADOL_AI_WALLETS, BUSDC_WALLET, BUSDT_USDC_WALLET, BTCB_WETH_WALLET, BTCB_XAUT_WALLET],
+    () => [...WALLETS.map((w) => w.address), ...BUYBACK_AI_WALLETS, ...ADOL_AI_WALLETS, BUSDC_WALLET, BUSDT_USDC_WALLET, BTCB_WETH_WALLET, BTCB_XAUT_WALLET, BTC_FUND_WALLET],
     []
   );
 
@@ -453,6 +462,19 @@ function HomeContent() {
     queryFn: () => fetchCachedData(addresses),
     staleTime: 30 * 60 * 1000,
     refetchInterval: 30 * 60 * 1000,
+  });
+
+  // BTC 현재 가격 (CoinGecko)
+  const { data: btcPrice } = useQuery({
+    queryKey: ['btc-price'],
+    queryFn: async () => {
+      const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
+      const data = await res.json();
+      return data.bitcoin?.usd as number;
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000,
+    enabled: selectedTab === 'lab',
   });
 
   // 토큰 소각 데이터 로드 (아쿠아1 적정가격 계산에도 필요)
@@ -982,6 +1004,97 @@ function HomeContent() {
         {/* 실험실 탭 */}
         {selectedTab === 'lab' && (
           <div className="space-y-4">
+            {/* BTC 펀드 카드 */}
+            <Card className="bg-slate-800/50 border-slate-700/50 hover:bg-slate-800/80 transition-all duration-200 overflow-hidden group">
+              <div className="p-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 mb-4">
+                      <img src="/BTC.b.png" alt="BTC" className="w-8 h-8 rounded-full border-2 border-slate-700" />
+                      <h2 className="text-lg font-semibold text-white">BTC 펀드</h2>
+                    </div>
+
+                    {(() => {
+                      const fundAssets = getAssets(BTC_FUND_WALLET);
+                      const operatingValue = fundAssets ? parseAmount(fundAssets) : 0;
+
+                      // 경과일 계산
+                      const now = new Date();
+                      const koreaOffset = 9 * 60;
+                      const koreaTime = new Date(now.getTime() + (koreaOffset + now.getTimezoneOffset()) * 60000);
+                      const ty = koreaTime.getFullYear();
+                      const tm = koreaTime.getMonth() + 1;
+                      const td = koreaTime.getDate();
+                      const [sy, sm, sd] = BTC_FUND_START_DATE.split('-').map(Number);
+                      const todayDate = new Date(ty, tm - 1, td);
+                      const startDate = new Date(sy, sm - 1, sd);
+                      const diffDays = Math.max(1, Math.floor((todayDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+
+                      // 순이익 계산
+                      const currentBtcPrice = btcPrice || 0;
+                      const btcPnl = BTC_FUND_BTC_AMOUNT * (currentBtcPrice - BTC_FUND_BTC_PRICE);
+                      const operatingProfit = operatingValue > 0 ? operatingValue - BTC_FUND_LOAN : 0;
+                      const loanInterest = BTC_FUND_LOAN * BTC_FUND_LOAN_RATE * (diffDays / 365);
+                      const netProfit = btcPnl + operatingProfit - loanInterest;
+
+                      // 현재 자산 = 원금 + 순이익
+                      const currentAssetValue = currentBtcPrice > 0 && operatingValue > 0 ? BTC_FUND_START_ASSETS + netProfit : 0;
+                      const returnRate = currentAssetValue > 0 ? ((currentAssetValue - BTC_FUND_START_ASSETS) / BTC_FUND_START_ASSETS) : 0;
+                      const apr = returnRate * (365 / diffDays) * 100;
+                      const formattedStartDate = BTC_FUND_START_DATE.replace(/^20/, '').replace(/-/g, '.');
+
+                      return (
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-slate-400">개시일:</span>
+                            <span className="text-sm text-white">{formattedStartDate} ({diffDays}일 경과)</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-slate-400">원금:</span>
+                            <span className="text-sm text-white">${BTC_FUND_START_ASSETS.toLocaleString()}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-slate-400">현재 자산:</span>
+                            <span className={`text-sm font-medium ${currentAssetValue >= BTC_FUND_START_ASSETS ? 'text-emerald-400' : 'text-rose-400'}`}>
+                              {currentAssetValue > 0 ? `$${Math.round(currentAssetValue).toLocaleString()}` : '-'}
+                            </span>
+                            {currentAssetValue > 0 && (
+                              <span className={`text-sm font-medium ${returnRate >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                ({returnRate >= 0 ? '+' : ''}{(returnRate * 100).toFixed(2)}%)
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-slate-400">예상 APR:</span>
+                            <span className={`text-sm font-medium ${apr >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                              {currentAssetValue > 0 ? `${apr >= 0 ? '+' : ''}${apr.toFixed(1)}%` : '-'}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <a
+                      href={`${PUMPSPACE_BASE_URL}${BTC_FUND_WALLET}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-6 py-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-md transition-all duration-200 font-medium text-center"
+                    >
+                      이동
+                    </a>
+                    <Link
+                      href="/wallet/btc-fund"
+                      className="px-6 py-2.5 bg-slate-600 hover:bg-slate-500 text-white rounded-md transition-all duration-200 font-medium text-center"
+                    >
+                      분석
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
             {/* bUSDC - USDC 카드 */}
             <Card className="bg-slate-800/50 border-slate-700/50 hover:bg-slate-800/80 transition-all duration-200 overflow-hidden group">
               <div className="p-5">
@@ -1350,6 +1463,7 @@ function HomeContent() {
                 </div>
               </div>
             </Card>
+
           </div>
         )}
       </main>

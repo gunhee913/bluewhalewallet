@@ -446,17 +446,24 @@ async function fetchLpBalances(
     console.log(`[LP ${lpName}] Crawling...`);
     
     // 각 LP 지갑에서 sBWPM 잔액 가져오기 (기존 함수 재사용)
-    const balance = await fetchBuybackSbwpm(walletAddress, browserlessToken);
+    let balance = await fetchBuybackSbwpm(walletAddress, browserlessToken);
+    
+    // 실패 시 15초 대기 후 재시도
+    if (!balance || balance <= 0) {
+      console.log(`[LP ${lpName}] First attempt failed, retrying in 15s...`);
+      await new Promise((r) => setTimeout(r, 15000));
+      balance = await fetchBuybackSbwpm(walletAddress, browserlessToken);
+    }
     
     if (balance && balance > 0) {
       results[lpName] = balance;
       console.log(`[LP ${lpName}] Balance: ${balance}`);
     } else {
-      console.log(`[LP ${lpName}] No balance found`);
+      console.log(`[LP ${lpName}] No balance found after retry`);
     }
     
-    // 다음 요청 전 대기
-    await new Promise((r) => setTimeout(r, 10000));
+    // 다음 요청 전 대기 (15초)
+    await new Promise((r) => setTimeout(r, 15000));
   }
   
   console.log('[LP] All balances:', results);
@@ -526,7 +533,7 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = getSupabase();
     
-    // type=supply면 KaiaScan 총 발행량만 크롤링
+    // type=supply면 KaiaScan 총 공급량만 크롤링
     if (crawlType === 'supply') {
       const browserlessToken = process.env.BROWSERLESS_TOKEN;
       if (!browserlessToken) {

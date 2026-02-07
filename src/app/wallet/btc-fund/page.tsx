@@ -285,7 +285,7 @@ export default function BtcFundAnalysisPage() {
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm text-slate-400">LTV</span>
-              <span className={`text-sm font-medium ${btcCalc.ltv <= 70 ? 'text-emerald-400' : btcCalc.ltv <= 80 ? 'text-amber-400' : 'text-rose-400'}`}>
+              <span className={`text-sm font-medium ${btcCalc.ltv > 78 ? 'text-rose-400' : 'text-amber-400'}`}>
                 {btcCalc.currentBtcPrice > 0 ? `${btcCalc.ltv.toFixed(1)}%` : '-'}
               </span>
             </div>

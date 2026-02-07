@@ -54,10 +54,10 @@ const BUSDC_WALLET = '0x6A3a608213a6597aaC0d7BC08da8e7f77d6FaEdB';
 const BUSDC_START_DATE = '2026-02-02';
 const BUSDC_START_ASSETS = 1007;
 
-// 실험실 - bAUSD 지갑
-const BAUSD_WALLET = '0xa7f39e0d389eCF0cADFb8b940015300D4010A58C';
-const BAUSD_START_DATE = '2026-02-02';
-const BAUSD_START_ASSETS = 1007;
+// 실험실 - bUSDT-USDC 지갑
+const BUSDT_USDC_WALLET = '0xa7f39e0d389eCF0cADFb8b940015300D4010A58C';
+const BUSDT_USDC_START_DATE = '2026-02-02';
+const BUSDT_USDC_START_ASSETS = 1007;
 
 // 실험실 - BTC.b-WETH.e 지갑
 const BTCB_WETH_WALLET = '0x620298587246547da70B8c16d3aA0C92F38E243f';
@@ -443,7 +443,7 @@ function HomeContent() {
   };
 
   const addresses = useMemo(
-    () => [...WALLETS.map((w) => w.address), ...BUYBACK_AI_WALLETS, ...ADOL_AI_WALLETS, BUSDC_WALLET, BAUSD_WALLET, BTCB_WETH_WALLET, BTCB_XAUT_WALLET],
+    () => [...WALLETS.map((w) => w.address), ...BUYBACK_AI_WALLETS, ...ADOL_AI_WALLETS, BUSDC_WALLET, BUSDT_USDC_WALLET, BTCB_WETH_WALLET, BTCB_XAUT_WALLET],
     []
   );
 
@@ -1075,21 +1075,21 @@ function HomeContent() {
               </div>
             </Card>
 
-            {/* bAUSD - AUSD 카드 */}
+            {/* bUSDT - USDC 카드 */}
             <Card className="bg-slate-800/50 border-slate-700/50 hover:bg-slate-800/80 transition-all duration-200 overflow-hidden group">
               <div className="p-5">
                 <div className="flex items-center justify-between">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="flex items-center -space-x-2">
-                        <img src="/bAUSD.svg" alt="bAUSD" className="w-8 h-8 rounded-full border-2 border-slate-700" />
-                        <img src="/AUSD.svg" alt="AUSD" className="w-8 h-8 rounded-full border-2 border-slate-700" />
+                        <img src="/bUSDT.png" alt="bUSDT" className="w-8 h-8 rounded-full border-2 border-slate-700" />
+                        <img src="/USDC.svg" alt="USDC" className="w-8 h-8 rounded-full border-2 border-slate-700" />
                       </div>
-                      <h2 className="text-lg font-semibold text-white">bAUSD - AUSD</h2>
+                      <h2 className="text-lg font-semibold text-white">bUSDT - USDC</h2>
                     </div>
 
                     {(() => {
-                      const bausdAssets = getAssets(BAUSD_WALLET);
+                      const bausdAssets = getAssets(BUSDT_USDC_WALLET);
                       const currentValue = bausdAssets ? parseAmount(bausdAssets) : 0;
                       
                       // 경과일 계산 (한국 시간 기준, 날짜만 비교)
@@ -1099,17 +1099,17 @@ function HomeContent() {
                       const ty = koreaTime.getFullYear();
                       const tm = koreaTime.getMonth() + 1;
                       const td = koreaTime.getDate();
-                      const [sy, sm, sd] = BAUSD_START_DATE.split('-').map(Number);
+                      const [sy, sm, sd] = BUSDT_USDC_START_DATE.split('-').map(Number);
                       const todayDate = new Date(ty, tm - 1, td);
                       const startDate = new Date(sy, sm - 1, sd);
                       const diffDays = Math.max(1, Math.floor((todayDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1);
                       
                       // APR 계산
-                      const returnRate = currentValue > 0 ? ((currentValue - BAUSD_START_ASSETS) / BAUSD_START_ASSETS) : 0;
+                      const returnRate = currentValue > 0 ? ((currentValue - BUSDT_USDC_START_ASSETS) / BUSDT_USDC_START_ASSETS) : 0;
                       const apr = returnRate * (365 / diffDays) * 100;
                       
                       // 시작일 포맷
-                      const formattedStartDate = BAUSD_START_DATE.replace(/^20/, '').replace(/-/g, '.');
+                      const formattedStartDate = BUSDT_USDC_START_DATE.replace(/^20/, '').replace(/-/g, '.');
                       
                       return (
                         <div className="space-y-1">
@@ -1123,7 +1123,7 @@ function HomeContent() {
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-sm text-slate-400">원금:</span>
-                            <span className="text-sm text-white">${BAUSD_START_ASSETS.toLocaleString()}</span>
+                            <span className="text-sm text-white">${BUSDT_USDC_START_ASSETS.toLocaleString()}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-sm text-slate-400">현재 자산:</span>
@@ -1149,7 +1149,7 @@ function HomeContent() {
 
                   <div className="flex flex-col gap-2">
                     <a
-                      href={`${PUMPSPACE_BASE_URL}${BAUSD_WALLET}`}
+                      href={`${PUMPSPACE_BASE_URL}${BUSDT_USDC_WALLET}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="px-6 py-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-md transition-all duration-200 font-medium text-center"
@@ -1157,7 +1157,7 @@ function HomeContent() {
                       이동
                     </a>
                     <Link
-                      href="/wallet/bausd"
+                      href="/wallet/busdt-usdc"
                       className="px-6 py-2.5 bg-slate-600 hover:bg-slate-500 text-white rounded-md transition-all duration-200 font-medium text-center"
                     >
                       분석

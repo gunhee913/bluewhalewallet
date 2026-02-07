@@ -51,11 +51,11 @@ function getSupabase() {
 
 // PumpSpace에서 sBWPM 토큰 보유량 추출
 async function extractSbwpmAmount(page: Page): Promise<number | null> {
-  // 페이지 로드 후 10초 대기 (동적 콘텐츠 로딩)
-  await new Promise((r) => setTimeout(r, 10000));
+  // 페이지 로드 후 15초 대기 (동적 콘텐츠 로딩)
+  await new Promise((r) => setTimeout(r, 15000));
   
-  // 최대 15초 동안 폴링 (1초 간격)
-  for (let attempt = 0; attempt < 15; attempt++) {
+  // 최대 20초 동안 폴링 (1초 간격)
+  for (let attempt = 0; attempt < 20; attempt++) {
     try {
       const result = await page.evaluate(() => {
         const body = document.body.innerText;
@@ -63,8 +63,8 @@ async function extractSbwpmAmount(page: Page): Promise<number | null> {
         
         // sBWPM 토큰 찾기
         for (let i = 0; i < lines.length; i++) {
-          if (lines[i] === 'sBWPM' && i + 1 < lines.length && lines[i + 1].includes('$')) {
-            // Units 위치 찾기
+          if (lines[i] === 'sBWPM') {
+            // 방법1: Units 위치 기반
             let unitsIndex = -1;
             for (let j = i + 1; j < Math.min(i + 10, lines.length); j++) {
               if (lines[j] === 'Units') {
@@ -73,18 +73,28 @@ async function extractSbwpmAmount(page: Page): Promise<number | null> {
               }
             }
             
-            if (unitsIndex === -1) continue;
+            if (unitsIndex > 0) {
+              // Units 앞 여러 줄을 합쳐서 숫자 찾기
+              const nearby = lines.slice(Math.max(0, unitsIndex - 3), unitsIndex).join(' ');
+              const amountMatch = nearby.match(/([\d,]+\.?\d*)/g);
+              if (amountMatch) {
+                // 가장 마지막(Units에 가장 가까운) 숫자
+                const lastNum = amountMatch[amountMatch.length - 1];
+                const amount = parseFloat(lastNum.replace(/,/g, ''));
+                if (amount > 0) {
+                  console.log(`Found sBWPM via Units: ${amount}`);
+                  return amount;
+                }
+              }
+            }
             
-            // Units 바로 앞 2줄을 합쳐서 보유량 추출
-            const numPart1 = lines[unitsIndex - 2] || '';
-            const numPart2 = lines[unitsIndex - 1] || '';
-            
-            const combinedNum = (numPart1 + numPart2).replace(/,/g, '');
-            const amountMatch = combinedNum.match(/([\d.]+)/);
-            if (amountMatch) {
-              const amount = parseFloat(amountMatch[1]);
-              if (amount > 0) {
-                console.log(`Found sBWPM: ${amount} Units`);
+            // 방법2: sBWPM 이후 줄들에서 소수점 숫자 찾기
+            const nextLines = lines.slice(i + 1, i + 10).join(' ');
+            const decimalMatch = nextLines.match(/([\d,]+\.\d+)/);
+            if (decimalMatch) {
+              const amount = parseFloat(decimalMatch[1].replace(/,/g, ''));
+              if (amount > 0 && amount < 100000) {
+                console.log(`Found sBWPM via decimal: ${amount}`);
                 return amount;
               }
             }
@@ -310,16 +320,17 @@ async function extractWalletBalance(page: Page, walletAddress: string): Promise<
 
 // 총 공급량 추출
 async function extractTotalSupply(page: Page): Promise<number | null> {
-  // 페이지 로드 후 5초 대기
-  await new Promise((r) => setTimeout(r, 5000));
+  // 페이지 로드 후 10초 대기
+  await new Promise((r) => setTimeout(r, 10000));
   
-  // 최대 10초 동안 폴링
-  for (let attempt = 0; attempt < 10; attempt++) {
+  // 최대 20초 동안 폴링
+  for (let attempt = 0; attempt < 20; attempt++) {
     try {
       const result = await page.evaluate(() => {
         const body = document.body.innerText;
+        const lines = body.split('\n').map(l => l.trim()).filter(l => l);
         
-        // "총 공급량" 또는 "Total Supply" 찾기
+        // 방법1: regex로 "총 공급량" 또는 "Total Supply" 찾기
         const patterns = [
           /총\s*공급량[:\s]*([\d,]+)/i,
           /Total\s*Supply[:\s]*([\d,]+)/i,
@@ -332,8 +343,25 @@ async function extractTotalSupply(page: Page): Promise<number | null> {
           }
         }
         
-        // 페이지에서 숫자 패턴으로 찾기
-        // sBWPM 앞에 있는 숫자 찾기
+        // 방법2: 줄 단위로 "총 공급량" 또는 "Total Supply" 찾고 다음 줄에서 숫자 추출
+        for (let i = 0; i < lines.length; i++) {
+          if (lines[i].includes('총 공급량') || lines[i].includes('Total Supply') || lines[i].includes('총공급량')) {
+            // 같은 줄에 숫자가 있는 경우
+            const sameLineMatch = lines[i].match(/([\d,]+)/);
+            if (sameLineMatch && parseInt(sameLineMatch[1].replace(/,/g, ''), 10) > 100) {
+              return parseInt(sameLineMatch[1].replace(/,/g, ''), 10);
+            }
+            // 다음 몇 줄에서 숫자 찾기
+            for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
+              const numMatch = lines[j].match(/^([\d,]+)/);
+              if (numMatch && parseInt(numMatch[1].replace(/,/g, ''), 10) > 100) {
+                return parseInt(numMatch[1].replace(/,/g, ''), 10);
+              }
+            }
+          }
+        }
+        
+        // 방법3: "sBWPM" 앞에 있는 숫자
         const sbwpmMatch = body.match(/([\d,]+)\s*sBWPM/);
         if (sbwpmMatch && sbwpmMatch[1]) {
           return parseInt(sbwpmMatch[1].replace(/,/g, ''), 10);
@@ -497,6 +525,60 @@ export async function GET(request: NextRequest) {
   
   try {
     const supabase = getSupabase();
+    
+    // type=supply면 KaiaScan 총 발행량만 크롤링
+    if (crawlType === 'supply') {
+      const browserlessToken = process.env.BROWSERLESS_TOKEN;
+      if (!browserlessToken) {
+        return NextResponse.json({ success: false, error: 'BROWSERLESS_TOKEN not configured' });
+      }
+      
+      console.log('[Supply Only] Starting KaiaScan crawling...');
+      const supply = await fetchTokenSupply('sBWPM', TOKEN_CONTRACTS['sBWPM'], browserlessToken);
+      
+      if (supply && supply > 0) {
+        const { error } = await supabase
+          .from('token_supply')
+          .update({ circulating_supply: supply, updated_at: new Date().toISOString() })
+          .eq('token_name', 'sBWPM');
+        if (error) console.error('Supabase update error:', error);
+      }
+      
+      return NextResponse.json({ success: true, type: 'supply', circulatingSupply: supply });
+    }
+    
+    // type=buyback이면 바이백만 크롤링
+    if (crawlType === 'buyback') {
+      const browserlessToken = process.env.BROWSERLESS_TOKEN;
+      if (!browserlessToken) {
+        return NextResponse.json({ success: false, error: 'BROWSERLESS_TOKEN not configured' });
+      }
+      
+      console.log('[Buyback Only] Starting...');
+      const buybackGofun = await fetchBuybackSbwpm(BUYBACK_GOFUN, browserlessToken);
+      await new Promise((r) => setTimeout(r, 10000));
+      const buybackDolfun = await fetchBuybackSbwpm(BUYBACK_DOLFUN, browserlessToken);
+      await new Promise((r) => setTimeout(r, 10000));
+      const buybackGofunKaia = await fetchBuybackSbwpmKaia(BUYBACK_GOFUN_KAIA, browserlessToken);
+      
+      const totalBuyback = (buybackGofun || 0) + (buybackDolfun || 0);
+      
+      if (totalBuyback > 0 || buybackGofunKaia) {
+        const { error } = await supabase
+          .from('token_supply')
+          .update({
+            buyback_gofun: buybackGofun,
+            buyback_dolfun: buybackDolfun,
+            buyback_gofun_kaia: buybackGofunKaia,
+            buyback_amount: totalBuyback > 0 ? totalBuyback : null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('token_name', 'sBWPM');
+        if (error) console.error('Supabase update error:', error);
+      }
+      
+      return NextResponse.json({ success: true, type: 'buyback', buybackGofun, buybackDolfun, buybackGofunKaia, buybackAmount: totalBuyback });
+    }
     
     // type=liquidity면 유동성만 크롤링 (PumpSpace에서 LP 지갑 sBWPM 잔액)
     if (crawlType === 'liquidity') {

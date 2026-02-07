@@ -829,27 +829,27 @@ function HomeContent() {
                                   <>
                                     <tr className="border-b border-slate-700/50">
                                       <td className="text-slate-300 py-2 px-2">아발란체</td>
-                                      <td className="text-right text-white py-2 px-2 font-mono">{formatNum(buybackGofun)}</td>
-                                      <td className="text-right text-white py-2 px-2 font-mono">{formatNum(buybackDolfun)}</td>
-                                      <td className="text-right text-white py-2 px-2 font-mono">{formatNum(liquidityTotal)}</td>
-                                      <td className="text-right text-white py-2 px-2 font-mono">{formatNum(avaxWalletHolding)}</td>
-                                      <td className="text-right text-white py-2 px-2 font-mono">{formatNum(avalancheBalance)}</td>
+                                      <td className="text-right text-white py-2 px-2">{formatNum(buybackGofun)}</td>
+                                      <td className="text-right text-white py-2 px-2">{formatNum(buybackDolfun)}</td>
+                                      <td className="text-right text-white py-2 px-2">{formatNum(liquidityTotal)}</td>
+                                      <td className="text-right text-white py-2 px-2">{formatNum(avaxWalletHolding)}</td>
+                                      <td className="text-right text-white py-2 px-2">{formatNum(avalancheBalance)}</td>
                                     </tr>
                                     <tr className="border-b border-slate-700/50">
                                       <td className="text-slate-300 py-2 px-2">카이아</td>
-                                      <td className="text-right text-white py-2 px-2 font-mono">{formatNum(buybackGofunKaia)}</td>
+                                      <td className="text-right text-white py-2 px-2">{formatNum(buybackGofunKaia)}</td>
                                       <td className="text-right text-slate-500 py-2 px-2">-</td>
                                       <td className="text-right text-slate-500 py-2 px-2">-</td>
-                                      <td className="text-right text-white py-2 px-2 font-mono">{formatNum(kaiaWalletHolding)}</td>
-                                      <td className="text-right text-white py-2 px-2 font-mono">{formatNum(kaiaBalance - burnedAmount)}</td>
+                                      <td className="text-right text-white py-2 px-2">{formatNum(kaiaWalletHolding)}</td>
+                                      <td className="text-right text-white py-2 px-2">{formatNum(kaiaBalance - burnedAmount)}</td>
                                     </tr>
                                     <tr className="bg-slate-700/20">
                                       <td className="text-slate-300 font-medium py-2 px-2">합계</td>
-                                      <td className="text-right text-white font-medium py-2 px-2 font-mono">{formatNum(buybackGofun + buybackGofunKaia)}</td>
-                                      <td className="text-right text-white font-medium py-2 px-2 font-mono">{formatNum(buybackDolfun)}</td>
-                                      <td className="text-right text-white font-medium py-2 px-2 font-mono">{formatNum(liquidityTotal)}</td>
-                                      <td className="text-right text-white font-medium py-2 px-2 font-mono">{formatNum(totalWalletHolding)}</td>
-                                      <td className="text-right text-white font-medium py-2 px-2 font-mono">{formatNum(sbwpmCirculating)}</td>
+                                      <td className="text-right text-white font-medium py-2 px-2">{formatNum(buybackGofun + buybackGofunKaia)}</td>
+                                      <td className="text-right text-white font-medium py-2 px-2">{formatNum(buybackDolfun)}</td>
+                                      <td className="text-right text-white font-medium py-2 px-2">{formatNum(liquidityTotal)}</td>
+                                      <td className="text-right text-white font-medium py-2 px-2">{formatNum(totalWalletHolding)}</td>
+                                      <td className="text-right text-white font-medium py-2 px-2">{formatNum(sbwpmCirculating)}</td>
                                     </tr>
                                   </>
                                 );

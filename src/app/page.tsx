@@ -777,83 +777,86 @@ function HomeContent() {
                     <RowItem label="총 발행량" value={totalSupply} link="#" decimal={false} />
                     <RowItem label="BWPM NFT" value={bwpmNft} link="#" decimal={false} />
                     
-                    {/* sBWPM 행 - 클릭하면 펼침/접힘 */}
-                    <div
-                      onClick={() => setSbwpmExpanded(!sbwpmExpanded)}
-                      className="flex items-center justify-between bg-slate-700/30 rounded-lg px-4 py-3 cursor-pointer hover:bg-slate-700/50 transition-colors"
-                    >
-                      <div className="flex items-center gap-4">
-                        <span className="text-slate-400 text-sm w-20 shrink-0">sBWPM</span>
-                        <span className="text-white text-sm font-medium">{formatNum(sbwpmCirculating)} 개</span>
-                        <ChevronDown 
-                          className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${sbwpmExpanded ? 'rotate-180' : ''}`} 
-                        />
-                      </div>
-                      <Link
-                        href="#"
-                        onClick={(e) => e.stopPropagation()}
-                        className="px-4 py-1.5 text-sm bg-slate-600 hover:bg-slate-500 text-white rounded transition-colors whitespace-nowrap shrink-0 ml-2"
+                    {/* sBWPM 행 + 분포 테이블 (하나의 블록으로 묶어 space-y gap 1번만 적용) */}
+                    <div>
+                      {/* sBWPM 행 - 클릭하면 펼침/접힘 */}
+                      <div
+                        onClick={() => setSbwpmExpanded(!sbwpmExpanded)}
+                        className="flex items-center justify-between bg-slate-700/30 rounded-lg px-4 py-3 cursor-pointer hover:bg-slate-700/50 transition-colors"
                       >
-                        분석
-                      </Link>
-                    </div>
-                    
-                    {/* sBWPM 분포 테이블 - 펼침/접힘 애니메이션 */}
-                    <div 
-                      className={`overflow-hidden transition-all duration-300 ease-in-out -mt-2 ${
-                        sbwpmExpanded ? 'max-h-[500px] opacity-100 mt-0' : 'max-h-0 opacity-0'
-                      }`}
-                    >
-                      <div className="overflow-x-auto scrollbar-thin ml-4 mr-0 md:ml-6 pb-1">
-                        <table className="w-full min-w-[480px] text-sm">
-                          <thead>
-                            <tr className="border-b border-slate-600">
-                              <th className="text-left text-slate-400 font-medium py-2 px-2">구분</th>
-                              <th className="text-right text-slate-400 font-medium py-2 px-2">바이백(고펀)</th>
-                              <th className="text-right text-slate-400 font-medium py-2 px-2">바이백(돌펀)</th>
-                              <th className="text-right text-slate-400 font-medium py-2 px-2">유동성</th>
-                              <th className="text-right text-slate-400 font-medium py-2 px-2">지갑보유</th>
-                              <th className="text-right text-slate-400 font-medium py-2 px-2">합계</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {(() => {
-                              // 지갑보유 = 합계 - 바이백(고펀) - 바이백(돌펀) - 유동성
-                              const avaxWalletHolding = avalancheBalance - buybackGofun - buybackDolfun - liquidityTotal;
-                              const kaiaWalletHolding = kaiaBalance - burnedAmount - buybackGofunKaia;
-                              const totalWalletHolding = avaxWalletHolding + kaiaWalletHolding;
-                              
-                              return (
-                                <>
-                                  <tr className="border-b border-slate-700/50">
-                                    <td className="text-slate-300 py-2 px-2">아발란체</td>
-                                    <td className="text-right text-white py-2 px-2 font-mono">{formatNum(buybackGofun)}</td>
-                                    <td className="text-right text-white py-2 px-2 font-mono">{formatNum(buybackDolfun)}</td>
-                                    <td className="text-right text-white py-2 px-2 font-mono">{formatNum(liquidityTotal)}</td>
-                                    <td className="text-right text-white py-2 px-2 font-mono">{formatNum(avaxWalletHolding)}</td>
-                                    <td className="text-right text-white py-2 px-2 font-mono">{formatNum(avalancheBalance)}</td>
-                                  </tr>
-                                  <tr className="border-b border-slate-700/50">
-                                    <td className="text-slate-300 py-2 px-2">카이아</td>
-                                    <td className="text-right text-white py-2 px-2 font-mono">{formatNum(buybackGofunKaia)}</td>
-                                    <td className="text-right text-slate-500 py-2 px-2">-</td>
-                                    <td className="text-right text-slate-500 py-2 px-2">-</td>
-                                    <td className="text-right text-white py-2 px-2 font-mono">{formatNum(kaiaWalletHolding)}</td>
-                                    <td className="text-right text-white py-2 px-2 font-mono">{formatNum(kaiaBalance - burnedAmount)}</td>
-                                  </tr>
-                                  <tr className="bg-slate-700/20">
-                                    <td className="text-slate-300 font-medium py-2 px-2">합계</td>
-                                    <td className="text-right text-white font-medium py-2 px-2 font-mono">{formatNum(buybackGofun + buybackGofunKaia)}</td>
-                                    <td className="text-right text-white font-medium py-2 px-2 font-mono">{formatNum(buybackDolfun)}</td>
-                                    <td className="text-right text-white font-medium py-2 px-2 font-mono">{formatNum(liquidityTotal)}</td>
-                                    <td className="text-right text-white font-medium py-2 px-2 font-mono">{formatNum(totalWalletHolding)}</td>
-                                    <td className="text-right text-white font-medium py-2 px-2 font-mono">{formatNum(sbwpmCirculating)}</td>
-                                  </tr>
-                                </>
-                              );
-                            })()}
-                          </tbody>
-                        </table>
+                        <div className="flex items-center gap-4">
+                          <span className="text-slate-400 text-sm w-20 shrink-0">sBWPM</span>
+                          <span className="text-white text-sm font-medium">{formatNum(sbwpmCirculating)} 개</span>
+                          <ChevronDown 
+                            className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${sbwpmExpanded ? 'rotate-180' : ''}`} 
+                          />
+                        </div>
+                        <Link
+                          href="#"
+                          onClick={(e) => e.stopPropagation()}
+                          className="px-4 py-1.5 text-sm bg-slate-600 hover:bg-slate-500 text-white rounded transition-colors whitespace-nowrap shrink-0 ml-2"
+                        >
+                          분석
+                        </Link>
+                      </div>
+                      
+                      {/* sBWPM 분포 테이블 - 펼침/접힘 애니메이션 */}
+                      <div 
+                        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                          sbwpmExpanded ? 'max-h-[500px] opacity-100 mt-2' : 'max-h-0 opacity-0'
+                        }`}
+                      >
+                        <div className="overflow-x-auto scrollbar-thin ml-4 mr-0 md:ml-6 pb-1">
+                          <table className="w-full min-w-[480px] text-sm">
+                            <thead>
+                              <tr className="border-b border-slate-600">
+                                <th className="text-left text-slate-400 font-medium py-2 px-2">구분</th>
+                                <th className="text-right text-slate-400 font-medium py-2 px-2">바이백(고펀)</th>
+                                <th className="text-right text-slate-400 font-medium py-2 px-2">바이백(돌펀)</th>
+                                <th className="text-right text-slate-400 font-medium py-2 px-2">유동성</th>
+                                <th className="text-right text-slate-400 font-medium py-2 px-2">지갑보유</th>
+                                <th className="text-right text-slate-400 font-medium py-2 px-2">합계</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {(() => {
+                                // 지갑보유 = 합계 - 바이백(고펀) - 바이백(돌펀) - 유동성
+                                const avaxWalletHolding = avalancheBalance - buybackGofun - buybackDolfun - liquidityTotal;
+                                const kaiaWalletHolding = kaiaBalance - burnedAmount - buybackGofunKaia;
+                                const totalWalletHolding = avaxWalletHolding + kaiaWalletHolding;
+                                
+                                return (
+                                  <>
+                                    <tr className="border-b border-slate-700/50">
+                                      <td className="text-slate-300 py-2 px-2">아발란체</td>
+                                      <td className="text-right text-white py-2 px-2 font-mono">{formatNum(buybackGofun)}</td>
+                                      <td className="text-right text-white py-2 px-2 font-mono">{formatNum(buybackDolfun)}</td>
+                                      <td className="text-right text-white py-2 px-2 font-mono">{formatNum(liquidityTotal)}</td>
+                                      <td className="text-right text-white py-2 px-2 font-mono">{formatNum(avaxWalletHolding)}</td>
+                                      <td className="text-right text-white py-2 px-2 font-mono">{formatNum(avalancheBalance)}</td>
+                                    </tr>
+                                    <tr className="border-b border-slate-700/50">
+                                      <td className="text-slate-300 py-2 px-2">카이아</td>
+                                      <td className="text-right text-white py-2 px-2 font-mono">{formatNum(buybackGofunKaia)}</td>
+                                      <td className="text-right text-slate-500 py-2 px-2">-</td>
+                                      <td className="text-right text-slate-500 py-2 px-2">-</td>
+                                      <td className="text-right text-white py-2 px-2 font-mono">{formatNum(kaiaWalletHolding)}</td>
+                                      <td className="text-right text-white py-2 px-2 font-mono">{formatNum(kaiaBalance - burnedAmount)}</td>
+                                    </tr>
+                                    <tr className="bg-slate-700/20">
+                                      <td className="text-slate-300 font-medium py-2 px-2">합계</td>
+                                      <td className="text-right text-white font-medium py-2 px-2 font-mono">{formatNum(buybackGofun + buybackGofunKaia)}</td>
+                                      <td className="text-right text-white font-medium py-2 px-2 font-mono">{formatNum(buybackDolfun)}</td>
+                                      <td className="text-right text-white font-medium py-2 px-2 font-mono">{formatNum(liquidityTotal)}</td>
+                                      <td className="text-right text-white font-medium py-2 px-2 font-mono">{formatNum(totalWalletHolding)}</td>
+                                      <td className="text-right text-white font-medium py-2 px-2 font-mono">{formatNum(sbwpmCirculating)}</td>
+                                    </tr>
+                                  </>
+                                );
+                              })()}
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
                     </div>
                     

@@ -804,7 +804,7 @@ function HomeContent() {
                         }`}
                       >
                         <div className="overflow-x-auto scrollbar-thin ml-4 mr-0 md:ml-6 pb-1">
-                          <table className="w-full min-w-[480px] text-sm">
+                          <table className="w-full min-w-[480px] text-xs">
                             <thead>
                               <tr className="border-b border-slate-600">
                                 <th className="text-left text-slate-400 font-medium py-2 px-2">구분</th>
@@ -825,20 +825,20 @@ function HomeContent() {
                                 return (
                                   <>
                                     <tr className="border-b border-slate-700/50">
-                                      <td className="text-slate-300 py-2 px-2">아발란체</td>
-                                      <td className="text-right text-white py-2 px-2">{formatNum(buybackGofun)}</td>
-                                      <td className="text-right text-white py-2 px-2">{formatNum(buybackDolfun)}</td>
-                                      <td className="text-right text-white py-2 px-2">{formatNum(liquidityTotal)}</td>
-                                      <td className="text-right text-white py-2 px-2">{formatNum(avaxWalletHolding)}</td>
-                                      <td className="text-right text-white py-2 px-2">{formatNum(avalancheBalance)}</td>
+                                      <td className="text-slate-400 py-2 px-2">아발란체</td>
+                                      <td className="text-right text-slate-300 py-2 px-2">{formatNum(buybackGofun)}</td>
+                                      <td className="text-right text-slate-300 py-2 px-2">{formatNum(buybackDolfun)}</td>
+                                      <td className="text-right text-slate-300 py-2 px-2">{formatNum(liquidityTotal)}</td>
+                                      <td className="text-right text-slate-300 py-2 px-2">{formatNum(avaxWalletHolding)}</td>
+                                      <td className="text-right text-slate-300 py-2 px-2">{formatNum(avalancheBalance)}</td>
                                     </tr>
                                     <tr className="border-b border-slate-700/50">
-                                      <td className="text-slate-300 py-2 px-2">카이아</td>
-                                      <td className="text-right text-white py-2 px-2">{formatNum(buybackGofunKaia)}</td>
+                                      <td className="text-slate-400 py-2 px-2">카이아</td>
+                                      <td className="text-right text-slate-300 py-2 px-2">{formatNum(buybackGofunKaia)}</td>
                                       <td className="text-right text-slate-500 py-2 px-2">-</td>
                                       <td className="text-right text-slate-500 py-2 px-2">-</td>
-                                      <td className="text-right text-white py-2 px-2">{formatNum(kaiaWalletHolding)}</td>
-                                      <td className="text-right text-white py-2 px-2">{formatNum(kaiaBalance - burnedAmount)}</td>
+                                      <td className="text-right text-slate-300 py-2 px-2">{formatNum(kaiaWalletHolding)}</td>
+                                      <td className="text-right text-slate-300 py-2 px-2">{formatNum(kaiaBalance - burnedAmount)}</td>
                                     </tr>
                                     <tr className="bg-slate-700/20">
                                       <td className="text-slate-300 font-medium py-2 px-2">합계</td>

@@ -816,8 +816,8 @@ function HomeContent() {
                             <thead>
                               <tr className="border-b border-slate-600">
                                 <th className="text-left text-slate-400 font-medium py-2 px-2">구분</th>
-                                <th className="text-right text-slate-400 font-medium py-2 px-2">BWPM FUND</th>
-                                <th className="text-right text-slate-400 font-medium py-2 px-2">ADOL FUND</th>
+                                <th className="text-right text-slate-400 font-medium py-2 px-2">BWPM 펀드</th>
+                                <th className="text-right text-slate-400 font-medium py-2 px-2">ADOL 펀드</th>
                                 <th className="text-right text-slate-400 font-medium py-2 px-2">유동성</th>
                                 <th className="text-right text-slate-400 font-medium py-2 px-2">지갑보유</th>
                                 <th className="text-right text-slate-400 font-medium py-2 px-2">합계</th>

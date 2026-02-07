@@ -911,7 +911,7 @@ function HomeContent() {
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-slate-400">멤버 보유량:</span>
                         <span className="text-sm font-medium text-emerald-400">
-                          {clubLoading ? '로딩...' : 
+                          {clubLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin inline" /> : 
                            shellClubData?.totalAmount ? 
                              `${Math.floor(shellClubData.totalAmount).toLocaleString()} SHELL` : '-'}
                         </span>
@@ -919,7 +919,7 @@ function HomeContent() {
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-slate-400">멤버 보유가치:</span>
                         <span className="text-sm font-medium text-white">
-                          {clubLoading ? '로딩...' : 
+                          {clubLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin inline" /> : 
                            shellClubData?.totalValue ? 
                              `$${Math.floor(shellClubData.totalValue).toLocaleString()}` : '-'}
                         </span>

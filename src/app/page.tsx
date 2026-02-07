@@ -1055,7 +1055,7 @@ function HomeContent() {
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-sm text-slate-400">현재 자산:</span>
-                            <span className={`text-sm font-medium ${currentAssetValue >= BTC_FUND_START_ASSETS ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            <span className="text-sm font-medium text-emerald-400">
                               {currentAssetValue > 0 ? `$${Math.round(currentAssetValue).toLocaleString()}` : '-'}
                             </span>
                             {currentAssetValue > 0 && (

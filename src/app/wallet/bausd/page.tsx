@@ -180,10 +180,10 @@ export default function BausdAnalysisPage() {
             <div>
               <div className="flex items-center gap-3 mb-1">
                 <div className="flex items-center -space-x-2">
-                  <img src="/bAUSD.svg" alt="bAUSD" className="w-8 h-8 rounded-full border-2 border-slate-700" />
-                  <img src="/AUSD.svg" alt="AUSD" className="w-8 h-8 rounded-full border-2 border-slate-700" />
+                  <img src="/bUSDT.png" alt="bUSDT" className="w-8 h-8 rounded-full border-2 border-slate-700" />
+                  <img src="/USDC.svg" alt="USDC" className="w-8 h-8 rounded-full border-2 border-slate-700" />
                 </div>
-                <h1 className="text-xl md:text-2xl font-bold text-white">bAUSD - AUSD</h1>
+                <h1 className="text-xl md:text-2xl font-bold text-white">bUSDT - USDC</h1>
               </div>
               <code className="text-xs md:text-sm text-slate-400 font-mono">
                 {formatAddress(BAUSD_WALLET)}

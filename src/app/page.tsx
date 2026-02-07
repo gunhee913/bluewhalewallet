@@ -1136,11 +1136,7 @@ function HomeContent() {
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
                             <span className="text-sm text-slate-400">개시일:</span>
-                            <span className="text-sm text-white">{formattedStartDate}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-slate-400">경과일:</span>
-                            <span className="text-sm text-white">{diffDays}일</span>
+                            <span className="text-sm text-white">{formattedStartDate} ({diffDays}일 경과)</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-sm text-slate-400">원금:</span>
@@ -1228,11 +1224,7 @@ function HomeContent() {
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
                             <span className="text-sm text-slate-400">개시일:</span>
-                            <span className="text-sm text-white">{formattedStartDate}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-slate-400">경과일:</span>
-                            <span className="text-sm text-white">{diffDays}일</span>
+                            <span className="text-sm text-white">{formattedStartDate} ({diffDays}일 경과)</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-sm text-slate-400">원금:</span>
@@ -1320,11 +1312,7 @@ function HomeContent() {
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
                             <span className="text-sm text-slate-400">개시일:</span>
-                            <span className="text-sm text-white">{formattedStartDate}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-slate-400">경과일:</span>
-                            <span className="text-sm text-white">{diffDays}일</span>
+                            <span className="text-sm text-white">{formattedStartDate} ({diffDays}일 경과)</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-sm text-slate-400">원금:</span>
@@ -1412,11 +1400,7 @@ function HomeContent() {
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
                             <span className="text-sm text-slate-400">개시일:</span>
-                            <span className="text-sm text-white">{formattedStartDate}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-slate-400">경과일:</span>
-                            <span className="text-sm text-white">{diffDays}일</span>
+                            <span className="text-sm text-white">{formattedStartDate} ({diffDays}일 경과)</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-sm text-slate-400">원금:</span>

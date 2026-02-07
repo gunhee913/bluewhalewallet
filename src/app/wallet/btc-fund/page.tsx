@@ -402,6 +402,7 @@ export default function BtcFundAnalysisPage() {
                     <tr>
                       <th className="text-left text-sm md:text-base font-medium text-slate-400 px-4 py-3 md:py-4">날짜</th>
                       <th className="text-right text-sm md:text-base font-medium text-slate-400 px-4 py-3 md:py-4">운용 자산</th>
+                      <th className="text-right text-sm md:text-base font-medium text-slate-400 px-4 py-3 md:py-4">현재 자산</th>
                       <th className="text-right text-sm md:text-base font-medium text-slate-400 px-4 py-3 md:py-4">변동</th>
                     </tr>
                   </thead>
@@ -411,11 +412,31 @@ export default function BtcFundAnalysisPage() {
                       const change = calculateChange(item.total_assets, prevItem?.total_assets);
                       const isPositive = change !== null && change >= 0;
 
+                      // 현재 자산 계산 (원금 + BTC손익 + 운용수익 - 대출이자)
+                      const operatingVal = parseAmount(item.total_assets);
+                      const rowBtcPnl = btcCalc.currentBtcPrice > 0 ? BTC_FUND_BTC_AMOUNT * (btcCalc.currentBtcPrice - BTC_FUND_BTC_PRICE) : 0;
+                      const rowOperatingProfit = operatingVal > 0 ? operatingVal - BTC_FUND_LOAN : 0;
+
+                      // 해당 날짜 기준 경과일 계산
+                      const [ry, rm, rd] = item.recorded_at.split('-').map(Number);
+                      const [sy2, sm2, sd2] = BTC_FUND_START_DATE.split('-').map(Number);
+                      const rowDate = new Date(ry, rm - 1, rd);
+                      const startDate2 = new Date(sy2, sm2 - 1, sd2);
+                      const rowDiffDays = Math.max(1, Math.floor((rowDate.getTime() - startDate2.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+                      const rowLoanInterest = BTC_FUND_LOAN * BTC_FUND_LOAN_RATE * (rowDiffDays / 365);
+
+                      const rowCurrentAsset = btcCalc.currentBtcPrice > 0 && operatingVal > 0
+                        ? 10058 + rowBtcPnl + rowOperatingProfit - rowLoanInterest
+                        : 0;
+
                       return (
                         <tr key={item.recorded_at} className="border-t border-slate-700/50 hover:bg-slate-700/30">
                           <td className="px-4 py-4 text-sm md:text-base text-white">{item.recorded_at.replace(/^20/, '').replace(/-/g, '.')}</td>
                           <td className="px-4 py-4 text-right text-sm md:text-base text-emerald-400 font-mono">
                             {formatAssets(item.total_assets)}
+                          </td>
+                          <td className={`px-4 py-4 text-right text-sm md:text-base font-mono ${rowCurrentAsset >= 10058 ? 'text-emerald-400' : rowCurrentAsset > 0 ? 'text-rose-400' : 'text-slate-500'}`}>
+                            {rowCurrentAsset > 0 ? `$${Math.round(rowCurrentAsset).toLocaleString()}` : '-'}
                           </td>
                           <td className={`px-4 py-4 text-right text-sm md:text-base font-medium ${
                             change === null ? 'text-slate-500' : isPositive ? 'text-emerald-400' : 'text-rose-400'

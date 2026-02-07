@@ -186,11 +186,16 @@ export async function GET(request: NextRequest) {
   }
 
   const results: Record<string, { amount: number; value: number; price: number } | null> = {};
+  const failedAddresses: string[] = [];
 
   // 각 지갑 순차 처리
   for (const address of addresses) {
     const shellData = await fetchShellForWallet(address, browserlessToken);
     results[address.toLowerCase()] = shellData;
+    
+    if (!shellData) {
+      failedAddresses.push(address);
+    }
     
     // 다음 요청 전 30초 대기 (rate limit 방지)
     if (addresses.length > 1) {
@@ -198,21 +203,40 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  // 실패한 멤버 재시도 (15초 대기 후)
+  if (failedAddresses.length > 0) {
+    console.log(`[SHELL] Retrying ${failedAddresses.length} failed members...`);
+    await new Promise((r) => setTimeout(r, 15000));
+    
+    for (const address of failedAddresses) {
+      const shellData = await fetchShellForWallet(address, browserlessToken);
+      if (shellData) {
+        results[address.toLowerCase()] = shellData;
+        console.log(`[SHELL] Retry success for ${address.slice(0, 8)}`);
+      } else {
+        console.log(`[SHELL] Retry failed for ${address.slice(0, 8)}`);
+      }
+      
+      if (failedAddresses.length > 1) {
+        await new Promise((r) => setTimeout(r, 30000));
+      }
+    }
+  }
+
   // Supabase에 저장
   const koreaDate = new Date(Date.now() + 9 * 60 * 60 * 1000);
   const today = koreaDate.toISOString().split('T')[0];
   
-  const upsertData = Object.entries(results)
-    .filter(([, data]) => data !== null)
-    .map(([address, data]) => ({
-      address: address.toLowerCase(),
-      shell_amount: data!.amount,
-      shell_value: data!.value,
-      shell_price: data!.price,
-      recorded_at: today,
-    }));
+  const successResults = Object.entries(results).filter(([, data]) => data !== null);
+  const upsertData = successResults.map(([address, data]) => ({
+    address: address.toLowerCase(),
+    shell_amount: data!.amount,
+    shell_value: data!.value,
+    shell_price: data!.price,
+    recorded_at: today,
+  }));
 
-  console.log('Saving to Supabase:', upsertData);
+  console.log(`Saving to Supabase: ${upsertData.length}/${addresses.length} members`);
 
   if (upsertData.length > 0) {
     try {
@@ -237,10 +261,13 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  const finalFailedCount = Object.values(results).filter(v => v === null).length;
+
   return NextResponse.json({
     success: true,
     results,
     savedCount: upsertData.length,
-    message: 'SHELL CLUB data refreshed',
+    failedCount: finalFailedCount,
+    message: `SHELL CLUB data refreshed (${upsertData.length}/${addresses.length} success)`,
   });
 }

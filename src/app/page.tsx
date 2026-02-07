@@ -753,13 +753,13 @@ function HomeContent() {
                 const sbwpmCirculating = sbwpmSupply - burnedAmount;
                 const bwpmNft = totalSupply - sbwpmSupply;
                 
-                const formatNum = (n: number) => n.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+                const formatNum = (n: number, decimal: boolean = true) => n.toLocaleString(undefined, { minimumFractionDigits: decimal ? 1 : 0, maximumFractionDigits: decimal ? 1 : 0 });
                 
-                const RowItem = ({ label, value, link }: { label: string; value: number; link: string | null }) => (
+                const RowItem = ({ label, value, link, decimal = true }: { label: string; value: number; link: string | null; decimal?: boolean }) => (
                   <div className="flex items-center justify-between bg-slate-700/30 rounded-lg px-4 py-3">
                     <div className="flex items-center gap-4">
                       <span className="text-slate-400 text-sm w-20 shrink-0">{label}</span>
-                      <span className="text-white text-sm font-medium">{formatNum(value)} 개</span>
+                      <span className="text-white text-sm font-medium">{formatNum(value, decimal)} 개</span>
                     </div>
                     {link && (
                       <Link
@@ -774,8 +774,8 @@ function HomeContent() {
                 
                 return (
                   <div className="space-y-2">
-                    <RowItem label="총 발행량" value={totalSupply} link="#" />
-                    <RowItem label="BWPM NFT" value={bwpmNft} link="#" />
+                    <RowItem label="총 발행량" value={totalSupply} link="#" decimal={false} />
+                    <RowItem label="BWPM NFT" value={bwpmNft} link="#" decimal={false} />
                     
                     {/* sBWPM 행 - 클릭하면 펼침/접힘 */}
                     <div

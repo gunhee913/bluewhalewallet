@@ -759,7 +759,7 @@ function HomeContent() {
                   <div className="flex items-center justify-between bg-slate-700/30 rounded-lg px-4 py-3">
                     <div className="flex items-center gap-4">
                       <span className="text-slate-400 text-sm w-20 shrink-0">{label}</span>
-                      <span className="text-white font-medium">{formatNum(value)}개</span>
+                      <span className="text-white text-sm font-medium">{formatNum(value)} 개</span>
                     </div>
                     {link && (
                       <Link
@@ -784,7 +784,7 @@ function HomeContent() {
                     >
                       <div className="flex items-center gap-4">
                         <span className="text-slate-400 text-sm w-20 shrink-0">sBWPM</span>
-                        <span className="text-white font-medium">{formatNum(sbwpmCirculating)}개</span>
+                        <span className="text-white text-sm font-medium">{formatNum(sbwpmCirculating)} 개</span>
                         <ChevronDown 
                           className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${sbwpmExpanded ? 'rotate-180' : ''}`} 
                         />

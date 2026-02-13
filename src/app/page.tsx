@@ -120,11 +120,6 @@ const WALLETS: WalletInfo[] = [
     hasAnalysis: true,
   },
   {
-    name: 'CORAL 펀드',
-    address: '0xdA6C0aFb267072F8fF6FC4F207b992729F4a4e15',
-    hasAnalysis: true,
-  },
-  {
     name: 'V2 수수료 펀드',
     address: '0x021f53A57F99413A83298187C139f647F95F5133',
     hasAnalysis: true,

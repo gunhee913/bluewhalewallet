@@ -110,6 +110,16 @@ const WALLETS: WalletInfo[] = [
     hasAnalysis: true,
   },
   {
+    name: 'PEARL 펀드',
+    address: '0xC04C654359f1be91e6b47c9da5F3259b62622Fb4',
+    hasAnalysis: true,
+  },
+  {
+    name: 'KRILL 펀드',
+    address: '0x207Dd88810c115c8FDb6e2F2CD3245d5d1B86c51',
+    hasAnalysis: true,
+  },
+  {
     name: 'CORAL 펀드',
     address: '0xdA6C0aFb267072F8fF6FC4F207b992729F4a4e15',
     hasAnalysis: true,
@@ -295,6 +305,8 @@ function WalletCard({ wallet, totalAssets, fundDetails, aquaFairPrice }: WalletC
   const getAnalysisLink = () => {
     if (wallet.isBuybackTotal) return '/wallet/buyback';
     if (wallet.isAdolTotal) return '/wallet/adol';
+    if (wallet.name === 'PEARL 펀드') return '/wallet/pearl';
+    if (wallet.name === 'KRILL 펀드') return '/wallet/krill';
     return `/wallet/${wallet.address}`;
   };
 

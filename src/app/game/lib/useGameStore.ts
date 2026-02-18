@@ -770,7 +770,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     const freshQuests = get().quests;
     const newCompleted = [...completedQuestIds, questId];
     const newQuests = freshQuests.map((q) => q.questId === questId ? { ...q, claimed: true } : q);
-    const extra = pickQuests(1, newCompleted, get().playerTier);
+    const activeIds = newQuests.filter((q) => !q.claimed).map((q) => q.questId);
+    const extra = pickQuests(1, newCompleted, get().playerTier, activeIds);
     const { killCount, totalGoldEarned, playerTier, startTime, dashCount, combo } = get();
     const elapsed = startTime > 0 ? Math.floor((Date.now() - startTime) / 1000) : 0;
     extra.forEach((q) => {

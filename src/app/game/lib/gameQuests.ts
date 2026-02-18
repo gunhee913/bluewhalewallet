@@ -58,9 +58,10 @@ function getPhaseForTier(tier: number): 1 | 2 | 3 {
   return 3;
 }
 
-export function pickQuests(count: number, completedIds: string[], playerTier: number = 1): QuestDef[] {
+export function pickQuests(count: number, completedIds: string[], playerTier: number = 1, activeIds: string[] = []): QuestDef[] {
   const currentPhase = getPhaseForTier(playerTier);
-  const available = QUEST_POOL.filter((q) => !completedIds.includes(q.id) && q.phase <= currentPhase);
+  const excludeSet = new Set([...completedIds, ...activeIds]);
+  const available = QUEST_POOL.filter((q) => !excludeSet.has(q.id) && q.phase <= currentPhase);
   const shuffled = [...available].sort(() => Math.random() - 0.5);
   return shuffled.slice(0, count);
 }

@@ -12,6 +12,7 @@ import Items from './components/Items';
 import EventSystem from './components/EventSystem';
 import BossController from './components/Boss';
 import HUD from './components/HUD';
+import UpgradePanel from './components/UpgradePanel';
 import MobileControls from './components/MobileControls';
 import BGM from './components/BGM';
 import { FOG_COLOR, FOG_NEAR, FOG_FAR } from './lib/gameConfig';
@@ -49,6 +50,7 @@ export default function GameClient() {
       </Canvas>
 
       <HUD />
+      <UpgradePanel />
       <MobileControls />
       <BGM />
     </div>

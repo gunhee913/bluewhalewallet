@@ -1,5 +1,17 @@
 import { create } from 'zustand';
-import { CREATURE_STAGES, getStageByTier, WORLD_SIZE, WORLD_DEPTH, OCEAN_FLOOR_Y } from './gameConfig';
+import {
+  CREATURE_STAGES,
+  getStageByTier,
+  WORLD_SIZE,
+  WORLD_DEPTH,
+  OCEAN_FLOOR_Y,
+  GOLD_PER_TIER,
+  EVOLUTION_COST,
+  SPEED_UPGRADES,
+  EAT_RANGE_UPGRADES,
+  NPC_COUNT_UPGRADES,
+  MAX_UPGRADE_LEVEL,
+} from './gameConfig';
 
 export interface NPC {
   id: string;
@@ -55,11 +67,11 @@ function spawnNPC(tier: number): NPC {
   };
 }
 
-function generateInitialNPCs(): NPC[] {
+function generateInitialNPCs(npcMultiplier = 1.0): NPC[] {
   const npcs: NPC[] = [];
-  const countsPerTier: Record<number, number> = { 0: 150, 1: 80, 2: 50, 3: 40, 4: 30, 5: 20, 6: 12, 7: 8 };
+  const baseCounts: Record<number, number> = { 0: 150, 1: 80, 2: 50, 3: 40, 4: 30, 5: 20, 6: 12, 7: 8 };
   for (let tier = 0; tier <= 7; tier++) {
-    const count = countsPerTier[tier];
+    const count = Math.round(baseCounts[tier] * npcMultiplier);
     for (let i = 0; i < count; i++) {
       npcs.push(spawnNPC(tier));
     }
@@ -85,7 +97,19 @@ function generateInitialItems(): GameItem[] {
   return items;
 }
 
+export interface Upgrades {
+  speed: number;
+  eatRange: number;
+  npcCount: number;
+}
+
 interface GameState {
+  nickname: string;
+  gold: number;
+  totalGoldEarned: number;
+  upgrades: Upgrades;
+  showUpgradePanel: boolean;
+
   playerTier: number;
   exp: number;
   isGameOver: boolean;
@@ -114,6 +138,14 @@ interface GameState {
 
   moveInput: { x: number; y: number };
   cameraRotation: { x: number; y: number };
+
+  setNickname: (name: string) => void;
+  addGold: (amount: number) => void;
+  evolve: () => boolean;
+  buyUpgrade: (type: keyof Upgrades) => boolean;
+  toggleUpgradePanel: () => void;
+  getUpgradeMultiplier: (type: keyof Upgrades) => number;
+  getNextUpgradeCost: (type: keyof Upgrades) => number | null;
 
   addExp: (amount: number) => void;
   setGameOver: () => void;
@@ -148,6 +180,12 @@ interface GameState {
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
+  nickname: typeof window !== 'undefined' ? localStorage.getItem('blueGameNickname') || '' : '',
+  gold: 0,
+  totalGoldEarned: 0,
+  upgrades: { speed: 1, eatRange: 1, npcCount: 1 },
+  showUpgradePanel: false,
+
   playerTier: 1,
   exp: 0,
   isGameOver: false,
@@ -177,21 +215,86 @@ export const useGameStore = create<GameState>((set, get) => ({
   moveInput: { x: 0, y: 0 },
   cameraRotation: { x: 0, y: 0 },
 
+  setNickname: (name: string) => {
+    if (typeof window !== 'undefined') localStorage.setItem('blueGameNickname', name);
+    set({ nickname: name });
+  },
+
+  addGold: (amount: number) => {
+    set((s) => ({ gold: s.gold + amount, totalGoldEarned: s.totalGoldEarned + amount }));
+  },
+
+  evolve: () => {
+    const { playerTier, gold } = get();
+    if (playerTier >= 7) return false;
+    const cost = EVOLUTION_COST[playerTier];
+    if (!cost || gold < cost) return false;
+    set({ playerTier: playerTier + 1, gold: gold - cost, exp: 0 });
+    return true;
+  },
+
+  buyUpgrade: (type: keyof Upgrades) => {
+    const { upgrades, gold, npcs } = get();
+    const currentLevel = upgrades[type];
+    if (currentLevel >= MAX_UPGRADE_LEVEL) return false;
+    const table = type === 'speed' ? SPEED_UPGRADES : type === 'eatRange' ? EAT_RANGE_UPGRADES : NPC_COUNT_UPGRADES;
+    const next = table[currentLevel];
+    if (!next || gold < next.cost) return false;
+
+    const newUpgrades = { ...upgrades, [type]: currentLevel + 1 };
+    set({ gold: gold - next.cost, upgrades: newUpgrades });
+
+    if (type === 'npcCount') {
+      const oldMul = NPC_COUNT_UPGRADES[currentLevel - 1]?.multiplier ?? 1.0;
+      const newMul = next.multiplier;
+      const baseCounts: Record<number, number> = { 0: 150, 1: 80, 2: 50, 3: 40, 4: 30, 5: 20, 6: 12, 7: 8 };
+      const extraNpcs: NPC[] = [];
+      for (let tier = 0; tier <= 7; tier++) {
+        const oldCount = Math.round(baseCounts[tier] * oldMul);
+        const newCount = Math.round(baseCounts[tier] * newMul);
+        const diff = newCount - oldCount;
+        for (let i = 0; i < diff; i++) {
+          extraNpcs.push(spawnNPC(tier));
+        }
+      }
+      if (extraNpcs.length > 0) {
+        set((s) => ({ npcs: [...s.npcs, ...extraNpcs] }));
+      }
+    }
+    return true;
+  },
+
+  toggleUpgradePanel: () => {
+    const { showUpgradePanel, isPaused } = get();
+    if (!showUpgradePanel) {
+      set({ showUpgradePanel: true, isPaused: true });
+    } else {
+      set({ showUpgradePanel: false, isPaused: false });
+    }
+  },
+
+  getUpgradeMultiplier: (type: keyof Upgrades) => {
+    const level = get().upgrades[type];
+    const table = type === 'speed' ? SPEED_UPGRADES : type === 'eatRange' ? EAT_RANGE_UPGRADES : NPC_COUNT_UPGRADES;
+    return table[level - 1]?.multiplier ?? 1.0;
+  },
+
+  getNextUpgradeCost: (type: keyof Upgrades) => {
+    const level = get().upgrades[type];
+    if (level >= MAX_UPGRADE_LEVEL) return null;
+    const table = type === 'speed' ? SPEED_UPGRADES : type === 'eatRange' ? EAT_RANGE_UPGRADES : NPC_COUNT_UPGRADES;
+    return table[level]?.cost ?? null;
+  },
+
   addExp: (amount: number) => {
-    const { playerTier, exp, activeEffects } = get();
+    const { exp, activeEffects, playerTier } = get();
     const stage = getStageByTier(playerTier);
     const now = Date.now();
     const hasExp2x = activeEffects.some((e) => e.type === 'exp2x' && e.endTime > now);
     const finalAmount = hasExp2x ? amount * 2 : amount;
     const newExp = exp + finalAmount;
-
-    if (newExp >= stage.expToNext && playerTier < 7) {
-      set({ playerTier: playerTier + 1, exp: 0 });
-    } else if (playerTier >= 7 && newExp >= stage.expToNext) {
-      set({ isCleared: true });
-    } else {
-      set({ exp: newExp });
-    }
+    const maxExp = stage.expToNext === Infinity ? newExp : Math.min(newExp, stage.expToNext);
+    set({ exp: maxExp });
   },
 
   setGameOver: () => set({ isGameOver: true }),
@@ -199,10 +302,13 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   startGame: () => {
     const now = Date.now();
+    const { upgrades } = get();
+    const npcMultiplier = NPC_COUNT_UPGRADES[upgrades.npcCount - 1]?.multiplier ?? 1.0;
     set({
       isStarted: true,
       isPaused: false,
-      npcs: generateInitialNPCs(),
+      showUpgradePanel: false,
+      npcs: generateInitialNPCs(npcMultiplier),
       items: generateInitialItems(),
       activeEffects: [],
       activeEvent: null,
@@ -223,6 +329,10 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({
       playerTier: 1,
       exp: 0,
+      gold: 0,
+      totalGoldEarned: 0,
+      upgrades: { speed: 1, eatRange: 1, npcCount: 1 },
+      showUpgradePanel: false,
       isGameOver: false,
       isCleared: false,
       isStarted: false,

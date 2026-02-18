@@ -26,3 +26,38 @@ export const OCEAN_FLOOR_Y = -WORLD_DEPTH / 2;
 export function getStageByTier(tier: number) {
   return CREATURE_STAGES.find((s) => s.tier === tier) ?? CREATURE_STAGES[1];
 }
+
+export const GOLD_PER_TIER: Record<number, number> = {
+  0: 1, 1: 2, 2: 4, 3: 6, 4: 8, 5: 10, 6: 13, 7: 15,
+};
+
+export const EVOLUTION_COST: Record<number, number> = {
+  1: 50,    // KRILL -> CLAM
+  2: 120,   // CLAM -> SHELL
+  3: 250,   // SHELL -> PEARL
+  4: 500,   // PEARL -> CORAL
+  5: 1000,  // CORAL -> DOLPHIN
+  6: 2000,  // DOLPHIN -> WHALE
+};
+
+export const MAX_UPGRADE_LEVEL = 10;
+
+function generateUpgrades(baseMultiplier: number, step: number, costs: number[]) {
+  return costs.map((cost, i) => ({
+    level: i + 1,
+    multiplier: +(baseMultiplier + step * i).toFixed(2),
+    cost,
+  }));
+}
+
+export const SPEED_UPGRADES = generateUpgrades(1.0, 0.1, [
+  0, 30, 60, 100, 160, 240, 350, 500, 700, 1000,
+]);
+
+export const EAT_RANGE_UPGRADES = generateUpgrades(1.0, 0.1, [
+  0, 30, 60, 100, 160, 240, 350, 500, 700, 1000,
+]);
+
+export const NPC_COUNT_UPGRADES = generateUpgrades(1.0, 0.1, [
+  0, 40, 80, 140, 220, 320, 450, 620, 840, 1100,
+]);

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useGameStore } from '../lib/useGameStore';
-import { getStageByTier } from '../lib/gameConfig';
+import { getStageByTier, EVOLUTION_COST } from '../lib/gameConfig';
 import { playEvolveSound, setSfxVolume, getSfxVolume, ensureAudioContext } from '../lib/sounds';
 
 function formatTime(ms: number) {
@@ -55,20 +55,102 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
   );
 }
 
+interface RankingEntry {
+  id: number;
+  nickname: string;
+  score: number;
+  tier_reached: number;
+  gold_earned: number;
+  kill_count: number;
+  play_time_ms: number;
+}
+
+function RankingList({ onClose }: { onClose: () => void }) {
+  const [rankings, setRankings] = useState<RankingEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/game/ranking')
+      .then((r) => r.json())
+      .then((d) => { if (d.success) setRankings(d.rankings || []); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60" onClick={onClose}>
+      <div className="bg-[#0d3b5e] rounded-2xl p-5 w-80 max-h-[70vh] shadow-xl flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <h2 className="text-white font-bold text-lg mb-3 text-center">랭킹 TOP 20</h2>
+        {loading ? (
+          <div className="text-white/40 text-center py-6">불러오는 중...</div>
+        ) : rankings.length === 0 ? (
+          <div className="text-white/40 text-center py-6">기록이 없습니다</div>
+        ) : (
+          <div className="flex-1 overflow-y-auto space-y-1 scrollbar-thin">
+            {rankings.map((r, i) => {
+              const tierStage = getStageByTier(r.tier_reached);
+              const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`;
+              return (
+                <div key={r.id} className={`flex items-center gap-2 rounded-lg px-3 py-2 ${
+                  i < 3 ? 'bg-white/10' : 'bg-white/5'
+                }`}>
+                  <span className="text-sm w-7 text-center font-bold text-white/60">{medal}</span>
+                  <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: tierStage.color }} />
+                  <span className="text-white text-xs font-semibold flex-1 truncate">{r.nickname}</span>
+                  <span className="text-yellow-300 text-xs font-bold">{r.score}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        <button onClick={onClose}
+          className="mt-3 w-full py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-semibold transition-colors text-sm">
+          닫기
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function ResultScreen({ isCleared }: { isCleared: boolean }) {
   const score = useGameStore((s) => s.score);
   const killCount = useGameStore((s) => s.killCount);
   const startTime = useGameStore((s) => s.startTime);
   const playerTier = useGameStore((s) => s.playerTier);
+  const totalGoldEarned = useGameStore((s) => s.totalGoldEarned);
+  const nickname = useGameStore((s) => s.nickname);
   const resetGame = useGameStore((s) => s.resetGame);
   const stage = getStageByTier(playerTier);
   const elapsed = startTime > 0 ? Date.now() - startTime : 0;
+
+  const [myRank, setMyRank] = useState<number | null>(null);
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     const prev = localStorage.getItem('blueGameHighScore');
     const hi = prev ? parseInt(prev, 10) : 0;
     if (score > hi) localStorage.setItem('blueGameHighScore', String(score));
   }, [score]);
+
+  useEffect(() => {
+    if (saved) return;
+    setSaved(true);
+    fetch('/api/game/ranking', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nickname,
+        score,
+        tierReached: playerTier,
+        goldEarned: totalGoldEarned,
+        killCount,
+        playTimeMs: elapsed,
+      }),
+    })
+      .then((r) => r.json())
+      .then((d) => { if (d.rank) setMyRank(d.rank); })
+      .catch(() => {});
+  }, []);
 
   const highScore = typeof window !== 'undefined'
     ? parseInt(localStorage.getItem('blueGameHighScore') || '0', 10)
@@ -87,6 +169,12 @@ function ResultScreen({ isCleared }: { isCleared: boolean }) {
         <p className="text-red-200 mb-4">{stage.name} ({stage.nameKo}) 단계에서 잡아먹혔습니다</p>
       )}
       <div className="bg-black/30 rounded-xl p-4 mb-4 min-w-[220px] space-y-2">
+        {myRank && (
+          <div className="flex justify-between text-sm">
+            <span className="text-white/60">내 순위</span>
+            <span className="text-blue-300 font-bold">#{myRank}</span>
+          </div>
+        )}
         <div className="flex justify-between text-sm">
           <span className="text-white/60">점수</span>
           <span className="text-yellow-300 font-bold">{score}</span>
@@ -94,6 +182,10 @@ function ResultScreen({ isCleared }: { isCleared: boolean }) {
         <div className="flex justify-between text-sm">
           <span className="text-white/60">최고 기록</span>
           <span className="text-yellow-200 font-bold">{Math.max(score, highScore)}</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span className="text-white/60">획득 골드</span>
+          <span className="text-yellow-400 font-bold">🪙 {totalGoldEarned}</span>
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-white/60">처치 수</span>
@@ -311,35 +403,77 @@ export default function HUD() {
     prevTierRef.current = playerTier;
   }, [playerTier, isStarted]);
 
+  const showUpgradePanel = useGameStore((s) => s.showUpgradePanel);
+
   const handlePauseKey = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape' && isStarted && !isGameOver && !isCleared) {
+      if (showUpgradePanel) return;
       togglePause();
     }
-  }, [isStarted, isGameOver, isCleared, togglePause]);
+  }, [isStarted, isGameOver, isCleared, togglePause, showUpgradePanel]);
 
   useEffect(() => {
     window.addEventListener('keydown', handlePauseKey);
     return () => window.removeEventListener('keydown', handlePauseKey);
   }, [handlePauseKey]);
 
+  const nickname = useGameStore((s) => s.nickname);
+  const setNickname = useGameStore((s) => s.setNickname);
+  const [showRanking, setShowRanking] = useState(false);
+
   if (!isStarted) {
+    const canStart = nickname.trim().length > 0;
     return (
-      <div className="fixed inset-0 z-40 flex flex-col items-center justify-center bg-[#0c4a7a]/80 px-6">
-        <h1 className="text-4xl sm:text-5xl font-bold text-white mb-3 sm:mb-4 tracking-wider">BlueGame</h1>
-        <p className="text-base sm:text-lg text-blue-200 mb-2">바다를 헤엄치며 진화하세요</p>
-        <p className="text-xs sm:text-sm text-blue-300/70 mb-6 sm:mb-8 text-center">
-          KRILL &rarr; CLAM &rarr; SHELL &rarr; PEARL &rarr; CORAL &rarr; DOLPHIN &rarr; WHALE
-        </p>
-        <button onClick={() => { ensureAudioContext(); startGame(); }}
-          className="px-8 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-lg font-semibold transition-colors">
-          게임 시작
-        </button>
-        <p className="text-[10px] sm:text-xs text-blue-300/50 mt-4 sm:mt-6 text-center">
-          PC: WASD 이동 + 마우스 시점 + Shift 돌진 | 모바일: 조이스틱 + 터치 + 돌진 | ESC: 일시정지
-        </p>
-      </div>
+      <>
+        <div className="fixed inset-0 z-40 flex flex-col items-center justify-center bg-[#0c4a7a]/80 px-6">
+          <h1 className="text-4xl sm:text-5xl font-bold text-white mb-3 sm:mb-4 tracking-wider">BlueGame</h1>
+          <p className="text-base sm:text-lg text-blue-200 mb-2">바다를 헤엄치며 진화하세요</p>
+          <p className="text-xs sm:text-sm text-blue-300/70 mb-4 sm:mb-6 text-center">
+            KRILL &rarr; CLAM &rarr; SHELL &rarr; PEARL &rarr; CORAL &rarr; DOLPHIN &rarr; WHALE
+          </p>
+          <div className="mb-4 sm:mb-6 w-full max-w-[240px]">
+            <input
+              type="text"
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value.slice(0, 12))}
+              placeholder="닉네임 입력"
+              maxLength={12}
+              className="w-full px-4 py-2.5 bg-white/10 border border-white/20 rounded-xl text-white text-center text-sm placeholder-white/40 outline-none focus:border-blue-400 focus:bg-white/15 transition-all"
+              onKeyDown={(e) => { if (e.key === 'Enter' && canStart) { ensureAudioContext(); startGame(); } }}
+              autoComplete="off"
+              style={{ fontSize: '16px' }}
+            />
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={() => { if (canStart) { ensureAudioContext(); startGame(); } }}
+              disabled={!canStart}
+              className={`px-8 py-3 rounded-xl text-lg font-semibold transition-colors ${
+                canStart
+                  ? 'bg-blue-500 hover:bg-blue-600 text-white'
+                  : 'bg-white/10 text-white/30 cursor-not-allowed'
+              }`}
+            >
+              게임 시작
+            </button>
+            <button
+              onClick={() => setShowRanking(true)}
+              className="px-5 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl text-lg font-semibold transition-colors"
+            >
+              🏆
+            </button>
+          </div>
+          <p className="text-[10px] sm:text-xs text-blue-300/50 mt-4 sm:mt-6 text-center">
+            PC: WASD 이동 + 마우스 시점 + Shift 돌진 | 모바일: 조이스틱 + 터치 + 돌진 | ESC: 일시정지
+          </p>
+        </div>
+        {showRanking && <RankingList onClose={() => setShowRanking(false)} />}
+      </>
     );
   }
+
+  const gold = useGameStore((s) => s.gold);
+  const toggleUpgradePanel = useGameStore((s) => s.toggleUpgradePanel);
 
   if (isGameOver) return <ResultScreen isCleared={false} />;
   if (isCleared) return <ResultScreen isCleared={true} />;
@@ -356,19 +490,18 @@ export default function HUD() {
           </div>
 
           <div className="flex items-center gap-1 sm:gap-2 flex-1 justify-end">
+            <div className="bg-black/40 backdrop-blur-sm rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 flex items-center gap-1">
+              <span className="text-yellow-400 text-[10px] sm:text-xs">🪙</span>
+              <span className="text-yellow-300 text-[10px] sm:text-xs font-bold">{gold}</span>
+            </div>
             <DashCooldownPC />
             <div className="bg-black/40 backdrop-blur-sm rounded-xl px-2 sm:px-3 py-1.5 sm:py-2">
               <span className="text-yellow-300 text-[10px] sm:text-xs font-bold">{score}</span>
             </div>
-            <div className="flex items-center gap-1 sm:gap-2 bg-black/40 backdrop-blur-sm rounded-xl px-2 sm:px-4 py-1.5 sm:py-2">
-              <div className="w-16 sm:w-32 h-1.5 sm:h-2 bg-white/20 rounded-full overflow-hidden">
-                <div className="h-full bg-green-400 rounded-full transition-all duration-300"
-                  style={{ width: `${Math.min(expPercent, 100)}%` }} />
-              </div>
-              <span className="text-white/60 text-[10px] sm:text-xs">
-                {stage.expToNext === Infinity ? 'MAX' : `${exp}/${stage.expToNext}`}
-              </span>
-            </div>
+            <button onClick={toggleUpgradePanel}
+              className="pointer-events-auto bg-gradient-to-b from-yellow-500/80 to-yellow-600/80 backdrop-blur-sm rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 hover:from-yellow-400/80 hover:to-yellow-500/80 transition-all active:scale-95 border border-yellow-400/30">
+              <span className="text-white text-[10px] sm:text-xs font-bold">⬆</span>
+            </button>
             <button onClick={togglePause}
               className="pointer-events-auto bg-black/40 backdrop-blur-sm rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 hover:bg-black/60 transition-colors">
               <span className="text-white text-[10px] sm:text-xs">| |</span>

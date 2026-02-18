@@ -11,6 +11,7 @@ import {
   WORLD_SIZE,
   WORLD_DEPTH,
   OCEAN_FLOOR_Y,
+  SPEED_UPGRADES,
 } from '../lib/gameConfig';
 import CreatureModel from './CreatureModels';
 import { registerPlayerRef } from './NPCs';
@@ -199,11 +200,12 @@ const Player = forwardRef(function Player(_props, ref) {
       moveDir.normalize();
     }
 
-    const { isDashing, activeEffects } = useGameStore.getState();
+    const { isDashing, activeEffects, upgrades } = useGameStore.getState();
     const now = Date.now();
-    let speedMul = 1;
-    if (isDashing) speedMul = 2.5;
-    else if (activeEffects.some((e) => e.type === 'speed' && e.endTime > now)) speedMul = 1.5;
+    const upgradeSpeedMul = SPEED_UPGRADES[upgrades.speed - 1]?.multiplier ?? 1.0;
+    let speedMul = upgradeSpeedMul;
+    if (isDashing) speedMul *= 2.5;
+    else if (activeEffects.some((e) => e.type === 'speed' && e.endTime > now)) speedMul *= 1.5;
 
     if (keys['shift'] && !isDashing) {
       useGameStore.getState().startDash();

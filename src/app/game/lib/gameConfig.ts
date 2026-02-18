@@ -104,7 +104,7 @@ export const MAX_LEVEL = 50;
 
 export function getLevelExpRequired(level: number): number {
   if (level >= MAX_LEVEL) return Infinity;
-  return Math.floor(5 + level * 2.5 + (level ** 1.4) * 0.8);
+  return Math.floor(8 + level * 2 + (level ** 2) * 0.4);
 }
 
 export interface LevelReward {

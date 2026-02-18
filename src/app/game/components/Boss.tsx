@@ -111,7 +111,7 @@ export default function BossController() {
 
     if (now - state.boss.spawnTime > diff.duration) {
       state.setBoss(null);
-      state.setNextBossTime(now + diff.interval + (state.perkBonuses.bossDelay ?? 0));
+      state.setNextBossTime(now + diff.interval);
       return;
     }
 

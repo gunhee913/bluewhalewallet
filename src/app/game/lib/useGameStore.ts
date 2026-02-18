@@ -26,22 +26,16 @@ export interface PerkBonuses {
   goldBonus: number;
   expBonus: number;
   dashCooldownReduction: number;
-  itemDurationBonus: number;
   comboTimeBonus: number;
   autoMagnetRange: number;
-  bossDelay: number;
-  dashAutoEat: boolean;
-  permanentShieldInterval: number;
-  freeNextEvolve: boolean;
   goldDouble: boolean;
 }
 
 function buildPerkBonuses(perkEffects: PerkEffect[]): PerkBonuses {
   const b: PerkBonuses = {
     speedBonus: 0, eatRangeBonus: 0, goldBonus: 0, expBonus: 0,
-    dashCooldownReduction: 0, itemDurationBonus: 0, comboTimeBonus: 0,
-    autoMagnetRange: 0, bossDelay: 0, dashAutoEat: false,
-    permanentShieldInterval: 0, freeNextEvolve: false, goldDouble: false,
+    dashCooldownReduction: 0, comboTimeBonus: 0,
+    autoMagnetRange: 0, goldDouble: false,
   };
   for (const e of perkEffects) {
     switch (e.type) {
@@ -50,13 +44,8 @@ function buildPerkBonuses(perkEffects: PerkEffect[]): PerkBonuses {
       case 'gold_bonus': b.goldBonus += e.value; break;
       case 'exp_bonus': b.expBonus += e.value; break;
       case 'dash_cooldown_reduction': b.dashCooldownReduction += e.value; break;
-      case 'item_duration_bonus': b.itemDurationBonus += e.value; break;
       case 'combo_time_bonus': b.comboTimeBonus += e.value; break;
       case 'auto_magnet_range': b.autoMagnetRange = Math.max(b.autoMagnetRange, e.value); break;
-      case 'boss_delay': b.bossDelay += e.value; break;
-      case 'dash_auto_eat': b.dashAutoEat = true; break;
-      case 'permanent_shield_interval': b.permanentShieldInterval = e.value; break;
-      case 'free_next_evolve': b.freeNextEvolve = true; break;
       case 'gold_double': b.goldDouble = true; break;
     }
   }
@@ -348,26 +337,19 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   evolve: () => {
-    const { playerTier, gold, perkBonuses } = get();
+    const { playerTier, gold } = get();
     if (playerTier >= 7) return false;
     const cost = EVOLUTION_COST[playerTier];
     if (!cost) return false;
-    const finalCost = perkBonuses.freeNextEvolve ? 0 : cost;
-    if (gold < finalCost) return false;
-    const usedFree = perkBonuses.freeNextEvolve;
+    if (gold < cost) return false;
     const nextTier = playerTier + 1;
     const whaleUpdate = nextTier === 7 ? { scoreAtWhale: get().score } : {};
     set({
       playerTier: nextTier,
-      gold: gold - finalCost,
+      gold: gold - cost,
       shellDefenseAvailable: nextTier >= 2 ? true : false,
       ...whaleUpdate,
     });
-    if (usedFree) {
-      const updated = get().ownedPerks.filter((id) => id !== 'free_evolve');
-      const effects = PERK_POOL.filter((p) => updated.includes(p.id)).map((p) => p.effect);
-      set({ ownedPerks: updated, perkBonuses: buildPerkBonuses(effects) });
-    }
     get().updateQuestProgress('evolve', nextTier);
     return true;
   },
@@ -506,7 +488,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       dashCooldownEnd: 0,
       startTime: now,
       nextEventTime: now + 30000 + Math.random() * 30000,
-      nextBossTime: now + 90000 + (get().perkBonuses.bossDelay ?? 0),
+      nextBossTime: now + 90000,
       dashCount: 0,
       level: 1,
       levelExp: 0,
@@ -676,7 +658,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (!item) return;
     const now = Date.now();
     const baseDurations: Record<string, number> = { speed: 8000, magnet: 8000, shield: 5000, exp2x: 10000 };
-    const duration = Math.round(baseDurations[item.type] * (1 + perkBonuses.itemDurationBonus));
+    const duration = baseDurations[item.type] ?? 5000;
     const newEffect: ActiveEffect = { type: item.type, endTime: now + duration };
     set({
       items: items.filter((i) => i.id !== itemId),

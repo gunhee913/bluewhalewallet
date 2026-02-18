@@ -114,7 +114,6 @@ export default function UpgradePanel() {
   const getUpgradeMultiplier = useGameStore((s) => s.getUpgradeMultiplier);
   const getNextUpgradeCost = useGameStore((s) => s.getNextUpgradeCost);
 
-  const perkBonuses = useGameStore((s) => s.perkBonuses);
   const [evolveFlash, setEvolveFlash] = useState(false);
 
   const handleEvolve = () => {
@@ -141,9 +140,7 @@ export default function UpgradePanel() {
 
   const currentStage = getStageByTier(playerTier);
   const nextStage = playerTier < 7 ? getStageByTier(playerTier + 1) : null;
-  const rawEvolveCost = EVOLUTION_COST[playerTier] ?? null;
-  const isFreeEvolve = perkBonuses.freeNextEvolve;
-  const evolveCost = isFreeEvolve ? 0 : rawEvolveCost;
+  const evolveCost = EVOLUTION_COST[playerTier] ?? null;
   const canEvolve = evolveCost !== null && gold >= evolveCost;
   const isMaxTier = playerTier >= 7;
 
@@ -234,7 +231,7 @@ export default function UpgradePanel() {
                       : 'bg-white/10 text-white/40 cursor-not-allowed'
                 }`}
               >
-                {isMaxTier ? 'MAX' : isFreeEvolve ? '🧬 무료!' : `🪙 ${evolveCost}`}
+                {isMaxTier ? 'MAX' : `🪙 ${evolveCost}`}
               </button>
             </div>
           </div>

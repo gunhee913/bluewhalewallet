@@ -14,7 +14,6 @@ const MAX_BATCH_EAT = 15;
 
 export default function CollisionSystem({ playerRef }: { playerRef: React.RefObject<any> }) {
   const cooldownRef = useRef(0);
-  const lastShieldTimeRef = useRef(0);
 
   useFrame((_, delta) => {
     const state = useGameStore.getState();
@@ -34,17 +33,6 @@ export default function CollisionSystem({ playerRef }: { playerRef: React.RefObj
     const hasShield = state.activeEffects.some((e) => e.type === 'shield' && e.endTime > now);
     const isInvincible = isDashing || hasShield;
 
-    if (perkBonuses.permanentShieldInterval > 0 && !hasShield) {
-      if (lastShieldTimeRef.current === 0) lastShieldTimeRef.current = now;
-      if (now - lastShieldTimeRef.current >= perkBonuses.permanentShieldInterval) {
-        const { activeEffects } = useGameStore.getState();
-        useGameStore.setState({
-          activeEffects: [...activeEffects.filter((e) => e.type !== 'shield'), { type: 'shield', endTime: now + 5000 }],
-        });
-        lastShieldTimeRef.current = now;
-      }
-    }
-
     let eatRangeMultiplier = EAT_RANGE_UPGRADES[upgrades.eatRange - 1]?.multiplier ?? 1.0;
     eatRangeMultiplier *= (1 + perkBonuses.eatRangeBonus);
 
@@ -52,41 +40,6 @@ export default function CollisionSystem({ playerRef }: { playerRef: React.RefObj
     if (playerTier >= 7) eatRangeMultiplier *= 1.25;
 
     eatRangeMultiplier = Math.min(eatRangeMultiplier, MAX_EAT_RANGE_MULTIPLIER);
-
-    if (isDashing && perkBonuses.dashAutoEat) {
-      const dashEatRange = Math.min(playerStage.size * 3 * eatRangeMultiplier, 25);
-      const ids: string[] = [];
-      let totalExp = 0;
-      let totalGold = 0;
-      let effectCount = 0;
-      const multiplier = getComboMultiplier();
-      for (const npc of npcs) {
-        if (!npc.alive || npc.tier > playerTier) continue;
-        if (ids.length >= MAX_BATCH_EAT) break;
-        const npcPos = getNPCPosition(npc.id);
-        if (!npcPos) continue;
-        const d = Math.sqrt(
-          (playerPos.x - npcPos.x) ** 2 + (playerPos.y - npcPos.y) ** 2 + (playerPos.z - npcPos.z) ** 2
-        );
-        if (d < dashEatRange) {
-          ids.push(npc.id);
-          const baseExp = npc.tier < playerTier ? Math.max(npc.tier, 1) : 1;
-          totalExp += Math.round(baseExp * multiplier * (1 + perkBonuses.expBonus));
-          const goldAmount = GOLD_PER_TIER[npc.tier] ?? 1;
-          let goldGain = Math.round(goldAmount * multiplier * (1 + perkBonuses.goldBonus));
-          if (perkBonuses.goldDouble) goldGain *= 2;
-          totalGold += goldGain;
-          if (effectCount < MAX_BATCH_EFFECTS) {
-            triggerEatEffect(npcPos.x, npcPos.y, npcPos.z, getStageByTier(npc.tier).color);
-            effectCount++;
-          }
-        }
-      }
-      if (ids.length > 0) {
-        batchEatNPCs(ids, totalExp, totalGold);
-        playEatSound(combo);
-      }
-    }
 
     for (const npc of npcs) {
       if (!npc.alive) continue;

@@ -145,26 +145,10 @@ function NPCCreature({ npc, playerTier }: { npc: NPC; playerTier: number }) {
       }
     }
 
-    const { activeEffects, activeEvent, activeSkill } = useGameStore.getState();
+    const { activeEffects, activeEvent } = useGameStore.getState();
 
     const now = Date.now();
 
-    if (activeSkill && now < activeSkill.endTime) {
-      if (activeSkill.id === 'sonar_blast' && playerMeshPos) {
-        const stunDist = Math.sqrt(
-          (playerMeshPos.x - pos.x) ** 2 + (playerMeshPos.y - pos.y) ** 2 + (playerMeshPos.z - pos.z) ** 2
-        );
-        if (stunDist < 10) return;
-      }
-      if (activeSkill.id === 'ink_cloud' && npc.tier > currentPlayerTier && playerMeshPos) {
-        const inkDist = Math.sqrt(
-          (playerMeshPos.x - pos.x) ** 2 + (playerMeshPos.y - pos.y) ** 2 + (playerMeshPos.z - pos.z) ** 2
-        );
-        if (inkDist < 8) {
-          dirRef.current.set((Math.random() - 0.5) * 2, (Math.random() - 0.5) * 0.5, (Math.random() - 0.5) * 2).normalize();
-        }
-      }
-    }
     const hasMagnet = activeEffects.some((e) => e.type === 'magnet' && e.endTime > now);
     if (hasMagnet && npc.tier <= currentPlayerTier && playerMeshPos) {
       const toPlayer = new THREE.Vector3(

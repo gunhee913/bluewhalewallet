@@ -12,7 +12,6 @@ import {
   MAX_DASH_LEVEL,
   CREATURE_STAGES,
 } from '../lib/gameConfig';
-import { SKILLS } from '../lib/gameSkills';
 
 function GoldFlash({ show }: { show: boolean }) {
   if (!show) return null;
@@ -115,8 +114,6 @@ export default function UpgradePanel() {
   const getUpgradeMultiplier = useGameStore((s) => s.getUpgradeMultiplier);
   const getNextUpgradeCost = useGameStore((s) => s.getNextUpgradeCost);
 
-  const ownedSkills = useGameStore((s) => s.ownedSkills);
-  const buySkill = useGameStore((s) => s.buySkill);
   const perkBonuses = useGameStore((s) => s.perkBonuses);
   const [evolveFlash, setEvolveFlash] = useState(false);
 
@@ -305,52 +302,6 @@ export default function UpgradePanel() {
             onBuy={() => buyUpgrade('dashCooldown')}
           />
 
-          {/* Skills */}
-          <div className="pt-3 pb-1 flex items-center gap-2 border-t border-white/5 mt-1">
-            <span className="text-cyan-400/80 text-xs">✦</span>
-            <span className="text-cyan-300/60 text-xs font-semibold uppercase tracking-wider">액티브 스킬</span>
-          </div>
-          {SKILLS.map((skill) => {
-            const owned = ownedSkills.includes(skill.id);
-            const locked = playerTier < skill.minTier;
-            const canBuy = !owned && !locked && gold >= skill.cost;
-            const tierName = getStageByTier(skill.minTier).nameKo;
-            return (
-              <div key={skill.id} className={`relative rounded-xl p-3.5 transition-all border ${
-                locked ? 'bg-white/[0.02] border-white/5 opacity-60' : owned ? 'bg-green-500/10 border-green-500/20' : canBuy ? 'bg-white/[0.08] border-white/10 hover:bg-white/[0.12]' : 'bg-white/[0.03] border-white/5'
-              }`}>
-                <div className="flex items-center gap-3.5">
-                  <div className={`text-2xl w-10 h-10 flex items-center justify-center rounded-lg bg-white/5 flex-shrink-0 ${locked ? 'grayscale' : ''}`}>{skill.icon}</div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-0.5">
-                      <span className="text-white text-sm font-semibold">{skill.name}</span>
-                      {locked ? (
-                        <span className="text-orange-300/70 text-[10px]">🔒 {tierName} 필요</span>
-                      ) : (
-                        <span className="text-white/40 text-[10px]">CD {(skill.cooldownMs / 1000).toFixed(0)}초</span>
-                      )}
-                    </div>
-                    <span className="text-white/50 text-xs">{skill.description}</span>
-                  </div>
-                  <button
-                    onClick={() => !locked && buySkill(skill.id)}
-                    disabled={owned || locked}
-                    className={`flex-shrink-0 px-4 py-2.5 rounded-xl text-xs font-bold transition-all active:scale-90 ${
-                      owned
-                        ? 'bg-green-500/20 text-green-300 cursor-default'
-                        : locked
-                          ? 'bg-white/5 text-white/20 cursor-not-allowed'
-                          : canBuy
-                            ? 'bg-gradient-to-b from-purple-400 to-purple-600 text-white hover:from-purple-300 hover:to-purple-500 shadow-lg shadow-purple-500/20'
-                            : 'bg-white/10 text-white/40 cursor-not-allowed'
-                    }`}
-                  >
-                    {owned ? '보유' : locked ? '🔒' : `🪙 ${skill.cost}`}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
         </div>
 
         {/* Bottom hint */}

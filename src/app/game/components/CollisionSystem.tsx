@@ -51,43 +51,7 @@ export default function CollisionSystem({ playerRef }: { playerRef: React.RefObj
     if (playerTier >= 6) eatRangeMultiplier *= 1.25;
     if (playerTier >= 7) eatRangeMultiplier *= 1.25;
 
-    const { activeSkill } = state;
-    const skillActive = activeSkill && now < activeSkill.endTime;
-    if (skillActive && activeSkill.id === 'feeding_frenzy') eatRangeMultiplier *= 2;
-
     eatRangeMultiplier = Math.min(eatRangeMultiplier, MAX_EAT_RANGE_MULTIPLIER);
-
-    if (skillActive && activeSkill.id === 'tidal_wave') {
-      const ids: string[] = [];
-      let totalExp = 0;
-      let totalGold = 0;
-      let effectCount = 0;
-      for (const npc of npcs) {
-        if (!npc.alive || npc.tier > playerTier) continue;
-        if (ids.length >= MAX_BATCH_EAT) break;
-        const npcPos = getNPCPosition(npc.id);
-        if (!npcPos) continue;
-        const d = Math.sqrt(
-          (playerPos.x - npcPos.x) ** 2 + (playerPos.y - npcPos.y) ** 2 + (playerPos.z - npcPos.z) ** 2
-        );
-        if (d < 12) {
-          ids.push(npc.id);
-          totalExp += Math.max(npc.tier, 1);
-          const goldAmount = GOLD_PER_TIER[npc.tier] ?? 1;
-          totalGold += Math.round(goldAmount * (1 + perkBonuses.goldBonus));
-          if (effectCount < MAX_BATCH_EFFECTS) {
-            triggerEatEffect(npcPos.x, npcPos.y, npcPos.z, getStageByTier(npc.tier).color);
-            effectCount++;
-          }
-        }
-      }
-      if (ids.length > 0) {
-        batchEatNPCs(ids, totalExp, totalGold);
-        playEatSound(combo);
-      }
-      cooldownRef.current = 0.5;
-      return;
-    }
 
     if (isDashing && perkBonuses.dashAutoEat) {
       const dashEatRange = Math.min(playerStage.size * 3 * eatRangeMultiplier, 25);

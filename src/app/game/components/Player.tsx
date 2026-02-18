@@ -201,12 +201,11 @@ const Player = forwardRef(function Player(_props, ref) {
       moveDir.normalize();
     }
 
-    const { isDashing, dashCooldownEnd, activeEffects, upgrades, perkBonuses, playerTier: currentTier, activeSkill } = useGameStore.getState();
+    const { isDashing, dashCooldownEnd, activeEffects, upgrades, perkBonuses, playerTier: currentTier } = useGameStore.getState();
     const now = Date.now();
     const upgradeSpeedMul = SPEED_UPGRADES[upgrades.speed - 1]?.multiplier ?? 1.0;
     let speedMul = upgradeSpeedMul * (1 + perkBonuses.speedBonus);
     if (currentTier >= 3 && moveDir.length() > 0.1) speedMul *= 1.2;
-    if (activeSkill && activeSkill.id === 'feeding_frenzy' && now < activeSkill.endTime) speedMul *= 1.5;
     if (isDashing) speedMul *= 2.5;
     else if (activeEffects.some((e) => e.type === 'speed' && e.endTime > now)) speedMul *= 1.5;
 

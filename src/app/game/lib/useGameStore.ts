@@ -18,7 +18,6 @@ import {
   getLevelReward,
 } from './gameConfig';
 import { PerkDef, PERK_POOL, rollPerkChoices, PerkEffect } from './gamePerks';
-import { SkillDef, SKILLS, getSkillById } from './gameSkills';
 import { QuestDef, QuestProgress, pickQuests, QUEST_POOL } from './gameQuests';
 
 export interface PerkBonuses {
@@ -227,9 +226,6 @@ interface GameState {
 
   shellDefenseAvailable: boolean;
 
-  ownedSkills: string[];
-  activeSkill: { id: string; endTime: number } | null;
-  skillCooldowns: Record<string, number>;
 
   quests: QuestProgress[];
   completedQuestIds: string[];
@@ -282,10 +278,6 @@ interface GameState {
   getPerkBonuses: () => PerkBonuses;
   useShellDefense: () => boolean;
 
-  buySkill: (skillId: string) => boolean;
-  activateSkill: (skillId: string) => boolean;
-  isSkillActive: (skillId: string) => boolean;
-  isSkillOnCooldown: (skillId: string) => boolean;
 
   updateQuestProgress: (type: string, value: number, tierTarget?: number) => void;
   claimQuestReward: (questId: string) => void;
@@ -338,9 +330,6 @@ export const useGameStore = create<GameState>((set, get) => ({
   perkBonuses: buildPerkBonuses([]),
   shellDefenseAvailable: false,
 
-  ownedSkills: [],
-  activeSkill: null,
-  skillCooldowns: {},
 
   quests: [],
   completedQuestIds: [],
@@ -567,9 +556,6 @@ export const useGameStore = create<GameState>((set, get) => ({
       showPerkSelection: false,
       perkBonuses: buildPerkBonuses([]),
       shellDefenseAvailable: false,
-      ownedSkills: [],
-      activeSkill: null,
-      skillCooldowns: {},
       quests: [],
       completedQuestIds: [],
       dashCount: 0,
@@ -760,40 +746,6 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   getPerkBonuses: () => get().perkBonuses,
-
-  buySkill: (skillId: string) => {
-    const { ownedSkills, gold, playerTier } = get();
-    if (ownedSkills.includes(skillId)) return false;
-    const skill = getSkillById(skillId);
-    if (!skill || playerTier < skill.minTier || gold < skill.cost) return false;
-    set({ ownedSkills: [...ownedSkills, skillId], gold: gold - skill.cost });
-    return true;
-  },
-
-  activateSkill: (skillId: string) => {
-    const { ownedSkills, skillCooldowns, activeSkill } = get();
-    if (!ownedSkills.includes(skillId)) return false;
-    if (activeSkill && Date.now() < activeSkill.endTime) return false;
-    const now = Date.now();
-    if (skillCooldowns[skillId] && now < skillCooldowns[skillId]) return false;
-    const skill = getSkillById(skillId);
-    if (!skill) return false;
-    set({
-      activeSkill: { id: skillId, endTime: now + skill.durationMs },
-      skillCooldowns: { ...skillCooldowns, [skillId]: now + skill.cooldownMs },
-    });
-    return true;
-  },
-
-  isSkillActive: (skillId: string) => {
-    const { activeSkill } = get();
-    return !!activeSkill && activeSkill.id === skillId && Date.now() < activeSkill.endTime;
-  },
-
-  isSkillOnCooldown: (skillId: string) => {
-    const { skillCooldowns } = get();
-    return !!skillCooldowns[skillId] && Date.now() < skillCooldowns[skillId];
-  },
 
   useShellDefense: () => {
     const { shellDefenseAvailable, playerTier } = get();

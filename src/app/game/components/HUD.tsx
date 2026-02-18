@@ -5,7 +5,6 @@ import { useGameStore } from '../lib/useGameStore';
 import { getStageByTier, EVOLUTION_COST, getEvoAbility, getLevelExpRequired, MAX_LEVEL } from '../lib/gameConfig';
 import { playEvolveSound, playDashSound, setSfxVolume, getSfxVolume, ensureAudioContext } from '../lib/sounds';
 import PerkSelection from './PerkSelection';
-import { getSkillById } from '../lib/gameSkills';
 import { QUEST_POOL } from '../lib/gameQuests';
 
 function formatTime(ms: number) {
@@ -485,61 +484,6 @@ function QuestRewardPopup() {
   );
 }
 
-function SkillBar() {
-  const ownedSkills = useGameStore((s) => s.ownedSkills);
-  const activateSkill = useGameStore((s) => s.activateSkill);
-  const activeSkill = useGameStore((s) => s.activeSkill);
-  const skillCooldowns = useGameStore((s) => s.skillCooldowns);
-  const [, forceUpdate] = useState(0);
-
-  useEffect(() => {
-    const iv = setInterval(() => forceUpdate((v) => v + 1), 200);
-    return () => clearInterval(iv);
-  }, []);
-
-  if (ownedSkills.length === 0) return null;
-
-  const now = Date.now();
-
-  return (
-    <div className="fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 flex gap-2">
-      {ownedSkills.map((id) => {
-        const skill = getSkillById(id);
-        if (!skill) return null;
-        const isActive = activeSkill?.id === id && now < (activeSkill?.endTime ?? 0);
-        const cd = skillCooldowns[id] ?? 0;
-        const isOnCd = !isActive && cd > now;
-        const cdRemaining = isOnCd ? Math.ceil((cd - now) / 1000) : 0;
-
-        return (
-          <button
-            key={id}
-            onClick={() => activateSkill(id)}
-            disabled={isActive || isOnCd}
-            className={`relative w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex flex-col items-center justify-center transition-all active:scale-90 ${
-              isActive
-                ? 'bg-purple-500/80 ring-2 ring-purple-300 animate-pulse'
-                : isOnCd
-                  ? 'bg-gray-700/80'
-                  : 'bg-black/60 hover:bg-black/80 backdrop-blur-sm'
-            }`}
-          >
-            <span className="text-lg sm:text-xl">{skill.icon}</span>
-            {isOnCd && (
-              <span className="absolute inset-0 flex items-center justify-center text-white/80 font-bold text-xs bg-black/50 rounded-xl">
-                {cdRemaining}s
-              </span>
-            )}
-            {isActive && (
-              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-purple-400 rounded-full animate-ping" />
-            )}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
 function BossWarning() {
   const boss = useGameStore((s) => s.boss);
   const [flash, setFlash] = useState(false);
@@ -767,7 +711,6 @@ export default function HUD() {
       <ActiveEffectsBar />
       <EventBanner />
       <ComboDisplay />
-      <SkillBar />
       <QuestTracker />
       <QuestRewardPopup />
       <BossWarning />

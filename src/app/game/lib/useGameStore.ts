@@ -229,6 +229,7 @@ interface GameState {
   setMoveInput: (x: number, y: number) => void;
   setCameraRotation: (x: number, y: number) => void;
   eatNPC: (npcId: string) => void;
+  batchEatNPCs: (npcIds: string[], totalExp: number, totalGold: number) => void;
   respawnNPC: (tier: number) => void;
 
   startDash: () => void;
@@ -446,14 +447,20 @@ export const useGameStore = create<GameState>((set, get) => ({
       setTimeout(() => set({ levelUpMessage: null }), 2000);
     }
     if (didLevelUp && !get().showPerkSelection) {
-      const currentPerks = get().ownedPerks;
-      setTimeout(() => {
+      const tryShowPerk = () => {
         if (get().showPerkSelection || get().isGameOver) return;
-        const choices = rollPerkChoices(currentPerks, 3);
+        const hasUnclaimedQuest = get().quests.some((q) => q.completed && !q.claimed);
+        if (hasUnclaimedQuest) {
+          setTimeout(tryShowPerk, 1500);
+          return;
+        }
+        const latestPerks = get().ownedPerks;
+        const choices = rollPerkChoices(latestPerks, 3);
         if (choices.length > 0) {
           set({ perkChoices: choices, showPerkSelection: true, isPaused: true });
         }
-      }, 1500);
+      };
+      setTimeout(tryShowPerk, 1500);
     }
   },
 
@@ -482,7 +489,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       dashCooldownEnd: 0,
       startTime: now,
       nextEventTime: now + 30000 + Math.random() * 30000,
-      nextBossTime: now + 120000,
+      nextBossTime: now + 120000 + (get().perkBonuses.bossDelay ?? 0),
       dashCount: 0,
       level: 1,
       levelExp: 0,
@@ -554,6 +561,43 @@ export const useGameStore = create<GameState>((set, get) => ({
     setTimeout(() => get().respawnNPC(npc.tier), 3000 + Math.random() * 5000);
   },
 
+  batchEatNPCs: (npcIds: string[], totalExp: number, totalGold: number) => {
+    if (npcIds.length === 0) return;
+    const { npcs, score, killCount, combo, lastEatTime, perkBonuses } = get();
+
+    const idSet = new Set(npcIds);
+    let addedScore = 0;
+    const tiers: number[] = [];
+    for (const n of npcs) {
+      if (idSet.has(n.id)) {
+        addedScore += Math.max(n.tier, 1);
+        tiers.push(n.tier);
+      }
+    }
+
+    const now = Date.now();
+    const comboWindow = 2000 + perkBonuses.comboTimeBonus;
+    const newCombo = now - lastEatTime < comboWindow ? combo + npcIds.length : npcIds.length;
+    const newKill = killCount + npcIds.length;
+
+    set({
+      npcs: npcs.map((n) => (idSet.has(n.id) ? { ...n, alive: false } : n)),
+      score: score + addedScore,
+      killCount: newKill,
+      combo: newCombo,
+      lastEatTime: now,
+    });
+
+    get().addExp(totalExp);
+    get().addGold(totalGold);
+    get().updateQuestProgress('eat_count', newKill);
+    get().updateQuestProgress('combo', newCombo);
+    for (const tier of tiers) {
+      get().updateQuestProgress('eat_tier', newKill, tier);
+      setTimeout(() => get().respawnNPC(tier), 3000 + Math.random() * 5000);
+    }
+  },
+
   respawnNPC: (tier: number) => {
     set((state) => {
       const deadIndex = state.npcs.findIndex((n) => !n.alive && n.tier === tier);
@@ -569,8 +613,9 @@ export const useGameStore = create<GameState>((set, get) => ({
   startDash: () => {
     const now = Date.now();
     if (now < get().dashCooldownEnd || get().isDashing) return;
-    const { upgrades, dashCount } = get();
-    const cooldownMs = DASH_UPGRADES[upgrades.dashCooldown - 1]?.cooldownMs ?? 5000;
+    const { upgrades, dashCount, perkBonuses } = get();
+    const baseCooldown = DASH_UPGRADES[upgrades.dashCooldown - 1]?.cooldownMs ?? 5000;
+    const cooldownMs = Math.max(1000, baseCooldown - perkBonuses.dashCooldownReduction);
     set({ isDashing: true, dashCooldownEnd: now + cooldownMs, dashCount: dashCount + 1 });
     get().updateQuestProgress('dash_count', dashCount + 1);
     setTimeout(() => get().endDash(), 500);
@@ -579,14 +624,16 @@ export const useGameStore = create<GameState>((set, get) => ({
   endDash: () => set({ isDashing: false }),
 
   getDashCooldownMs: () => {
-    const { upgrades } = get();
-    return DASH_UPGRADES[upgrades.dashCooldown - 1]?.cooldownMs ?? 5000;
+    const { upgrades, perkBonuses } = get();
+    const baseCooldown = DASH_UPGRADES[upgrades.dashCooldown - 1]?.cooldownMs ?? 5000;
+    return Math.max(1000, baseCooldown - perkBonuses.dashCooldownReduction);
   },
 
   incrementCombo: () => {
     const now = Date.now();
-    const { lastEatTime, combo } = get();
-    const newCombo = now - lastEatTime < 2000 ? combo + 1 : 1;
+    const { lastEatTime, combo, perkBonuses } = get();
+    const comboWindow = 2000 + perkBonuses.comboTimeBonus;
+    const newCombo = now - lastEatTime < comboWindow ? combo + 1 : 1;
     set({ combo: newCombo, lastEatTime: now });
     get().updateQuestProgress('combo', newCombo);
   },
@@ -602,12 +649,13 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   collectItem: (itemId: string) => {
-    const { items, activeEffects } = get();
+    const { items, activeEffects, perkBonuses } = get();
     const item = items.find((i) => i.id === itemId);
     if (!item) return;
     const now = Date.now();
-    const durations: Record<string, number> = { speed: 8000, magnet: 8000, shield: 5000, exp2x: 10000 };
-    const newEffect: ActiveEffect = { type: item.type, endTime: now + durations[item.type] };
+    const baseDurations: Record<string, number> = { speed: 8000, magnet: 8000, shield: 5000, exp2x: 10000 };
+    const duration = Math.round(baseDurations[item.type] * (1 + perkBonuses.itemDurationBonus));
+    const newEffect: ActiveEffect = { type: item.type, endTime: now + duration };
     set({
       items: items.filter((i) => i.id !== itemId),
       activeEffects: [...activeEffects.filter((e) => e.type !== item.type), newEffect],
@@ -748,11 +796,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     const freshQuests = get().quests;
     const newCompleted = [...completedQuestIds, questId];
     const newQuests = freshQuests.map((q) => q.questId === questId ? { ...q, claimed: true } : q);
-    const remaining = newQuests.filter((q) => !q.claimed);
-    if (remaining.length < 2) {
-      const extra = pickQuests(2, newCompleted, get().playerTier);
-      extra.forEach((q) => newQuests.push({ questId: q.id, current: 0, completed: false, claimed: false }));
-    }
+    const extra = pickQuests(1, newCompleted, get().playerTier);
+    extra.forEach((q) => newQuests.push({ questId: q.id, current: 0, completed: false, claimed: false }));
     set({
       gold: freshGold + rewardGold,
       quests: newQuests,

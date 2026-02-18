@@ -291,22 +291,24 @@ function DashButtonPC() {
   };
 
   return (
-    <button
-      onClick={handleClick}
-      className={`pointer-events-auto hidden sm:flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 transition-all active:scale-90 ${
-        isReady
-          ? 'bg-gradient-to-b from-blue-400/80 to-blue-600/80 hover:from-blue-300/80 hover:to-blue-500/80 border border-blue-400/30'
-          : 'bg-black/40 border border-white/10'
-      }`}
-    >
-      <div className="w-6 h-6 relative rounded-full border border-white/30 flex items-center justify-center overflow-hidden">
-        {pct > 0 && (
-          <div className="absolute inset-0 bg-blue-400/40" style={{ clipPath: `inset(${100 - pct}% 0 0 0)` }} />
-        )}
-        <span className="text-[10px] text-white font-bold z-10">{pct > 0 ? remainSec : '⚡'}</span>
-      </div>
-      <span className={`text-[10px] font-bold ${isReady ? 'text-white' : 'text-white/40'}`}>돌진</span>
-    </button>
+    <div className="fixed bottom-6 right-6 z-40 pointer-events-auto hidden sm:block">
+      <button
+        onClick={handleClick}
+        className={`flex flex-col items-center gap-1 rounded-xl px-4 py-3 transition-all active:scale-90 ${
+          isReady
+            ? 'bg-gradient-to-b from-blue-400/90 to-blue-600/90 hover:from-blue-300/90 hover:to-blue-500/90 border border-blue-400/30 shadow-lg shadow-blue-500/20'
+            : 'bg-black/50 border border-white/10'
+        }`}
+      >
+        <div className="w-10 h-10 relative rounded-full border-2 border-white/30 flex items-center justify-center overflow-hidden">
+          {pct > 0 && (
+            <div className="absolute inset-0 bg-blue-400/40" style={{ clipPath: `inset(${100 - pct}% 0 0 0)` }} />
+          )}
+          <span className="text-sm text-white font-bold z-10">{pct > 0 ? remainSec : '⚡'}</span>
+        </div>
+        <span className={`text-[11px] font-bold tracking-wide ${isReady ? 'text-white' : 'text-white/40'}`}>SHIFT</span>
+      </button>
+    </div>
   );
 }
 
@@ -419,7 +421,7 @@ function QuestTracker() {
   if (activeQuests.length === 0) return null;
 
   return (
-    <div className="fixed left-1/2 -translate-x-1/2 bottom-20 sm:bottom-auto sm:left-3 sm:translate-x-0 sm:top-20 z-40 flex flex-col gap-1.5 w-[220px] sm:w-[200px] pointer-events-auto">
+    <div className="fixed left-1/2 -translate-x-1/2 bottom-20 sm:bottom-auto sm:left-3 sm:translate-x-0 sm:top-20 z-[65] flex flex-col gap-1.5 w-[220px] sm:w-[200px] pointer-events-auto">
       <button
         onClick={() => setCollapsed(!collapsed)}
         className={`flex items-center justify-between rounded-lg px-2.5 py-1 transition-all ${
@@ -733,7 +735,6 @@ export default function HUD() {
               <span className="text-yellow-400 text-[9px] sm:text-[11px]">🪙</span>
               <span className="text-yellow-300 text-[10px] sm:text-xs font-bold">{gold}</span>
             </div>
-            <DashButtonPC />
             <div className="bg-black/40 backdrop-blur-sm rounded-lg px-1.5 sm:px-2.5 py-1 sm:py-1.5 flex items-center gap-0.5">
               <span className="text-red-400 text-[9px] sm:text-[11px]">🎯</span>
               <span className="text-white text-[10px] sm:text-xs font-bold">{score}</span>
@@ -768,6 +769,7 @@ export default function HUD() {
       <QuestTracker />
       <QuestRewardPopup />
       <BossWarning />
+      <DashButtonPC />
 
       {/* Pause overlay */}
       {isPaused && !showPerkSelection && (

@@ -32,12 +32,12 @@ export const GOLD_PER_TIER: Record<number, number> = {
 };
 
 export const EVOLUTION_COST: Record<number, number> = {
-  1: 50,    // KRILL -> CLAM
-  2: 120,   // CLAM -> SHELL
-  3: 250,   // SHELL -> PEARL
-  4: 500,   // PEARL -> CORAL
-  5: 1000,  // CORAL -> DOLPHIN
-  6: 2000,  // DOLPHIN -> WHALE
+  1: 25,    // KRILL -> CLAM
+  2: 70,    // CLAM -> SHELL
+  3: 160,   // SHELL -> PEARL
+  4: 350,   // PEARL -> CORAL
+  5: 750,   // CORAL -> DOLPHIN
+  6: 1500,  // DOLPHIN -> WHALE
 };
 
 export const MAX_UPGRADE_LEVEL = 10;
@@ -51,15 +51,15 @@ function generateUpgrades(baseMultiplier: number, step: number, costs: number[])
 }
 
 export const SPEED_UPGRADES = generateUpgrades(1.0, 0.1, [
-  0, 30, 60, 100, 160, 240, 350, 500, 700, 1000,
+  0, 10, 25, 50, 90, 150, 250, 400, 600, 900,
 ]);
 
 export const EAT_RANGE_UPGRADES = generateUpgrades(1.0, 0.1, [
-  0, 30, 60, 100, 160, 240, 350, 500, 700, 1000,
+  0, 10, 25, 50, 90, 150, 250, 400, 600, 900,
 ]);
 
 export const NPC_COUNT_UPGRADES = generateUpgrades(1.0, 0.1, [
-  0, 40, 80, 140, 220, 320, 450, 620, 840, 1100,
+  0, 15, 35, 70, 120, 200, 320, 500, 700, 1000,
 ]);
 
 export const DASH_COOLDOWN_BASE = 5000;
@@ -67,16 +67,16 @@ export const MAX_DASH_LEVEL = 11;
 
 export const DASH_UPGRADES = [
   { level: 1, cooldownMs: 5000, cost: 0 },
-  { level: 2, cooldownMs: 4600, cost: 40 },
-  { level: 3, cooldownMs: 4200, cost: 80 },
-  { level: 4, cooldownMs: 3800, cost: 140 },
-  { level: 5, cooldownMs: 3400, cost: 220 },
-  { level: 6, cooldownMs: 3000, cost: 320 },
-  { level: 7, cooldownMs: 2600, cost: 450 },
-  { level: 8, cooldownMs: 2200, cost: 620 },
-  { level: 9, cooldownMs: 1800, cost: 840 },
-  { level: 10, cooldownMs: 1400, cost: 1100 },
-  { level: 11, cooldownMs: 1000, cost: 1400 },
+  { level: 2, cooldownMs: 4600, cost: 15 },
+  { level: 3, cooldownMs: 4200, cost: 35 },
+  { level: 4, cooldownMs: 3800, cost: 70 },
+  { level: 5, cooldownMs: 3400, cost: 120 },
+  { level: 6, cooldownMs: 3000, cost: 200 },
+  { level: 7, cooldownMs: 2600, cost: 320 },
+  { level: 8, cooldownMs: 2200, cost: 500 },
+  { level: 9, cooldownMs: 1800, cost: 700 },
+  { level: 10, cooldownMs: 1400, cost: 1000 },
+  { level: 11, cooldownMs: 1000, cost: 1300 },
 ];
 
 export interface EvoAbility {

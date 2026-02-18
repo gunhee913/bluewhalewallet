@@ -4,7 +4,7 @@ import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useGameStore } from '../lib/useGameStore';
 import { getStageByTier, GOLD_PER_TIER, EAT_RANGE_UPGRADES } from '../lib/gameConfig';
-import { getNPCPosition } from '../lib/npcRegistry';
+import { getNPCPosition, triggerStartle } from '../lib/npcRegistry';
 import { triggerEatEffect } from './EatEffect';
 import { playEatSound, playItemSound } from '../lib/sounds';
 
@@ -101,6 +101,7 @@ export default function CollisionSystem({ playerRef }: { playerRef: React.RefObj
     if (eatIds.length > 0) {
       batchEatNPCs(eatIds, totalExp, totalGold);
       playEatSound(combo);
+      triggerStartle(px, py, pz);
       cooldownRef.current = eatIds.length > 3 ? 0.15 : 0.08;
     }
 

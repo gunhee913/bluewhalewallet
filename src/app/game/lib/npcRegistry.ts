@@ -15,3 +15,13 @@ export function removeNPCPosition(id: string) {
 export function clearNPCPositions() {
   npcPositions.clear();
 }
+
+let _lastStartle: { x: number; y: number; z: number; time: number } | null = null;
+
+export function triggerStartle(x: number, y: number, z: number) {
+  _lastStartle = { x, y, z, time: Date.now() };
+}
+
+export function getLastStartle() {
+  return _lastStartle;
+}

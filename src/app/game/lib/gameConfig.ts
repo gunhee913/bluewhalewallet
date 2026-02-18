@@ -99,3 +99,23 @@ export const EVOLUTION_ABILITIES: EvoAbility[] = [
 export function getEvoAbility(tier: number): EvoAbility | null {
   return EVOLUTION_ABILITIES.find((a) => a.tier === tier) ?? null;
 }
+
+export const MAX_LEVEL = 50;
+
+export function getLevelExpRequired(level: number): number {
+  if (level >= MAX_LEVEL) return Infinity;
+  return Math.floor(5 + level * 2.5 + (level ** 1.4) * 0.8);
+}
+
+export interface LevelReward {
+  gold: number;
+  message: string;
+}
+
+export function getLevelReward(level: number): LevelReward {
+  const baseGold = 5 + Math.floor(level * 1.5);
+  const bonusGold = level % 5 === 0 ? level * 3 : 0;
+  const gold = baseGold + bonusGold;
+  const message = level % 5 === 0 ? `LV ${level} 달성! 보너스 골드 +${gold}` : `LV ${level} 달성! 골드 +${gold}`;
+  return { gold, message };
+}

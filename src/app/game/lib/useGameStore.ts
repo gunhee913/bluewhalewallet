@@ -13,6 +13,9 @@ import {
   MAX_UPGRADE_LEVEL,
   DASH_UPGRADES,
   MAX_DASH_LEVEL,
+  MAX_LEVEL,
+  getLevelExpRequired,
+  getLevelReward,
 } from './gameConfig';
 import { PerkDef, PERK_POOL, rollPerkChoices, PerkEffect } from './gamePerks';
 import { SkillDef, SKILLS, getSkillById } from './gameSkills';
@@ -163,6 +166,9 @@ interface GameState {
 
   playerTier: number;
   exp: number;
+  level: number;
+  levelExp: number;
+  levelUpMessage: string | null;
   isGameOver: boolean;
   isCleared: boolean;
   isStarted: boolean;
@@ -270,6 +276,9 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   playerTier: 1,
   exp: 0,
+  level: 1,
+  levelExp: 0,
+  levelUpMessage: null,
   isGameOver: false,
   isCleared: false,
   isStarted: false,
@@ -324,22 +333,17 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   evolve: () => {
-    const { playerTier, gold, perkBonuses, ownedPerks } = get();
+    const { playerTier, gold, perkBonuses } = get();
     if (playerTier >= 7) return false;
     const cost = EVOLUTION_COST[playerTier];
     if (!cost) return false;
     const finalCost = perkBonuses.freeNextEvolve ? 0 : cost;
     if (gold < finalCost) return false;
-    const choices = rollPerkChoices(ownedPerks, 3);
     const usedFree = perkBonuses.freeNextEvolve;
     const nextTier = playerTier + 1;
     set({
       playerTier: nextTier,
       gold: gold - finalCost,
-      exp: 0,
-      perkChoices: choices.length > 0 ? choices : null,
-      showPerkSelection: choices.length > 0,
-      isPaused: choices.length > 0,
       shellDefenseAvailable: nextTier >= 2 ? true : false,
     });
     if (usedFree) {
@@ -410,14 +414,43 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   addExp: (amount: number) => {
-    const { exp, activeEffects, playerTier } = get();
-    const stage = getStageByTier(playerTier);
+    const { level, levelExp, activeEffects, ownedPerks } = get();
+    if (level >= MAX_LEVEL) return;
     const now = Date.now();
     const hasExp2x = activeEffects.some((e) => e.type === 'exp2x' && e.endTime > now);
-    const finalAmount = hasExp2x ? amount * 2 : amount;
-    const newExp = exp + finalAmount;
-    const maxExp = stage.expToNext === Infinity ? newExp : Math.min(newExp, stage.expToNext);
-    set({ exp: maxExp });
+    const finalAmount = Math.round(hasExp2x ? amount * 2 : amount);
+
+    let currentLevel = level;
+    let currentExp = levelExp + finalAmount;
+    let totalGoldReward = 0;
+    let lastMessage: string | null = null;
+    let didLevelUp = false;
+
+    while (currentLevel < MAX_LEVEL) {
+      const required = getLevelExpRequired(currentLevel);
+      if (currentExp < required) break;
+      currentExp -= required;
+      currentLevel++;
+      didLevelUp = true;
+      const reward = getLevelReward(currentLevel);
+      totalGoldReward += reward.gold;
+      lastMessage = reward.message;
+    }
+
+    set({ level: currentLevel, levelExp: currentExp });
+    if (totalGoldReward > 0) {
+      get().addGold(totalGoldReward);
+    }
+    if (lastMessage) {
+      set({ levelUpMessage: lastMessage });
+      setTimeout(() => set({ levelUpMessage: null }), 2000);
+    }
+    if (didLevelUp && !get().showPerkSelection) {
+      const choices = rollPerkChoices(ownedPerks, 3);
+      if (choices.length > 0) {
+        set({ perkChoices: choices, showPerkSelection: true, isPaused: true });
+      }
+    }
   },
 
   setGameOver: () => set({ isGameOver: true }),
@@ -425,9 +458,9 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   startGame: () => {
     const now = Date.now();
-    const { upgrades, completedQuestIds } = get();
+    const { upgrades, completedQuestIds, playerTier } = get();
     const npcMultiplier = NPC_COUNT_UPGRADES[upgrades.npcCount - 1]?.multiplier ?? 1.0;
-    const initialQuests = pickQuests(3, completedQuestIds);
+    const initialQuests = pickQuests(3, completedQuestIds, playerTier);
     set({
       isStarted: true,
       isPaused: false,
@@ -447,6 +480,9 @@ export const useGameStore = create<GameState>((set, get) => ({
       nextEventTime: now + 30000 + Math.random() * 30000,
       nextBossTime: now + 120000,
       dashCount: 0,
+      level: 1,
+      levelExp: 0,
+      levelUpMessage: null,
       quests: initialQuests.map((q) => ({ questId: q.id, current: 0, completed: false, claimed: false })),
       questRewardPopup: null,
     });
@@ -456,6 +492,9 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({
       playerTier: 1,
       exp: 0,
+      level: 1,
+      levelExp: 0,
+      levelUpMessage: null,
       gold: 0,
       totalGoldEarned: 0,
       upgrades: { speed: 1, eatRange: 1, npcCount: 1, dashCooldown: 1 },
@@ -705,7 +744,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const newQuests = quests.map((q) => q.questId === questId ? { ...q, claimed: true } : q);
     const remaining = newQuests.filter((q) => !q.claimed);
     if (remaining.length < 2) {
-      const extra = pickQuests(2, newCompleted);
+      const extra = pickQuests(2, newCompleted, get().playerTier);
       extra.forEach((q) => newQuests.push({ questId: q.id, current: 0, completed: false, claimed: false }));
     }
     set({

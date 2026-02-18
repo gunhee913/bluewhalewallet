@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useGameStore } from '../lib/useGameStore';
-import { getStageByTier, EVOLUTION_COST, getEvoAbility } from '../lib/gameConfig';
-import { playEvolveSound, setSfxVolume, getSfxVolume, ensureAudioContext } from '../lib/sounds';
+import { getStageByTier, EVOLUTION_COST, getEvoAbility, getLevelExpRequired, MAX_LEVEL } from '../lib/gameConfig';
+import { playEvolveSound, playDashSound, setSfxVolume, getSfxVolume, ensureAudioContext } from '../lib/sounds';
 import PerkSelection from './PerkSelection';
 import { getSkillById } from '../lib/gameSkills';
 import { QUEST_POOL } from '../lib/gameQuests';
@@ -258,34 +258,55 @@ function ComboDisplay() {
   );
 }
 
-function DashCooldownPC() {
+function DashButtonPC() {
   const dashCooldownEnd = useGameStore((s) => s.dashCooldownEnd);
+  const isDashing = useGameStore((s) => s.isDashing);
   const getDashCooldownMs = useGameStore((s) => s.getDashCooldownMs);
+  const startDash = useGameStore((s) => s.startDash);
   const [pct, setPct] = useState(0);
+  const [remainSec, setRemainSec] = useState(0);
 
   useEffect(() => {
     const cooldownMs = getDashCooldownMs();
     const iv = setInterval(() => {
       const now = Date.now();
       if (now < dashCooldownEnd) {
-        setPct(Math.min(100, ((dashCooldownEnd - now) / cooldownMs) * 100));
+        const remaining = dashCooldownEnd - now;
+        setPct(Math.min(100, (remaining / cooldownMs) * 100));
+        setRemainSec(Math.ceil(remaining / 1000));
       } else {
         setPct(0);
+        setRemainSec(0);
       }
     }, 50);
     return () => clearInterval(iv);
   }, [dashCooldownEnd, getDashCooldownMs]);
 
+  const isReady = pct === 0 && !isDashing;
+
+  const handleClick = () => {
+    if (!isReady) return;
+    startDash();
+    playDashSound();
+  };
+
   return (
-    <div className="bg-black/40 backdrop-blur-sm rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 flex items-center gap-1">
-      <span className="text-[10px] sm:text-xs text-white/60">Shift</span>
-      <div className="w-6 h-6 sm:w-7 sm:h-7 relative rounded-full border border-white/30 flex items-center justify-center overflow-hidden">
+    <button
+      onClick={handleClick}
+      className={`pointer-events-auto hidden sm:flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 transition-all active:scale-90 ${
+        isReady
+          ? 'bg-gradient-to-b from-blue-400/80 to-blue-600/80 hover:from-blue-300/80 hover:to-blue-500/80 border border-blue-400/30'
+          : 'bg-black/40 border border-white/10'
+      }`}
+    >
+      <div className="w-6 h-6 relative rounded-full border border-white/30 flex items-center justify-center overflow-hidden">
         {pct > 0 && (
           <div className="absolute inset-0 bg-blue-400/40" style={{ clipPath: `inset(${100 - pct}% 0 0 0)` }} />
         )}
-        <span className="text-[9px] text-white font-bold z-10">{pct > 0 ? Math.ceil(pct / 25) : '⚡'}</span>
+        <span className="text-[10px] text-white font-bold z-10">{pct > 0 ? remainSec : '⚡'}</span>
       </div>
-    </div>
+      <span className={`text-[10px] font-bold ${isReady ? 'text-white' : 'text-white/40'}`}>돌진</span>
+    </button>
   );
 }
 
@@ -562,7 +583,9 @@ function PauseMenu({ togglePause, resetGame, onOpenSettings }: {
 
 export default function HUD() {
   const playerTier = useGameStore((s) => s.playerTier);
-  const exp = useGameStore((s) => s.exp);
+  const level = useGameStore((s) => s.level);
+  const levelExp = useGameStore((s) => s.levelExp);
+  const levelUpMessage = useGameStore((s) => s.levelUpMessage);
   const score = useGameStore((s) => s.score);
   const isStarted = useGameStore((s) => s.isStarted);
   const isGameOver = useGameStore((s) => s.isGameOver);
@@ -573,7 +596,8 @@ export default function HUD() {
   const togglePause = useGameStore((s) => s.togglePause);
 
   const stage = getStageByTier(playerTier);
-  const expPercent = stage.expToNext === Infinity ? 100 : (exp / stage.expToNext) * 100;
+  const levelExpRequired = getLevelExpRequired(level);
+  const levelPercent = level >= MAX_LEVEL ? 100 : (levelExp / levelExpRequired) * 100;
 
   const [evolveMsg, setEvolveMsg] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
@@ -673,16 +697,20 @@ export default function HUD() {
           <div className="bg-black/40 backdrop-blur-sm rounded-lg px-1.5 sm:px-3 py-1 sm:py-1.5">
             <div className="flex items-center gap-1 sm:gap-1.5 mb-0.5">
               <div className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 rounded-full" style={{ backgroundColor: stage.color }} />
-              <span className="text-white font-bold text-[10px] sm:text-xs">{stage.name}</span>
+              <span className="text-white font-bold text-[10px] sm:text-xs">{stage.nameKo}</span>
               <span className="text-white/50 text-[8px] sm:text-[10px]">T{playerTier}</span>
-              {stage.expToNext !== Infinity && (
-                <span className="text-cyan-300/70 text-[8px] sm:text-[10px]">{exp}/{stage.expToNext}</span>
+              <span className="text-amber-300 font-bold text-[10px] sm:text-xs ml-1">LV {level}</span>
+              {level < MAX_LEVEL && (
+                <span className="text-cyan-300/70 text-[8px] sm:text-[10px]">{levelExp}/{levelExpRequired}</span>
+              )}
+              {level >= MAX_LEVEL && (
+                <span className="text-yellow-400 text-[8px] sm:text-[10px]">MAX</span>
               )}
             </div>
-            <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+            <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
               <div
                 className="h-full rounded-full transition-all duration-300"
-                style={{ width: `${expPercent}%`, backgroundColor: stage.expToNext === Infinity ? '#fbbf24' : '#22d3ee' }}
+                style={{ width: `${levelPercent}%`, backgroundColor: level >= MAX_LEVEL ? '#fbbf24' : '#22d3ee' }}
               />
             </div>
           </div>
@@ -692,7 +720,7 @@ export default function HUD() {
               <span className="text-yellow-400 text-[9px] sm:text-[11px]">🪙</span>
               <span className="text-yellow-300 text-[10px] sm:text-xs font-bold">{gold}</span>
             </div>
-            <DashCooldownPC />
+            <DashButtonPC />
             <div className="bg-black/40 backdrop-blur-sm rounded-lg px-1.5 sm:px-2.5 py-1 sm:py-1.5 flex items-center gap-0.5">
               <span className="text-red-400 text-[9px] sm:text-[11px]">🎯</span>
               <span className="text-white text-[10px] sm:text-xs font-bold">{score}</span>
@@ -734,6 +762,15 @@ export default function HUD() {
         <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center">
           <div className="animate-bounce bg-yellow-400/90 backdrop-blur-sm rounded-2xl px-8 py-4 shadow-lg">
             <p className="text-2xl font-bold text-black text-center">{evolveMsg}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Level up message */}
+      {levelUpMessage && !evolveMsg && (
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
+          <div className="animate-bounce bg-cyan-400/90 backdrop-blur-sm rounded-xl px-6 py-2 shadow-lg">
+            <p className="text-sm sm:text-base font-bold text-black text-center">{levelUpMessage}</p>
           </div>
         </div>
       )}

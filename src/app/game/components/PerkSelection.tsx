@@ -15,7 +15,7 @@ export default function PerkSelection() {
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div className="mx-4 w-full max-w-2xl animate-in fade-in zoom-in-95 duration-300">
         <div className="mb-4 text-center">
-          <h2 className="text-2xl font-bold text-white sm:text-3xl">진화 보너스 선택</h2>
+          <h2 className="text-2xl font-bold text-white sm:text-3xl">🎉 레벨업 보상!</h2>
           <p className="mt-1 text-sm text-white/70">하나를 선택하여 영구 보너스를 획득하세요</p>
         </div>
 

@@ -155,24 +155,27 @@ export default function UpgradePanel() {
 
   return (
     <div className="fixed inset-0 z-[55] flex items-end sm:items-center justify-center" onClick={toggleUpgradePanel}>
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
 
       <div
-        className="relative w-full sm:w-[380px] max-h-[85vh] bg-gradient-to-b from-[#0d3b5e] to-[#072a45] rounded-t-2xl sm:rounded-2xl shadow-2xl border border-white/10 flex flex-col animate-[slideUp_0.3s_ease-out]"
+        className="relative w-full sm:w-[440px] max-h-[85vh] bg-gradient-to-b from-[#0a2f4e] to-[#061e35] rounded-t-3xl sm:rounded-2xl shadow-2xl border border-cyan-500/20 flex flex-col animate-[slideUp_0.3s_ease-out]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-4 pt-4 pb-3 border-b border-white/10">
+        <div className="px-5 pt-4 pb-3 border-b border-white/10 bg-gradient-to-r from-cyan-900/30 to-blue-900/30">
           <div className="flex items-center justify-between">
-            <h2 className="text-white font-bold text-lg">업그레이드</h2>
+            <div className="flex items-center gap-2.5">
+              <span className="text-xl">🏪</span>
+              <h2 className="text-white font-bold text-lg">상점</h2>
+            </div>
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5 bg-yellow-500/20 rounded-lg px-3 py-1.5">
+              <div className="flex items-center gap-1.5 bg-yellow-500/20 rounded-lg px-3 py-1.5 border border-yellow-500/20">
                 <span className="text-sm">🪙</span>
                 <span className="text-yellow-300 font-bold text-sm">{gold}</span>
               </div>
               <button
                 onClick={toggleUpgradePanel}
-                className="text-white/40 hover:text-white/80 transition-colors text-lg"
+                className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/15 text-white/40 hover:text-white/80 transition-all text-lg"
               >
                 ✕
               </button>
@@ -181,7 +184,7 @@ export default function UpgradePanel() {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-2 scrollbar-thin scrollbar-thumb-white/10">
+        <div className="flex-1 overflow-y-auto p-3 space-y-2.5 scrollbar-thin scrollbar-thumb-white/10">
           {/* Evolution */}
           <div className={`relative rounded-xl p-3 transition-all duration-200 ${
             isMaxTier ? 'bg-white/5' : canEvolve ? 'bg-white/10 hover:bg-white/15' : 'bg-white/5'
@@ -229,6 +232,12 @@ export default function UpgradePanel() {
                 {isMaxTier ? 'MAX' : `🪙 ${evolveCost}`}
               </button>
             </div>
+          </div>
+
+          {/* Upgrades section */}
+          <div className="pt-1 pb-0.5 flex items-center gap-2">
+            <span className="text-amber-400/80 text-xs">✦</span>
+            <span className="text-amber-300/60 text-xs font-semibold uppercase tracking-wider">능력 강화</span>
           </div>
 
           {/* Speed */}
@@ -289,8 +298,9 @@ export default function UpgradePanel() {
           />
 
           {/* Skills */}
-          <div className="pt-2 pb-1">
-            <span className="text-white/40 text-[10px] font-semibold uppercase tracking-wider">액티브 스킬</span>
+          <div className="pt-3 pb-1 flex items-center gap-2 border-t border-white/5 mt-1">
+            <span className="text-cyan-400/80 text-xs">✦</span>
+            <span className="text-cyan-300/60 text-xs font-semibold uppercase tracking-wider">액티브 스킬</span>
           </div>
           {SKILLS.map((skill) => {
             const owned = ownedSkills.includes(skill.id);
@@ -336,8 +346,8 @@ export default function UpgradePanel() {
         </div>
 
         {/* Bottom hint */}
-        <div className="px-4 py-2.5 border-t border-white/10">
-          <p className="text-white/30 text-[10px] text-center">해양생물을 먹어 골드를 모으세요</p>
+        <div className="px-4 py-2.5 border-t border-white/5 bg-black/20">
+          <p className="text-white/25 text-[10px] text-center">ESC로 닫기 · 해양생물을 먹어 골드를 모으세요</p>
         </div>
       </div>
     </div>

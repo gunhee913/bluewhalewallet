@@ -388,7 +388,7 @@ function WalletCard({ wallet, totalAssets, fundDetails, aquaFairPrice }: WalletC
 function HomeContent() {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab');
-  const [selectedTab, setSelectedTab] = useState<'wallet' | 'tokenInfo' | 'token' | 'club' | 'lab'>('wallet');
+  const [selectedTab, setSelectedTab] = useState<'wallet' | 'tokenInfo' | 'token' | 'club' | 'lab' | 'game'>('wallet');
   const [joinDialogOpen, setJoinDialogOpen] = useState(false);
   const [joinAddress, setJoinAddress] = useState('');
   const [joinLoading, setJoinLoading] = useState(false);
@@ -447,13 +447,13 @@ function HomeContent() {
     
     // sessionStorage에서 마지막 탭 상태 복원
     const savedTab = sessionStorage.getItem('lastTab');
-    if (savedTab === 'token' || savedTab === 'tokenInfo' || savedTab === 'wallet' || savedTab === 'club' || savedTab === 'lab') {
+    if (savedTab === 'token' || savedTab === 'tokenInfo' || savedTab === 'wallet' || savedTab === 'club' || savedTab === 'lab' || savedTab === 'game') {
       setSelectedTab(savedTab);
     }
   }, [tabParam]);
 
   // 탭 변경 핸들러
-  const handleTabChange = (tab: 'wallet' | 'tokenInfo' | 'token' | 'club' | 'lab') => {
+  const handleTabChange = (tab: 'wallet' | 'tokenInfo' | 'token' | 'club' | 'lab' | 'game') => {
     setSelectedTab(tab);
     sessionStorage.setItem('lastTab', tab);
   };
@@ -644,7 +644,7 @@ function HomeContent() {
     };
   };
 
-  const isLoading = selectedTab === 'wallet' ? walletLoading : tokenLoading;
+  const isLoading = selectedTab === 'game' ? false : selectedTab === 'wallet' ? walletLoading : tokenLoading;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-x-hidden">
@@ -663,11 +663,11 @@ function HomeContent() {
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-6 py-10">
         {/* 탭 선택 */}
-        <div className="flex items-center justify-between mb-6 border-b border-slate-700">
+        <div className="flex items-center mb-6 border-b border-slate-700 overflow-x-auto">
           <div className="flex gap-6">
             <button
               onClick={() => handleTabChange('wallet')}
-              className={`pb-3 text-base md:text-lg font-medium transition-colors ${
+              className={`pb-3 text-base md:text-lg font-medium transition-colors whitespace-nowrap ${
                 selectedTab === 'wallet'
                   ? 'text-white border-b-2 border-white'
                   : 'text-slate-500 hover:text-slate-300'
@@ -677,7 +677,7 @@ function HomeContent() {
             </button>
             <button
               onClick={() => handleTabChange('tokenInfo')}
-              className={`pb-3 text-base md:text-lg font-medium transition-colors ${
+              className={`pb-3 text-base md:text-lg font-medium transition-colors whitespace-nowrap ${
                 selectedTab === 'tokenInfo'
                   ? 'text-white border-b-2 border-white'
                   : 'text-slate-500 hover:text-slate-300'
@@ -687,7 +687,7 @@ function HomeContent() {
             </button>
             <button
               onClick={() => handleTabChange('token')}
-              className={`pb-3 text-base md:text-lg font-medium transition-colors ${
+              className={`pb-3 text-base md:text-lg font-medium transition-colors whitespace-nowrap ${
                 selectedTab === 'token'
                   ? 'text-white border-b-2 border-white'
                   : 'text-slate-500 hover:text-slate-300'
@@ -697,7 +697,7 @@ function HomeContent() {
             </button>
             <button
               onClick={() => handleTabChange('club')}
-              className={`pb-3 text-base md:text-lg font-medium transition-colors ${
+              className={`pb-3 text-base md:text-lg font-medium transition-colors whitespace-nowrap ${
                 selectedTab === 'club'
                   ? 'text-white border-b-2 border-white'
                   : 'text-slate-500 hover:text-slate-300'
@@ -707,13 +707,23 @@ function HomeContent() {
             </button>
             <button
               onClick={() => handleTabChange('lab')}
-              className={`pb-3 text-base md:text-lg font-medium transition-colors ${
+              className={`pb-3 text-base md:text-lg font-medium transition-colors whitespace-nowrap ${
                 selectedTab === 'lab'
                   ? 'text-white border-b-2 border-white'
                   : 'text-slate-500 hover:text-slate-300'
               }`}
             >
               실험실
+            </button>
+            <button
+              onClick={() => handleTabChange('game')}
+              className={`pb-3 text-base md:text-lg font-medium transition-colors whitespace-nowrap ${
+                selectedTab === 'game'
+                  ? 'text-white border-b-2 border-white'
+                  : 'text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              게임
             </button>
           </div>
         </div>
@@ -1455,6 +1465,31 @@ function HomeContent() {
               </div>
             </Card>
 
+          </div>
+        )}
+
+        {/* 게임 탭 */}
+        {selectedTab === 'game' && (
+          <div className="space-y-4">
+            <Link href="/game" className="block">
+              <Card className="bg-slate-800/50 border-slate-700/50 hover:bg-slate-800/80 transition-all duration-200 overflow-hidden group cursor-pointer">
+                <div className="p-5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-xl">
+                          🐋
+                        </div>
+                        <h2 className="text-lg font-semibold text-white">고래키우기</h2>
+                      </div>
+                    </div>
+                    <div className="px-6 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-all duration-200 font-medium text-center shrink-0">
+                      시작
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </Link>
           </div>
         )}
       </main>

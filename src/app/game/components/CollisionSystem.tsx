@@ -14,8 +14,8 @@ export default function CollisionSystem({ playerRef }: { playerRef: React.RefObj
   useFrame((_, delta) => {
     const state = useGameStore.getState();
     const { npcs, playerTier, isStarted, isGameOver, isCleared, isPaused,
-      addExp, addGold, eatNPC, setGameOver, isDashing, items, collectItem, boss, setBoss,
-      incrementCombo, getComboMultiplier, combo, upgrades } = state;
+      addExp, addGold, eatNPC, setGameOver, isDashing, items, collectItem, boss,
+      incrementCombo, getComboMultiplier, combo, upgrades, perkBonuses, useShellDefense } = state;
 
     if (!playerRef.current?.position || !isStarted || isGameOver || isCleared || isPaused) return;
 
@@ -28,7 +28,36 @@ export default function CollisionSystem({ playerRef }: { playerRef: React.RefObj
     const hasShield = state.activeEffects.some((e) => e.type === 'shield' && e.endTime > now);
     const isInvincible = isDashing || hasShield;
 
-    const eatRangeMultiplier = EAT_RANGE_UPGRADES[upgrades.eatRange - 1]?.multiplier ?? 1.0;
+    let eatRangeMultiplier = EAT_RANGE_UPGRADES[upgrades.eatRange - 1]?.multiplier ?? 1.0;
+    eatRangeMultiplier *= (1 + perkBonuses.eatRangeBonus);
+
+    if (playerTier >= 6) eatRangeMultiplier *= 1.5;
+    if (playerTier >= 7) eatRangeMultiplier *= 1.5;
+
+    const { activeSkill } = state;
+    const skillActive = activeSkill && now < activeSkill.endTime;
+    if (skillActive && activeSkill.id === 'feeding_frenzy') eatRangeMultiplier *= 2;
+
+    if (skillActive && activeSkill.id === 'tidal_wave') {
+      for (const npc of npcs) {
+        if (!npc.alive || npc.tier > playerTier) continue;
+        const npcPos = getNPCPosition(npc.id);
+        if (!npcPos) continue;
+        const d = Math.sqrt(
+          (playerPos.x - npcPos.x) ** 2 + (playerPos.y - npcPos.y) ** 2 + (playerPos.z - npcPos.z) ** 2
+        );
+        if (d < 12) {
+          const npcStage = getStageByTier(npc.tier);
+          const goldAmount = GOLD_PER_TIER[npc.tier] ?? 1;
+          addGold(Math.round(goldAmount * (1 + perkBonuses.goldBonus)));
+          addExp(Math.max(npc.tier, 1));
+          eatNPC(npc.id);
+          triggerEatEffect(npcPos.x, npcPos.y, npcPos.z, npcStage.color);
+        }
+      }
+      cooldownRef.current = 0.5;
+      return;
+    }
 
     for (const npc of npcs) {
       if (!npc.alive) continue;
@@ -49,11 +78,12 @@ export default function CollisionSystem({ playerRef }: { playerRef: React.RefObj
         incrementCombo();
         const multiplier = getComboMultiplier();
         const baseExp = npc.tier < playerTier ? Math.max(npc.tier, 1) : 1;
-        const expGain = Math.round(baseExp * multiplier);
+        const expGain = Math.round(baseExp * multiplier * (1 + perkBonuses.expBonus));
         addExp(expGain);
 
         const goldAmount = GOLD_PER_TIER[npc.tier] ?? 1;
-        const goldGain = Math.round(goldAmount * multiplier);
+        let goldGain = Math.round(goldAmount * multiplier * (1 + perkBonuses.goldBonus));
+        if (perkBonuses.goldDouble) goldGain *= 2;
         addGold(goldGain);
 
         eatNPC(npc.id);
@@ -62,6 +92,9 @@ export default function CollisionSystem({ playerRef }: { playerRef: React.RefObj
         cooldownRef.current = 0.08;
         break;
       } else if (npc.tier > playerTier && dist < dangerRange && !isInvincible) {
+        if (useShellDefense()) {
+          continue;
+        }
         setGameOver();
         break;
       }
@@ -85,6 +118,7 @@ export default function CollisionSystem({ playerRef }: { playerRef: React.RefObj
       const dz = playerPos.z - boss.z;
       const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
       if (dist < playerStage.size + 3 && !isInvincible) {
+        if (useShellDefense()) return;
         setGameOver();
       }
     }

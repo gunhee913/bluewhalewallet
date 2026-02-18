@@ -10,6 +10,7 @@ export default function MobileControls() {
   const joystickRef = useRef<HTMLDivElement>(null);
   const nippleManager = useRef<any>(null);
   const setMoveInput = useGameStore((s) => s.setMoveInput);
+  const isStarted = useGameStore((s) => s.isStarted);
 
   useEffect(() => {
     setIsMobile('ontouchstart' in window);
@@ -63,8 +64,6 @@ export default function MobileControls() {
 
   if (!isMobile) return null;
 
-  const isStarted = useGameStore.getState().isStarted;
-
   return (
     <>
       <div
@@ -89,6 +88,7 @@ export default function MobileControls() {
 function DashButton({ isPortrait, onDash }: { isPortrait: boolean; onDash: () => void }) {
   const isDashing = useGameStore((s) => s.isDashing);
   const dashCooldownEnd = useGameStore((s) => s.dashCooldownEnd);
+  const getDashCooldownMs = useGameStore((s) => s.getDashCooldownMs);
   const isStarted = useGameStore((s) => s.isStarted);
   const isGameOver = useGameStore((s) => s.isGameOver);
   const isCleared = useGameStore((s) => s.isCleared);
@@ -96,17 +96,18 @@ function DashButton({ isPortrait, onDash }: { isPortrait: boolean; onDash: () =>
   const [cooldownPct, setCooldownPct] = useState(0);
 
   useEffect(() => {
+    const cooldownMs = getDashCooldownMs();
     const iv = setInterval(() => {
       const now = Date.now();
       if (now < dashCooldownEnd) {
         const remaining = dashCooldownEnd - now;
-        setCooldownPct(Math.min(100, (remaining / 4000) * 100));
+        setCooldownPct(Math.min(100, (remaining / cooldownMs) * 100));
       } else {
         setCooldownPct(0);
       }
     }, 50);
     return () => clearInterval(iv);
-  }, [dashCooldownEnd]);
+  }, [dashCooldownEnd, getDashCooldownMs]);
 
   if (!isStarted || isGameOver || isCleared) return null;
 

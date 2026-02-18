@@ -135,10 +135,35 @@ function NPCCreature({ npc, playerTier }: { npc: NPC; playerTier: number }) {
         dirRef.current.lerp(toPlayer, 0.03);
         dirRef.current.normalize();
       }
+
+      if (currentPlayerTier >= 4 && npc.tier <= currentPlayerTier && distToPlayer < 5 && distToPlayer > 0.5) {
+        toPlayer.normalize();
+        pos.x += toPlayer.x * 1.5 * delta;
+        pos.y += toPlayer.y * 1.5 * delta;
+        pos.z += toPlayer.z * 1.5 * delta;
+      }
     }
 
-    const { activeEffects, activeEvent } = useGameStore.getState();
+    const { activeEffects, activeEvent, activeSkill } = useGameStore.getState();
+
     const now = Date.now();
+
+    if (activeSkill && now < activeSkill.endTime) {
+      if (activeSkill.id === 'sonar_blast' && playerMeshPos) {
+        const stunDist = Math.sqrt(
+          (playerMeshPos.x - pos.x) ** 2 + (playerMeshPos.y - pos.y) ** 2 + (playerMeshPos.z - pos.z) ** 2
+        );
+        if (stunDist < 10) return;
+      }
+      if (activeSkill.id === 'ink_cloud' && npc.tier > currentPlayerTier && playerMeshPos) {
+        const inkDist = Math.sqrt(
+          (playerMeshPos.x - pos.x) ** 2 + (playerMeshPos.y - pos.y) ** 2 + (playerMeshPos.z - pos.z) ** 2
+        );
+        if (inkDist < 8) {
+          dirRef.current.set((Math.random() - 0.5) * 2, (Math.random() - 0.5) * 0.5, (Math.random() - 0.5) * 2).normalize();
+        }
+      }
+    }
     const hasMagnet = activeEffects.some((e) => e.type === 'magnet' && e.endTime > now);
     if (hasMagnet && npc.tier <= currentPlayerTier && playerMeshPos) {
       const toPlayer = new THREE.Vector3(
@@ -160,6 +185,15 @@ function NPCCreature({ npc, playerTier }: { npc: NPC; playerTier: number }) {
       speedMult *= 1.8;
     } else if (behaviorRef.current === 'idle') {
       speedMult *= 0.1;
+    }
+
+    if (currentPlayerTier >= 5 && npc.tier > currentPlayerTier && playerMeshPos) {
+      const toxicDist = Math.sqrt(
+        (playerMeshPos.x - pos.x) ** 2 +
+        (playerMeshPos.y - pos.y) ** 2 +
+        (playerMeshPos.z - pos.z) ** 2
+      );
+      if (toxicDist < 6) speedMult *= 0.6;
     }
 
     const speed = stage.speed * speedMult * speedJitter.current;
@@ -199,7 +233,7 @@ function NPCCreature({ npc, playerTier }: { npc: NPC; playerTier: number }) {
 
   return (
     <group ref={groupRef} position={[npc.x, npc.y, npc.z]}>
-      <CreatureModel creatureId={stage.id} scale={stage.size} />
+      <CreatureModel creatureId={stage.id} scale={stage.size} variant={npc.variant} />
       {tierDiff > 0 && <DangerMark size={stage.size} tierDiff={tierDiff} />}
       {tierDiff <= 0 && <EdibleMark size={stage.size} />}
     </group>

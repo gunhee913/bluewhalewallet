@@ -464,6 +464,133 @@ function WhaleModel({ scale = 1 }: { scale?: number }) {
   );
 }
 
+function JellyfishModel({ scale = 1 }: { scale?: number }) {
+  const groupRef = useRef<THREE.Group>(null);
+  const tentacleRefs = useRef<(THREE.Mesh | null)[]>([]);
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    if (groupRef.current) {
+      groupRef.current.position.y = Math.sin(t * 2) * 0.15;
+    }
+    tentacleRefs.current.forEach((mesh, i) => {
+      if (mesh) {
+        mesh.rotation.x = Math.sin(t * 3 + i * 0.8) * 0.3;
+        mesh.rotation.z = Math.sin(t * 2.5 + i * 1.2) * 0.15;
+      }
+    });
+  });
+
+  return (
+    <group scale={scale} ref={groupRef}>
+      <mesh>
+        <sphereGeometry args={[0.25, 12, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshStandardMaterial color="#e8a0ff" transparent opacity={0.7} roughness={0.1} emissive="#d070ff" emissiveIntensity={0.3} />
+      </mesh>
+      <mesh position={[0, -0.02, 0]}>
+        <sphereGeometry args={[0.2, 10, 10, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshStandardMaterial color="#f0c0ff" transparent opacity={0.4} />
+      </mesh>
+      {[0, 1, 2, 3, 4, 5].map((i) => {
+        const a = (i / 6) * Math.PI * 2;
+        return (
+          <mesh key={i} ref={(el) => { tentacleRefs.current[i] = el; }}
+            position={[Math.cos(a) * 0.12, -0.15, Math.sin(a) * 0.12]}>
+            <cylinderGeometry args={[0.015, 0.008, 0.4 + Math.sin(i) * 0.1, 4]} />
+            <meshStandardMaterial color="#d580ff" transparent opacity={0.6} />
+          </mesh>
+        );
+      })}
+    </group>
+  );
+}
+
+function TurtleModel({ scale = 1 }: { scale?: number }) {
+  const finsRef = useRef<THREE.Group>(null);
+
+  useFrame(({ clock }) => {
+    if (!finsRef.current) return;
+    finsRef.current.rotation.z = Math.sin(clock.getElapsedTime() * 3) * 0.2;
+  });
+
+  return (
+    <group scale={scale}>
+      <mesh position={[0, 0.1, 0]}>
+        <sphereGeometry args={[0.35, 12, 12]} />
+        <meshStandardMaterial color="#2d5a27" roughness={0.6} />
+      </mesh>
+      <mesh position={[0, 0.2, 0]}>
+        <sphereGeometry args={[0.32, 8, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshStandardMaterial color="#4a7c3f" roughness={0.7} />
+      </mesh>
+      {[[-0.15, 0, 0], [0.15, 0, 0], [-0.1, 0, -0.15], [0.1, 0, -0.15]].map(([ox, oy, oz], i) => (
+        <mesh key={i} position={[ox, oy, oz]} rotation={[0.3, 0, i < 2 ? (i === 0 ? 0.5 : -0.5) : 0]}>
+          <capsuleGeometry args={[0.06, 0.15, 4, 8]} />
+          <meshStandardMaterial color="#5a8a50" roughness={0.6} />
+        </mesh>
+      ))}
+      <mesh position={[0, 0.05, 0.3]}>
+        <sphereGeometry args={[0.1, 8, 8]} />
+        <meshStandardMaterial color="#5a8a50" roughness={0.5} />
+      </mesh>
+      <group ref={finsRef}>
+        <mesh position={[0.3, 0.05, 0.1]} rotation={[0, -0.3, -0.6]}>
+          <planeGeometry args={[0.25, 0.12]} />
+          <meshStandardMaterial color="#4a7c3f" side={THREE.DoubleSide} roughness={0.5} />
+        </mesh>
+        <mesh position={[-0.3, 0.05, 0.1]} rotation={[0, 0.3, 0.6]}>
+          <planeGeometry args={[0.25, 0.12]} />
+          <meshStandardMaterial color="#4a7c3f" side={THREE.DoubleSide} roughness={0.5} />
+        </mesh>
+      </group>
+      <mesh position={[0.04, 0.1, 0.35]}>
+        <sphereGeometry args={[0.02, 6, 6]} />
+        <meshStandardMaterial color="#2d3436" />
+      </mesh>
+      <mesh position={[-0.04, 0.1, 0.35]}>
+        <sphereGeometry args={[0.02, 6, 6]} />
+        <meshStandardMaterial color="#2d3436" />
+      </mesh>
+    </group>
+  );
+}
+
+function StingrayModel({ scale = 1 }: { scale?: number }) {
+  const bodyRef = useRef<THREE.Group>(null);
+
+  useFrame(({ clock }) => {
+    if (!bodyRef.current) return;
+    const t = clock.getElapsedTime();
+    bodyRef.current.rotation.z = Math.sin(t * 3) * 0.08;
+    bodyRef.current.position.y = Math.sin(t * 2) * 0.05;
+  });
+
+  return (
+    <group scale={scale} ref={bodyRef}>
+      <mesh rotation={[Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[0.4, 4]} />
+        <meshStandardMaterial color="#5f6f7e" roughness={0.4} metalness={0.15} side={THREE.DoubleSide} />
+      </mesh>
+      <mesh position={[0, 0.03, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[0.3, 4]} />
+        <meshStandardMaterial color="#dfe6e9" roughness={0.3} side={THREE.DoubleSide} />
+      </mesh>
+      <mesh position={[0, 0, -0.4]} rotation={[0.1, 0, 0]}>
+        <cylinderGeometry args={[0.02, 0.01, 0.5, 4]} />
+        <meshStandardMaterial color="#5f6f7e" roughness={0.4} />
+      </mesh>
+      <mesh position={[0.1, 0.04, 0.15]}>
+        <sphereGeometry args={[0.025, 6, 6]} />
+        <meshStandardMaterial color="#2d3436" />
+      </mesh>
+      <mesh position={[-0.1, 0.04, 0.15]}>
+        <sphereGeometry args={[0.025, 6, 6]} />
+        <meshStandardMaterial color="#2d3436" />
+      </mesh>
+    </group>
+  );
+}
+
 const CREATURE_COMPONENTS: Record<string, React.FC<{ scale?: number }>> = {
   plankton: PlanktonModel,
   krill: KrillModel,
@@ -475,8 +602,16 @@ const CREATURE_COMPONENTS: Record<string, React.FC<{ scale?: number }>> = {
   whale: WhaleModel,
 };
 
-export default function CreatureModel({ creatureId, scale = 1 }: { creatureId: string; scale?: number }) {
-  const Component = CREATURE_COMPONENTS[creatureId];
+const VARIANT_COMPONENTS: Record<string, React.FC<{ scale?: number }>> = {
+  krill: JellyfishModel,
+  pearl: TurtleModel,
+  coral: StingrayModel,
+};
+
+export default function CreatureModel({ creatureId, scale = 1, variant = 0 }: { creatureId: string; scale?: number; variant?: number }) {
+  const Component = variant === 1
+    ? (VARIANT_COMPONENTS[creatureId] ?? CREATURE_COMPONENTS[creatureId])
+    : CREATURE_COMPONENTS[creatureId];
   if (!Component) return null;
   return <Component scale={scale} />;
 }

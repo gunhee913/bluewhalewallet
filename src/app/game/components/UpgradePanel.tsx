@@ -9,8 +9,10 @@ import {
   EAT_RANGE_UPGRADES,
   NPC_COUNT_UPGRADES,
   MAX_UPGRADE_LEVEL,
+  MAX_DASH_LEVEL,
   CREATURE_STAGES,
 } from '../lib/gameConfig';
+import { SKILLS } from '../lib/gameSkills';
 
 function GoldFlash({ show }: { show: boolean }) {
   if (!show) return null;
@@ -40,11 +42,12 @@ interface UpgradeRowProps {
   cost: number | null;
   gold: number;
   multiplier: number;
+  multiplierLabel?: string;
   color: string;
   onBuy: () => boolean;
 }
 
-function UpgradeRow({ icon, label, sublabel, level, maxLevel, cost, gold, multiplier, color, onBuy }: UpgradeRowProps) {
+function UpgradeRow({ icon, label, sublabel, level, maxLevel, cost, gold, multiplier, multiplierLabel, color, onBuy }: UpgradeRowProps) {
   const [flash, setFlash] = useState(false);
   const [shake, setShake] = useState(false);
   const isMaxed = level >= maxLevel;
@@ -78,7 +81,7 @@ function UpgradeRow({ icon, label, sublabel, level, maxLevel, cost, gold, multip
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-white/60 text-xs">{sublabel}</span>
             <span className="font-mono text-xs font-bold" style={{ color }}>
-              x{multiplier.toFixed(1)}
+              {multiplierLabel ?? `x${multiplier.toFixed(1)}`}
             </span>
           </div>
           <ProgressBar current={level} max={maxLevel} color={color} />
@@ -112,6 +115,8 @@ export default function UpgradePanel() {
   const getUpgradeMultiplier = useGameStore((s) => s.getUpgradeMultiplier);
   const getNextUpgradeCost = useGameStore((s) => s.getNextUpgradeCost);
 
+  const ownedSkills = useGameStore((s) => s.ownedSkills);
+  const buySkill = useGameStore((s) => s.buySkill);
   const [evolveFlash, setEvolveFlash] = useState(false);
 
   const handleEvolve = () => {
@@ -145,6 +150,8 @@ export default function UpgradePanel() {
   const speedCost = getNextUpgradeCost('speed');
   const rangeCost = getNextUpgradeCost('eatRange');
   const npcCost = getNextUpgradeCost('npcCount');
+  const dashCost = getNextUpgradeCost('dashCooldown');
+  const dashCooldownMs = getUpgradeMultiplier('dashCooldown');
 
   return (
     <div className="fixed inset-0 z-[55] flex items-end sm:items-center justify-center" onClick={toggleUpgradePanel}>
@@ -265,6 +272,61 @@ export default function UpgradePanel() {
             color="#60a5fa"
             onBuy={() => buyUpgrade('npcCount')}
           />
+
+          {/* Dash Cooldown */}
+          <UpgradeRow
+            icon="💨"
+            label="부스터"
+            sublabel="돌진 쿨다운 감소"
+            level={upgrades.dashCooldown}
+            maxLevel={MAX_DASH_LEVEL}
+            cost={dashCost}
+            gold={gold}
+            multiplier={dashCooldownMs / 1000}
+            multiplierLabel={`${(dashCooldownMs / 1000).toFixed(1)}초`}
+            color="#c084fc"
+            onBuy={() => buyUpgrade('dashCooldown')}
+          />
+
+          {/* Skills */}
+          {SKILLS.filter((s) => s.minTier <= playerTier).length > 0 && (
+            <>
+              <div className="pt-2 pb-1">
+                <span className="text-white/40 text-[10px] font-semibold uppercase tracking-wider">액티브 스킬</span>
+              </div>
+              {SKILLS.filter((s) => s.minTier <= playerTier).map((skill) => {
+                const owned = ownedSkills.includes(skill.id);
+                const canBuy = !owned && gold >= skill.cost;
+                return (
+                  <div key={skill.id} className={`relative rounded-xl p-3 transition-all ${owned ? 'bg-green-500/10' : canBuy ? 'bg-white/10 hover:bg-white/15' : 'bg-white/5'}`}>
+                    <div className="flex items-center gap-3">
+                      <div className="text-2xl w-9 text-center flex-shrink-0">{skill.icon}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-0.5">
+                          <span className="text-white text-sm font-semibold">{skill.name}</span>
+                          <span className="text-white/40 text-[10px]">CD {(skill.cooldownMs / 1000).toFixed(0)}초</span>
+                        </div>
+                        <span className="text-white/60 text-xs">{skill.description}</span>
+                      </div>
+                      <button
+                        onClick={() => buySkill(skill.id)}
+                        disabled={owned}
+                        className={`flex-shrink-0 px-3 py-2 rounded-lg text-xs font-bold transition-all active:scale-90 ${
+                          owned
+                            ? 'bg-green-500/20 text-green-300 cursor-default'
+                            : canBuy
+                              ? 'bg-gradient-to-b from-purple-400 to-purple-600 text-white hover:from-purple-300 hover:to-purple-500 shadow-lg shadow-purple-500/20'
+                              : 'bg-white/10 text-white/40 cursor-not-allowed'
+                        }`}
+                      >
+                        {owned ? '보유' : `🪙 ${skill.cost}`}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </>
+          )}
         </div>
 
         {/* Bottom hint */}

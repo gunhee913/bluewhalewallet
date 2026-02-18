@@ -2,8 +2,11 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useGameStore } from '../lib/useGameStore';
-import { getStageByTier, EVOLUTION_COST } from '../lib/gameConfig';
+import { getStageByTier, EVOLUTION_COST, getEvoAbility } from '../lib/gameConfig';
 import { playEvolveSound, setSfxVolume, getSfxVolume, ensureAudioContext } from '../lib/sounds';
+import PerkSelection from './PerkSelection';
+import { getSkillById } from '../lib/gameSkills';
+import { QUEST_POOL } from '../lib/gameQuests';
 
 function formatTime(ms: number) {
   const s = Math.floor(ms / 1000);
@@ -257,19 +260,21 @@ function ComboDisplay() {
 
 function DashCooldownPC() {
   const dashCooldownEnd = useGameStore((s) => s.dashCooldownEnd);
+  const getDashCooldownMs = useGameStore((s) => s.getDashCooldownMs);
   const [pct, setPct] = useState(0);
 
   useEffect(() => {
+    const cooldownMs = getDashCooldownMs();
     const iv = setInterval(() => {
       const now = Date.now();
       if (now < dashCooldownEnd) {
-        setPct(Math.min(100, ((dashCooldownEnd - now) / 4000) * 100));
+        setPct(Math.min(100, ((dashCooldownEnd - now) / cooldownMs) * 100));
       } else {
         setPct(0);
       }
     }, 50);
     return () => clearInterval(iv);
-  }, [dashCooldownEnd]);
+  }, [dashCooldownEnd, getDashCooldownMs]);
 
   return (
     <div className="bg-black/40 backdrop-blur-sm rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 flex items-center gap-1">
@@ -279,6 +284,32 @@ function DashCooldownPC() {
           <div className="absolute inset-0 bg-blue-400/40" style={{ clipPath: `inset(${100 - pct}% 0 0 0)` }} />
         )}
         <span className="text-[9px] text-white font-bold z-10">{pct > 0 ? Math.ceil(pct / 25) : '⚡'}</span>
+      </div>
+    </div>
+  );
+}
+
+function EvoAbilityBadge() {
+  const playerTier = useGameStore((s) => s.playerTier);
+  const shellDefense = useGameStore((s) => s.shellDefenseAvailable);
+  const ability = getEvoAbility(playerTier);
+
+  if (!ability || !ability.icon) return null;
+
+  return (
+    <div className="fixed top-14 sm:top-16 right-2 sm:right-4 z-40 pointer-events-none">
+      <div className="bg-black/50 backdrop-blur-sm rounded-lg px-2.5 py-1.5 flex items-center gap-1.5"
+        style={{ borderLeft: '3px solid #a78bfa' }}>
+        <span className="text-sm">{ability.icon}</span>
+        <div className="flex flex-col">
+          <span className="text-[10px] text-white/90 font-semibold leading-tight">{ability.name}</span>
+          <span className="text-[8px] text-white/50 leading-tight">{ability.description}</span>
+        </div>
+        {playerTier >= 2 && (
+          <span className={`ml-1 text-[9px] font-bold ${shellDefense ? 'text-green-400' : 'text-red-400/60'}`}>
+            {shellDefense ? '🛡' : '⊘'}
+          </span>
+        )}
       </div>
     </div>
   );
@@ -338,6 +369,134 @@ function EventBanner() {
         <span className="text-white font-bold text-xs sm:text-sm">{info.label}</span>
         <span className="text-white/60 text-[10px]">{remaining}s</span>
       </div>
+    </div>
+  );
+}
+
+function QuestTracker() {
+  const quests = useGameStore((s) => s.quests);
+  const claimQuestReward = useGameStore((s) => s.claimQuestReward);
+  const startTime = useGameStore((s) => s.startTime);
+  const killCount = useGameStore((s) => s.killCount);
+  const [, forceUpdate] = useState(0);
+
+  useEffect(() => {
+    const iv = setInterval(() => {
+      forceUpdate((v) => v + 1);
+      const { startTime: st, isStarted, isGameOver } = useGameStore.getState();
+      if (isStarted && !isGameOver && st > 0) {
+        const elapsed = Math.floor((Date.now() - st) / 1000);
+        useGameStore.getState().updateQuestProgress('survive_time', elapsed);
+      }
+    }, 1000);
+    return () => clearInterval(iv);
+  }, []);
+
+  const activeQuests = quests.filter((q) => !q.claimed);
+  if (activeQuests.length === 0) return null;
+
+  return (
+    <div className="fixed left-2 sm:left-4 bottom-20 sm:bottom-6 z-40 flex flex-col gap-1.5 max-w-[200px] pointer-events-auto">
+      {activeQuests.slice(0, 3).map((qp) => {
+        const def = QUEST_POOL.find((q) => q.id === qp.questId);
+        if (!def) return null;
+        const pct = Math.min((qp.current / def.target) * 100, 100);
+        return (
+          <div key={qp.questId} className={`rounded-lg px-2.5 py-1.5 transition-all ${qp.completed ? 'bg-yellow-500/20 border border-yellow-400/30' : 'bg-black/50 backdrop-blur-sm'}`}>
+            <div className="flex items-center justify-between gap-1 mb-0.5">
+              <span className="text-[10px] text-white/90 font-semibold truncate">{def.name}</span>
+              {qp.completed && !qp.claimed && (
+                <button
+                  onClick={() => claimQuestReward(qp.questId)}
+                  className="text-[9px] bg-yellow-500 text-black font-bold px-1.5 py-0.5 rounded active:scale-90 transition-transform"
+                >
+                  수령
+                </button>
+              )}
+            </div>
+            <div className="text-[8px] text-white/50 mb-1">{def.description}</div>
+            <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-300"
+                style={{ width: `${pct}%`, backgroundColor: qp.completed ? '#fbbf24' : '#60a5fa' }}
+              />
+            </div>
+            <div className="text-[8px] text-white/40 text-right mt-0.5">{qp.current}/{def.target}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function QuestRewardPopup() {
+  const popup = useGameStore((s) => s.questRewardPopup);
+  if (!popup) return null;
+
+  return (
+    <div className="fixed top-1/3 left-1/2 -translate-x-1/2 z-[70] pointer-events-none animate-in fade-in zoom-in-95 duration-300">
+      <div className="bg-yellow-500/90 backdrop-blur-sm rounded-2xl px-6 py-3 shadow-lg">
+        <p className="text-lg font-bold text-black text-center">퀘스트 완료!</p>
+        <div className="flex items-center justify-center gap-3 mt-1">
+          {popup.gold > 0 && <span className="text-sm font-bold text-black/80">🪙 +{popup.gold}</span>}
+          {popup.exp > 0 && <span className="text-sm font-bold text-black/80">⭐ +{popup.exp}</span>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SkillBar() {
+  const ownedSkills = useGameStore((s) => s.ownedSkills);
+  const activateSkill = useGameStore((s) => s.activateSkill);
+  const activeSkill = useGameStore((s) => s.activeSkill);
+  const skillCooldowns = useGameStore((s) => s.skillCooldowns);
+  const [, forceUpdate] = useState(0);
+
+  useEffect(() => {
+    const iv = setInterval(() => forceUpdate((v) => v + 1), 200);
+    return () => clearInterval(iv);
+  }, []);
+
+  if (ownedSkills.length === 0) return null;
+
+  const now = Date.now();
+
+  return (
+    <div className="fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 flex gap-2">
+      {ownedSkills.map((id) => {
+        const skill = getSkillById(id);
+        if (!skill) return null;
+        const isActive = activeSkill?.id === id && now < (activeSkill?.endTime ?? 0);
+        const cd = skillCooldowns[id] ?? 0;
+        const isOnCd = !isActive && cd > now;
+        const cdRemaining = isOnCd ? Math.ceil((cd - now) / 1000) : 0;
+
+        return (
+          <button
+            key={id}
+            onClick={() => activateSkill(id)}
+            disabled={isActive || isOnCd}
+            className={`relative w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex flex-col items-center justify-center transition-all active:scale-90 ${
+              isActive
+                ? 'bg-purple-500/80 ring-2 ring-purple-300 animate-pulse'
+                : isOnCd
+                  ? 'bg-gray-700/80'
+                  : 'bg-black/60 hover:bg-black/80 backdrop-blur-sm'
+            }`}
+          >
+            <span className="text-lg sm:text-xl">{skill.icon}</span>
+            {isOnCd && (
+              <span className="absolute inset-0 flex items-center justify-center text-white/80 font-bold text-xs bg-black/50 rounded-xl">
+                {cdRemaining}s
+              </span>
+            )}
+            {isActive && (
+              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-purple-400 rounded-full animate-ping" />
+            )}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -506,9 +665,13 @@ export default function HUD() {
         </div>
       </div>
 
+      <EvoAbilityBadge />
       <ActiveEffectsBar />
       <EventBanner />
       <ComboDisplay />
+      <SkillBar />
+      <QuestTracker />
+      <QuestRewardPopup />
       <BossWarning />
 
       {/* Pause overlay */}
@@ -542,6 +705,8 @@ export default function HUD() {
           </div>
         </div>
       )}
+
+      <PerkSelection />
     </>
   );
 }

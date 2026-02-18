@@ -61,3 +61,41 @@ export const EAT_RANGE_UPGRADES = generateUpgrades(1.0, 0.1, [
 export const NPC_COUNT_UPGRADES = generateUpgrades(1.0, 0.1, [
   0, 40, 80, 140, 220, 320, 450, 620, 840, 1100,
 ]);
+
+export const DASH_COOLDOWN_BASE = 5000;
+export const MAX_DASH_LEVEL = 11;
+
+export const DASH_UPGRADES = [
+  { level: 1, cooldownMs: 5000, cost: 0 },
+  { level: 2, cooldownMs: 4600, cost: 40 },
+  { level: 3, cooldownMs: 4200, cost: 80 },
+  { level: 4, cooldownMs: 3800, cost: 140 },
+  { level: 5, cooldownMs: 3400, cost: 220 },
+  { level: 6, cooldownMs: 3000, cost: 320 },
+  { level: 7, cooldownMs: 2600, cost: 450 },
+  { level: 8, cooldownMs: 2200, cost: 620 },
+  { level: 9, cooldownMs: 1800, cost: 840 },
+  { level: 10, cooldownMs: 1400, cost: 1100 },
+  { level: 11, cooldownMs: 1000, cost: 1400 },
+];
+
+export interface EvoAbility {
+  tier: number;
+  name: string;
+  icon: string;
+  description: string;
+}
+
+export const EVOLUTION_ABILITIES: EvoAbility[] = [
+  { tier: 1, name: '없음', icon: '', description: '' },
+  { tier: 2, name: '방어 껍질', icon: '🛡️', description: '첫 피격 1회 방어' },
+  { tier: 3, name: '나선 가속', icon: '🌀', description: '연속 이동 시 속도 +20%' },
+  { tier: 4, name: '빛의 유혹', icon: '✨', description: '하위 NPC를 범위 5 내 유인' },
+  { tier: 5, name: '독성 포자', icon: '☠️', description: '근접 적 NPC 속도 -40%' },
+  { tier: 6, name: '음파 탐지', icon: '📡', description: '포식 가능 NPC 범위 +50%' },
+  { tier: 7, name: '폭풍 흡입', icon: '🌊', description: '포식 범위 2배, 자동 흡입' },
+];
+
+export function getEvoAbility(tier: number): EvoAbility | null {
+  return EVOLUTION_ABILITIES.find((a) => a.tier === tier) ?? null;
+}

@@ -200,7 +200,7 @@ const Player = forwardRef(function Player(_props, ref) {
       moveDir.normalize();
     }
 
-    const { isDashing, activeEffects, upgrades, perkBonuses, playerTier: currentTier, activeSkill } = useGameStore.getState();
+    const { isDashing, dashCooldownEnd, activeEffects, upgrades, perkBonuses, playerTier: currentTier, activeSkill } = useGameStore.getState();
     const now = Date.now();
     const upgradeSpeedMul = SPEED_UPGRADES[upgrades.speed - 1]?.multiplier ?? 1.0;
     let speedMul = upgradeSpeedMul * (1 + perkBonuses.speedBonus);
@@ -209,7 +209,7 @@ const Player = forwardRef(function Player(_props, ref) {
     if (isDashing) speedMul *= 2.5;
     else if (activeEffects.some((e) => e.type === 'speed' && e.endTime > now)) speedMul *= 1.5;
 
-    if (keys['shift'] && !isDashing) {
+    if (keys['shift'] && !isDashing && now >= dashCooldownEnd) {
       useGameStore.getState().startDash();
       playDashSound();
     }

@@ -670,10 +670,21 @@ export default function HUD() {
       {/* Top bar */}
       <div className="fixed top-0 left-0 right-0 z-40 pointer-events-none">
         <div className="flex items-center justify-between px-1.5 sm:px-3 py-1 sm:py-1.5 gap-1">
-          <div className="flex items-center gap-1 sm:gap-1.5 bg-black/40 backdrop-blur-sm rounded-lg px-1.5 sm:px-3 py-1 sm:py-1.5">
-            <div className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 rounded-full" style={{ backgroundColor: stage.color }} />
-            <span className="text-white font-bold text-[10px] sm:text-xs">{stage.name}</span>
-            <span className="text-white/50 text-[8px] sm:text-[10px]">T{playerTier}</span>
+          <div className="bg-black/40 backdrop-blur-sm rounded-lg px-1.5 sm:px-3 py-1 sm:py-1.5">
+            <div className="flex items-center gap-1 sm:gap-1.5 mb-0.5">
+              <div className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 rounded-full" style={{ backgroundColor: stage.color }} />
+              <span className="text-white font-bold text-[10px] sm:text-xs">{stage.name}</span>
+              <span className="text-white/50 text-[8px] sm:text-[10px]">T{playerTier}</span>
+              {stage.expToNext !== Infinity && (
+                <span className="text-cyan-300/70 text-[8px] sm:text-[10px]">{exp}/{stage.expToNext}</span>
+              )}
+            </div>
+            <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-300"
+                style={{ width: `${expPercent}%`, backgroundColor: stage.expToNext === Infinity ? '#fbbf24' : '#22d3ee' }}
+              />
+            </div>
           </div>
 
           <div className="flex items-center gap-1 flex-1 justify-end">

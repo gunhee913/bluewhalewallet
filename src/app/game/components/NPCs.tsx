@@ -37,13 +37,9 @@ const FLEE_RANGE = 6;
 type BehaviorState = 'cruise' | 'dash' | 'idle';
 
 function DangerMark({ size, tierDiff }: { size: number; tierDiff: number }) {
-  const ref = useRef<THREE.Mesh>(null);
-  useFrame(({ clock }) => {
-    if (ref.current) ref.current.position.y = size * 1.5 + Math.sin(clock.getElapsedTime() * 4) * 0.1;
-  });
   const color = tierDiff >= 3 ? '#ff0000' : tierDiff >= 2 ? '#ff6600' : '#ffaa00';
   return (
-    <mesh ref={ref} position={[0, size * 1.5, 0]}>
+    <mesh position={[0, size * 1.5, 0]}>
       <octahedronGeometry args={[0.12, 0]} />
       <meshBasicMaterial color={color} transparent opacity={0.85} />
     </mesh>
@@ -51,15 +47,8 @@ function DangerMark({ size, tierDiff }: { size: number; tierDiff: number }) {
 }
 
 function EdibleMark({ size }: { size: number }) {
-  const ref = useRef<THREE.Mesh>(null);
-  useFrame(({ clock }) => {
-    if (ref.current) {
-      ref.current.position.y = size * 1.4 + Math.sin(clock.getElapsedTime() * 3) * 0.08;
-      ref.current.scale.setScalar(0.8 + Math.sin(clock.getElapsedTime() * 4) * 0.15);
-    }
-  });
   return (
-    <mesh ref={ref} position={[0, size * 1.4, 0]}>
+    <mesh position={[0, size * 1.4, 0]}>
       <sphereGeometry args={[0.08, 8, 8]} />
       <meshBasicMaterial color="#44ff44" transparent opacity={0.9} />
     </mesh>
@@ -73,6 +62,8 @@ function NPCCreature({ npc, playerTier }: { npc: NPC; playerTier: number }) {
   const behaviorRef = useRef<BehaviorState>('cruise');
   const behaviorTimer = useRef(2 + Math.random() * 4);
   const speedJitter = useRef(0.8 + Math.random() * 0.4);
+  const terrainYRef = useRef(getTerrainHeight(npc.x, npc.z));
+  const terrainTimer = useRef(0);
 
   const stage = getStageByTier(npc.tier);
 
@@ -193,8 +184,12 @@ function NPCCreature({ npc, playerTier }: { npc: NPC; playerTier: number }) {
 
     const halfWorld = WORLD_SIZE / 2 - 5;
     const topY = OCEAN_FLOOR_Y + WORLD_DEPTH - 2;
-    const terrainY = getTerrainHeight(pos.x, pos.z);
-    const bottomY = terrainY + 0.5;
+    terrainTimer.current -= delta;
+    if (terrainTimer.current <= 0) {
+      terrainYRef.current = getTerrainHeight(pos.x, pos.z);
+      terrainTimer.current = 0.5 + Math.random() * 0.5;
+    }
+    const bottomY = terrainYRef.current + 0.5;
 
     if (pos.x > halfWorld || pos.x < -halfWorld) dirRef.current.x *= -1;
     if (pos.y > topY || pos.y < bottomY) dirRef.current.y *= -1;

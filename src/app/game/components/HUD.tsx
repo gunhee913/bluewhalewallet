@@ -420,17 +420,16 @@ export default function HUD() {
   const nickname = useGameStore((s) => s.nickname);
   const setNickname = useGameStore((s) => s.setNickname);
   const [showRanking, setShowRanking] = useState(false);
+  const gold = useGameStore((s) => s.gold);
+  const toggleUpgradePanel = useGameStore((s) => s.toggleUpgradePanel);
 
   if (!isStarted) {
     const canStart = nickname.trim().length > 0;
     return (
       <>
         <div className="fixed inset-0 z-40 flex flex-col items-center justify-center bg-[#0c4a7a]/80 px-6">
-          <h1 className="text-4xl sm:text-5xl font-bold text-white mb-3 sm:mb-4 tracking-wider">BlueGame</h1>
-          <p className="text-base sm:text-lg text-blue-200 mb-2">바다를 헤엄치며 진화하세요</p>
-          <p className="text-xs sm:text-sm text-blue-300/70 mb-4 sm:mb-6 text-center">
-            KRILL &rarr; CLAM &rarr; SHELL &rarr; PEARL &rarr; CORAL &rarr; DOLPHIN &rarr; WHALE
-          </p>
+          <h1 className="text-4xl sm:text-5xl font-bold text-white mb-3 sm:mb-4 tracking-wider">고래키우기</h1>
+          <p className="text-base sm:text-lg text-blue-200 mb-4 sm:mb-6">바다를 헤엄치며 진화하세요</p>
           <div className="mb-4 sm:mb-6 w-full max-w-[240px]">
             <input
               type="text"
@@ -471,9 +470,6 @@ export default function HUD() {
       </>
     );
   }
-
-  const gold = useGameStore((s) => s.gold);
-  const toggleUpgradePanel = useGameStore((s) => s.toggleUpgradePanel);
 
   if (isGameOver) return <ResultScreen isCleared={false} />;
   if (isCleared) return <ResultScreen isCleared={true} />;

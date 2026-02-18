@@ -231,7 +231,7 @@ const Player = forwardRef(function Player(_props, ref) {
     meshRef.current.position.x = Math.max(-halfWorld, Math.min(halfWorld, meshRef.current.position.x));
     meshRef.current.position.z = Math.max(-halfWorld, Math.min(halfWorld, meshRef.current.position.z));
 
-    const rockPush = checkRockCollision(meshRef.current.position.x, meshRef.current.position.z, stage.size * 0.5);
+    const rockPush = checkRockCollision(meshRef.current.position.x, meshRef.current.position.y, meshRef.current.position.z, stage.size * 0.5);
     if (rockPush) {
       meshRef.current.position.x = rockPush.x;
       meshRef.current.position.z = rockPush.z;

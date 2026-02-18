@@ -96,8 +96,12 @@ export const CAVE_DATA: CaveData[] = (() => {
   }));
 })();
 
-export function checkRockCollision(px: number, pz: number, playerRadius: number): { x: number; z: number } | null {
+export function checkRockCollision(px: number, py: number, pz: number, playerRadius: number): { x: number; z: number } | null {
   for (const rock of ROCK_DATA) {
+    const terrainY = getTerrainHeight(rock.x, rock.z);
+    const rockTop = terrainY + rock.scaleY * 0.85;
+    if (py > rockTop + playerRadius) continue;
+
     const dx = px - rock.x;
     const dz = pz - rock.z;
     const dist = Math.sqrt(dx * dx + dz * dz);

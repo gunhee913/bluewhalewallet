@@ -115,8 +115,8 @@ function DashButton({ isPortrait, onDash }: { isPortrait: boolean; onDash: () =>
 
   if (!isStarted || isGameOver || isCleared || isPaused || showUpgradePanel || showPerkSelection) return null;
 
-  const size = isPortrait ? 56 : 64;
-  const bottom = isPortrait ? 60 : 80;
+  const size = isPortrait ? 72 : 80;
+  const bottom = isPortrait ? 65 : 85;
 
   return (
     <button
@@ -134,7 +134,7 @@ function DashButton({ isPortrait, onDash }: { isPortrait: boolean; onDash: () =>
           ? `conic-gradient(rgba(255,255,255,0.1) ${100 - cooldownPct}%, rgba(100,180,255,0.4) ${100 - cooldownPct}%)`
           : 'rgba(100,180,255,0.4)',
         color: 'white',
-        fontSize: 12,
+        fontSize: 14,
         fontWeight: 'bold',
         zIndex: 55,
         touchAction: 'none',

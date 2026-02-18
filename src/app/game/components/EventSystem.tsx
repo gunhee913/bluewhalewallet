@@ -4,7 +4,7 @@ import { useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useGameStore } from '../lib/useGameStore';
 import { playEventSound } from '../lib/sounds';
-import { registerPlayerRef } from './NPCs';
+import { getPlayerPosition } from './NPCs';
 
 export default function EventSystem() {
   const lastCheckRef = useRef(0);
@@ -54,7 +54,7 @@ export default function EventSystem() {
       state.setNextEventTime(now + 40000 + Math.random() * 30000);
 
       if (type === 'frenzy') {
-        const playerPos = (scene.children.find((c: any) => c.type === 'Group') as any)?.position;
+        const playerPos = getPlayerPosition();
         if (playerPos) {
           state.spawnFrenzyNPCs(playerPos.x, playerPos.y, playerPos.z);
         } else {

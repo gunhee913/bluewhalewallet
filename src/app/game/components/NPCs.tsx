@@ -246,7 +246,7 @@ export function registerPlayerRef(ref: { position: THREE.Vector3 } | null) {
   _playerRef = ref;
 }
 
-function getPlayerPosition() {
+export function getPlayerPosition() {
   return _playerRef?.position ?? null;
 }
 

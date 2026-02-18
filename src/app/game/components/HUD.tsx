@@ -396,7 +396,7 @@ function QuestTracker() {
   if (activeQuests.length === 0) return null;
 
   return (
-    <div className="fixed left-1/2 -translate-x-1/2 bottom-20 sm:bottom-6 z-40 flex flex-col gap-1.5 w-[220px] sm:w-[240px] pointer-events-auto">
+    <div className="fixed left-1/2 -translate-x-1/2 bottom-20 sm:bottom-auto sm:left-3 sm:translate-x-0 sm:top-20 z-40 flex flex-col gap-1.5 w-[220px] sm:w-[200px] pointer-events-auto">
       {activeQuests.slice(0, 3).map((qp) => {
         const def = QUEST_POOL.find((q) => q.id === qp.questId);
         if (!def) return null;

@@ -5,6 +5,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGameStore, NPC } from '../lib/useGameStore';
 import { getStageByTier, WORLD_SIZE, WORLD_DEPTH, OCEAN_FLOOR_Y } from '../lib/gameConfig';
+import { getTerrainHeight } from '../lib/terrain';
 import { updateNPCPosition, removeNPCPosition, clearNPCPositions } from '../lib/npcRegistry';
 import CreatureModel from './CreatureModels';
 
@@ -208,7 +209,8 @@ function NPCCreature({ npc, playerTier }: { npc: NPC; playerTier: number }) {
 
     const halfWorld = WORLD_SIZE / 2 - 5;
     const topY = OCEAN_FLOOR_Y + WORLD_DEPTH - 2;
-    const bottomY = OCEAN_FLOOR_Y + 0.5;
+    const terrainY = getTerrainHeight(pos.x, pos.z);
+    const bottomY = terrainY + 0.5;
 
     if (pos.x > halfWorld || pos.x < -halfWorld) dirRef.current.x *= -1;
     if (pos.y > topY || pos.y < bottomY) dirRef.current.y *= -1;

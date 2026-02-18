@@ -54,7 +54,7 @@ export const SPEED_UPGRADES = generateUpgrades(1.0, 0.1, [
   0, 10, 25, 50, 90, 150, 250, 400, 600, 900,
 ]);
 
-export const EAT_RANGE_UPGRADES = generateUpgrades(1.0, 0.1, [
+export const EAT_RANGE_UPGRADES = generateUpgrades(1.0, 0.06, [
   0, 10, 25, 50, 90, 150, 250, 400, 600, 900,
 ]);
 

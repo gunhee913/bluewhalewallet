@@ -401,6 +401,8 @@ function QuestTracker() {
   const claimQuestReward = useGameStore((s) => s.claimQuestReward);
   const startTime = useGameStore((s) => s.startTime);
   const killCount = useGameStore((s) => s.killCount);
+  const showPerkSelection = useGameStore((s) => s.showPerkSelection);
+  const showUpgradePanel = useGameStore((s) => s.showUpgradePanel);
   const [collapsed, setCollapsed] = useState(false);
   const [, forceUpdate] = useState(0);
 
@@ -418,7 +420,7 @@ function QuestTracker() {
 
   const activeQuests = quests.filter((q) => !q.claimed);
   const hasClaimable = activeQuests.some((q) => q.completed && !q.claimed);
-  if (activeQuests.length === 0) return null;
+  if (activeQuests.length === 0 || showPerkSelection || showUpgradePanel) return null;
 
   return (
     <div className="fixed left-1/2 -translate-x-1/2 bottom-20 sm:bottom-auto sm:left-3 sm:translate-x-0 sm:top-20 z-[65] flex flex-col gap-1.5 w-[220px] sm:w-[200px] pointer-events-auto">
@@ -747,9 +749,9 @@ export default function HUD() {
                 <span className="text-white text-[11px] sm:text-sm">🏪</span>
               </button>
               {gold >= 25 && !shopTutorialDismissed && (
-                <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 pointer-events-none flex flex-col items-center animate-bounce">
-                  <span className="text-yellow-400 text-lg">▲</span>
+                <div className="absolute -top-11 right-0 pointer-events-none flex flex-col items-center animate-bounce">
                   <span className="bg-yellow-400/90 text-black text-[10px] font-bold px-2 py-0.5 rounded whitespace-nowrap">상점에서 강화!</span>
+                  <span className="text-yellow-400 text-lg leading-none">▼</span>
                 </div>
               )}
             </div>

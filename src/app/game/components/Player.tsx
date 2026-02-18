@@ -17,6 +17,7 @@ import CreatureModel from './CreatureModels';
 import { registerPlayerRef } from './NPCs';
 import { triggerEvolveEffect } from './EvolveEffect';
 import { playDashSound } from '../lib/sounds';
+import { getTerrainHeight, checkRockCollision } from '../lib/terrain';
 
 const keys: Record<string, boolean> = {};
 const MOUSE_SENSITIVITY = 0.003;
@@ -227,10 +228,18 @@ const Player = forwardRef(function Player(_props, ref) {
 
     const halfWorld = WORLD_SIZE / 2 - 2;
     const topY = OCEAN_FLOOR_Y + WORLD_DEPTH - 1;
-    const bottomY = OCEAN_FLOOR_Y + 0.3;
 
     meshRef.current.position.x = Math.max(-halfWorld, Math.min(halfWorld, meshRef.current.position.x));
     meshRef.current.position.z = Math.max(-halfWorld, Math.min(halfWorld, meshRef.current.position.z));
+
+    const rockPush = checkRockCollision(meshRef.current.position.x, meshRef.current.position.z, stage.size * 0.5);
+    if (rockPush) {
+      meshRef.current.position.x = rockPush.x;
+      meshRef.current.position.z = rockPush.z;
+    }
+
+    const terrainY = getTerrainHeight(meshRef.current.position.x, meshRef.current.position.z);
+    const bottomY = terrainY + stage.size * 0.5;
     meshRef.current.position.y = Math.max(bottomY, Math.min(topY, meshRef.current.position.y));
 
     const targetQuat = new THREE.Quaternion().setFromEuler(

@@ -19,7 +19,7 @@ import {
 } from './gameConfig';
 import { PerkDef, PERK_POOL, rollPerkChoices, PerkEffect } from './gamePerks';
 import { SkillDef, SKILLS, getSkillById } from './gameSkills';
-import { QuestProgress, pickQuests, QUEST_POOL } from './gameQuests';
+import { QuestDef, QuestProgress, pickQuests, QUEST_POOL } from './gameQuests';
 
 export interface PerkBonuses {
   speedBonus: number;
@@ -62,6 +62,29 @@ function buildPerkBonuses(perkEffects: PerkEffect[]): PerkBonuses {
     }
   }
   return b;
+}
+
+interface QuestInitState {
+  killCount: number;
+  totalGoldEarned: number;
+  playerTier: number;
+  elapsed: number;
+  dashCount: number;
+  combo: number;
+}
+
+function getQuestInitialProgress(def: QuestDef, state: QuestInitState): { current: number; completed: boolean } {
+  let current = 0;
+  switch (def.type) {
+    case 'eat_count': current = Math.min(state.killCount, def.target); break;
+    case 'gold_earn': current = Math.min(state.totalGoldEarned, def.target); break;
+    case 'evolve': current = Math.min(state.playerTier, def.target); break;
+    case 'survive_time': current = Math.min(state.elapsed, def.target); break;
+    case 'dash_count': current = Math.min(state.dashCount, def.target); break;
+    case 'combo': current = Math.min(state.combo, def.target); break;
+    case 'eat_tier': current = 0; break;
+  }
+  return { current, completed: current >= def.target };
 }
 
 export interface NPC {
@@ -192,6 +215,7 @@ interface GameState {
 
   boss: BossState | null;
   nextBossTime: number;
+  scoreAtWhale: number;
 
   moveInput: { x: number; y: number };
   cameraRotation: { x: number; y: number };
@@ -303,6 +327,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   boss: null,
   nextBossTime: 0,
+  scoreAtWhale: 0,
 
   moveInput: { x: 0, y: 0 },
   cameraRotation: { x: 0, y: 0 },
@@ -342,10 +367,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (gold < finalCost) return false;
     const usedFree = perkBonuses.freeNextEvolve;
     const nextTier = playerTier + 1;
+    const whaleUpdate = nextTier === 7 ? { scoreAtWhale: get().score } : {};
     set({
       playerTier: nextTier,
       gold: gold - finalCost,
       shellDefenseAvailable: nextTier >= 2 ? true : false,
+      ...whaleUpdate,
     });
     if (usedFree) {
       const updated = get().ownedPerks.filter((id) => id !== 'free_evolve');
@@ -483,18 +510,22 @@ export const useGameStore = create<GameState>((set, get) => ({
       boss: null,
       score: 0,
       killCount: 0,
+      scoreAtWhale: 0,
       combo: 0,
       lastEatTime: 0,
       isDashing: false,
       dashCooldownEnd: 0,
       startTime: now,
       nextEventTime: now + 30000 + Math.random() * 30000,
-      nextBossTime: now + 120000 + (get().perkBonuses.bossDelay ?? 0),
+      nextBossTime: now + 90000 + (get().perkBonuses.bossDelay ?? 0),
       dashCount: 0,
       level: 1,
       levelExp: 0,
       levelUpMessage: null,
-      quests: initialQuests.map((q) => ({ questId: q.id, current: 0, completed: false, claimed: false })),
+      quests: initialQuests.map((q) => {
+        const init = getQuestInitialProgress(q, { killCount: 0, totalGoldEarned: 0, playerTier, elapsed: 0, dashCount: 0, combo: 0 });
+        return { questId: q.id, current: init.current, completed: init.completed, claimed: false };
+      }),
       questRewardPopup: null,
     });
   },
@@ -521,6 +552,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       boss: null,
       score: 0,
       killCount: 0,
+      scoreAtWhale: 0,
       combo: 0,
       lastEatTime: 0,
       isDashing: false,
@@ -557,7 +589,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       killCount: newKill,
     });
     get().updateQuestProgress('eat_count', newKill);
-    get().updateQuestProgress('eat_tier', newKill, npc.tier);
+    get().updateQuestProgress('eat_tier', 1, npc.tier);
     setTimeout(() => get().respawnNPC(npc.tier), 3000 + Math.random() * 5000);
   },
 
@@ -592,9 +624,13 @@ export const useGameStore = create<GameState>((set, get) => ({
     get().addGold(totalGold);
     get().updateQuestProgress('eat_count', newKill);
     get().updateQuestProgress('combo', newCombo);
+    const tierCounts = new Map<number, number>();
     for (const tier of tiers) {
-      get().updateQuestProgress('eat_tier', newKill, tier);
+      tierCounts.set(tier, (tierCounts.get(tier) ?? 0) + 1);
       setTimeout(() => get().respawnNPC(tier), 3000 + Math.random() * 5000);
+    }
+    for (const [tier, count] of tierCounts) {
+      get().updateQuestProgress('eat_tier', count, tier);
     }
   },
 
@@ -776,8 +812,11 @@ export const useGameStore = create<GameState>((set, get) => ({
       const def = QUEST_POOL.find((q) => q.id === qp.questId);
       if (!def || def.type !== type) return qp;
       if (type === 'eat_tier' && tierTarget !== undefined && def.tierRequirement !== undefined && tierTarget < def.tierRequirement) return qp;
-      const newCurrent = Math.min(value, def.target);
-      if (newCurrent !== qp.current) changed = true;
+      const newCurrent = type === 'eat_tier'
+        ? Math.min(qp.current + value, def.target)
+        : Math.min(value, def.target);
+      if (newCurrent <= qp.current) return qp;
+      changed = true;
       return { ...qp, current: newCurrent, completed: newCurrent >= def.target };
     });
     if (changed) set({ quests: updated });
@@ -797,7 +836,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     const newCompleted = [...completedQuestIds, questId];
     const newQuests = freshQuests.map((q) => q.questId === questId ? { ...q, claimed: true } : q);
     const extra = pickQuests(1, newCompleted, get().playerTier);
-    extra.forEach((q) => newQuests.push({ questId: q.id, current: 0, completed: false, claimed: false }));
+    const { killCount, totalGoldEarned, playerTier, startTime, dashCount, combo } = get();
+    const elapsed = startTime > 0 ? Math.floor((Date.now() - startTime) / 1000) : 0;
+    extra.forEach((q) => {
+      const initial = getQuestInitialProgress(q, { killCount, totalGoldEarned, playerTier, elapsed, dashCount, combo });
+      newQuests.push({ questId: q.id, current: initial.current, completed: initial.completed, claimed: false });
+    });
     set({
       gold: freshGold + rewardGold,
       quests: newQuests,

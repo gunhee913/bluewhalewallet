@@ -1,16 +1,35 @@
 'use client';
 
-import { useRef, useMemo } from 'react';
+import { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { WORLD_SIZE, OCEAN_FLOOR_Y, WORLD_DEPTH } from '../lib/gameConfig';
+import { getTerrainHeight, ROCK_DATA, CAVE_DATA } from '../lib/terrain';
 
 const SURFACE_Y = OCEAN_FLOOR_Y + WORLD_DEPTH;
 
 function OceanFloor() {
+  const meshRef = useRef<THREE.Mesh>(null);
+
+  useEffect(() => {
+    if (!meshRef.current) return;
+    const geo = meshRef.current.geometry;
+    const pos = geo.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      const gx = pos.getX(i);
+      const gy = pos.getY(i);
+      const worldX = gx;
+      const worldZ = -gy;
+      const h = getTerrainHeight(worldX, worldZ) - OCEAN_FLOOR_Y;
+      pos.setZ(i, h);
+    }
+    pos.needsUpdate = true;
+    geo.computeVertexNormals();
+  }, []);
+
   return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, OCEAN_FLOOR_Y, 0]} receiveShadow>
-      <planeGeometry args={[WORLD_SIZE, WORLD_SIZE, 32, 32]} />
+    <mesh ref={meshRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, OCEAN_FLOOR_Y, 0]} receiveShadow>
+      <planeGeometry args={[WORLD_SIZE, WORLD_SIZE, 80, 80]} />
       <meshStandardMaterial color="#c2b280" roughness={0.95} metalness={0.0} />
     </mesh>
   );
@@ -18,6 +37,7 @@ function OceanFloor() {
 
 function SeaweedStrand({ x, z, height, offset }: { x: number; z: number; height: number; offset: number }) {
   const meshRef = useRef<THREE.Mesh>(null);
+  const terrainY = useMemo(() => getTerrainHeight(x, z), [x, z]);
 
   useFrame(({ clock }) => {
     if (!meshRef.current) return;
@@ -25,7 +45,7 @@ function SeaweedStrand({ x, z, height, offset }: { x: number; z: number; height:
   });
 
   return (
-    <mesh ref={meshRef} position={[x, OCEAN_FLOOR_Y + height / 2, z]}>
+    <mesh ref={meshRef} position={[x, terrainY + height / 2, z]}>
       <boxGeometry args={[0.15, height, 0.15]} />
       <meshStandardMaterial color="#27ae60" roughness={0.7} />
     </mesh>
@@ -101,18 +121,21 @@ function Bubbles() {
 
 function Rocks() {
   const rocks = useMemo(() =>
-    Array.from({ length: 20 }, () => ({
-      x: (Math.random() - 0.5) * WORLD_SIZE * 0.5,
-      z: (Math.random() - 0.5) * WORLD_SIZE * 0.5,
-      scale: [0.5 + Math.random() * 1.5, 0.3 + Math.random() * 0.8, 0.5 + Math.random() * 1.5] as [number, number, number],
-      rotation: Math.random() * Math.PI,
+    ROCK_DATA.map((r) => ({
+      ...r,
+      terrainY: getTerrainHeight(r.x, r.z),
     })), []);
 
   return (
     <>
       {rocks.map((r, i) => (
-        <mesh key={i} position={[r.x, OCEAN_FLOOR_Y + r.scale[1] * 0.4, r.z]} rotation={[0, r.rotation, 0]} scale={r.scale}>
-          <dodecahedronGeometry args={[0.5, 0]} />
+        <mesh
+          key={i}
+          position={[r.x, r.terrainY + r.scaleY * 0.35, r.z]}
+          rotation={[0, r.rotation, 0]}
+          scale={[r.scaleX, r.scaleY, r.scaleZ]}
+        >
+          <dodecahedronGeometry args={[0.5, 1]} />
           <meshStandardMaterial color="#5d6d7e" roughness={0.9} />
         </mesh>
       ))}
@@ -127,10 +150,11 @@ function CoralFormations() {
       const branchCount = 2 + Math.floor(Math.random() * 4);
       const baseH = 0.8 + Math.random() * 1.5;
       const color = palette[Math.floor(Math.random() * palette.length)];
+      const x = (Math.random() - 0.5) * WORLD_SIZE * 0.55;
+      const z = (Math.random() - 0.5) * WORLD_SIZE * 0.55;
       return {
-        x: (Math.random() - 0.5) * WORLD_SIZE * 0.55,
-        z: (Math.random() - 0.5) * WORLD_SIZE * 0.55,
-        color,
+        x, z, color,
+        terrainY: getTerrainHeight(x, z),
         branches: Array.from({ length: branchCount }, (_, j) => {
           const a = (j / branchCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.4;
           return { angle: a, h: baseH * (0.5 + Math.random() * 0.5), lean: (Math.random() - 0.5) * 0.3, rad: 0.04 + Math.random() * 0.06 };
@@ -142,7 +166,7 @@ function CoralFormations() {
   return (
     <>
       {corals.map((c, i) => (
-        <group key={i} position={[c.x, OCEAN_FLOOR_Y, c.z]}>
+        <group key={i} position={[c.x, c.terrainY, c.z]}>
           <mesh position={[0, 0.1, 0]}>
             <cylinderGeometry args={[0.25, 0.35, 0.2, 8]} />
             <meshStandardMaterial color={c.color} roughness={0.5} />
@@ -168,19 +192,23 @@ function CoralFormations() {
 function Starfish() {
   const starfish = useMemo(() => {
     const colors = ['#ff6348', '#f0932b', '#eb4d4b', '#9b59b6', '#e17055'];
-    return Array.from({ length: 20 }, () => ({
-      x: (Math.random() - 0.5) * WORLD_SIZE * 0.55,
-      z: (Math.random() - 0.5) * WORLD_SIZE * 0.55,
-      rot: Math.random() * Math.PI * 2,
-      scale: 0.2 + Math.random() * 0.25,
-      color: colors[Math.floor(Math.random() * colors.length)],
-    }));
+    return Array.from({ length: 20 }, () => {
+      const x = (Math.random() - 0.5) * WORLD_SIZE * 0.55;
+      const z = (Math.random() - 0.5) * WORLD_SIZE * 0.55;
+      return {
+        x, z,
+        terrainY: getTerrainHeight(x, z),
+        rot: Math.random() * Math.PI * 2,
+        scale: 0.2 + Math.random() * 0.25,
+        color: colors[Math.floor(Math.random() * colors.length)],
+      };
+    });
   }, []);
 
   return (
     <>
       {starfish.map((s, i) => (
-        <group key={i} position={[s.x, OCEAN_FLOOR_Y + 0.03, s.z]} rotation={[-Math.PI / 2, 0, s.rot]}>
+        <group key={i} position={[s.x, s.terrainY + 0.03, s.z]} rotation={[-Math.PI / 2, 0, s.rot]}>
           {[0, 1, 2, 3, 4].map((arm) => (
             <mesh key={arm} position={[Math.cos((arm / 5) * Math.PI * 2) * s.scale * 0.6, Math.sin((arm / 5) * Math.PI * 2) * s.scale * 0.6, 0]}
               rotation={[0, 0, (arm / 5) * Math.PI * 2]}>
@@ -204,19 +232,23 @@ function SeaShells() {
   const count = 20;
 
   const shells = useMemo(() =>
-    Array.from({ length: count }, () => ({
-      x: (Math.random() - 0.5) * WORLD_SIZE * 0.5,
-      z: (Math.random() - 0.5) * WORLD_SIZE * 0.5,
-      rot: Math.random() * Math.PI * 2,
-      scale: 0.15 + Math.random() * 0.2,
-    })), []);
+    Array.from({ length: count }, () => {
+      const x = (Math.random() - 0.5) * WORLD_SIZE * 0.5;
+      const z = (Math.random() - 0.5) * WORLD_SIZE * 0.5;
+      return {
+        x, z,
+        terrainY: getTerrainHeight(x, z),
+        rot: Math.random() * Math.PI * 2,
+        scale: 0.15 + Math.random() * 0.2,
+      };
+    }), []);
 
   const initialized = useRef(false);
 
   useFrame(() => {
     if (!meshRef.current || initialized.current) return;
     shells.forEach((s, i) => {
-      dummy.position.set(s.x, OCEAN_FLOOR_Y + s.scale * 0.3, s.z);
+      dummy.position.set(s.x, s.terrainY + s.scale * 0.3, s.z);
       dummy.rotation.set(0.2, s.rot, 0);
       dummy.scale.set(s.scale, s.scale * 0.6, s.scale);
       dummy.updateMatrix();
@@ -236,26 +268,46 @@ function SeaShells() {
 
 function Caves() {
   const caves = useMemo(() =>
-    Array.from({ length: 4 }, () => ({
-      x: (Math.random() - 0.5) * WORLD_SIZE * 0.4,
-      z: (Math.random() - 0.5) * WORLD_SIZE * 0.4,
-      rot: Math.random() * Math.PI * 2,
-      scale: 2 + Math.random() * 2,
+    CAVE_DATA.map((c) => ({
+      ...c,
+      terrainY: getTerrainHeight(c.x, c.z),
     })), []);
 
   return (
     <>
       {caves.map((c, i) => (
-        <group key={i} position={[c.x, OCEAN_FLOOR_Y, c.z]} rotation={[0, c.rot, 0]}>
-          <mesh position={[0, c.scale * 0.35, 0]}>
-            <sphereGeometry args={[c.scale, 12, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
-            <meshStandardMaterial color="#3d3d3d" roughness={0.95} side={THREE.DoubleSide} />
+        <group key={i} position={[c.x, c.terrainY, c.z]} rotation={[0, c.rotation, 0]}>
+          {/* Left pillar */}
+          <mesh position={[-c.width * 0.45, c.height * 0.4, 0]}>
+            <boxGeometry args={[c.width * 0.35, c.height * 0.9, c.depth * 0.4]} />
+            <meshStandardMaterial color="#3a3a3a" roughness={0.95} />
           </mesh>
-          <mesh position={[0, c.scale * 0.02, c.scale * 0.6]}>
-            <sphereGeometry args={[c.scale * 0.45, 10, 10]} />
+          {/* Right pillar */}
+          <mesh position={[c.width * 0.45, c.height * 0.4, 0]}>
+            <boxGeometry args={[c.width * 0.35, c.height * 0.9, c.depth * 0.4]} />
+            <meshStandardMaterial color="#3a3a3a" roughness={0.95} />
+          </mesh>
+          {/* Arch top */}
+          <mesh position={[0, c.height * 0.85, 0]} scale={[c.width * 0.7, c.height * 0.35, c.depth * 0.5]}>
+            <dodecahedronGeometry args={[1, 1]} />
+            <meshStandardMaterial color="#2d2d2d" roughness={0.95} />
+          </mesh>
+          {/* Back wall */}
+          <mesh position={[0, c.height * 0.35, -c.depth * 0.35]}>
+            <boxGeometry args={[c.width * 1.1, c.height * 0.8, c.depth * 0.15]} />
             <meshStandardMaterial color="#1a1a2e" roughness={1} />
           </mesh>
-          <pointLight position={[0, c.scale * 0.3, c.scale * 0.3]} intensity={0.3} color="#4a69bd" distance={c.scale * 3} />
+          {/* Overhang rocks */}
+          <mesh position={[-c.width * 0.2, c.height * 0.95, c.depth * 0.15]} scale={[1.2, 0.6, 0.8]}>
+            <dodecahedronGeometry args={[c.width * 0.25, 0]} />
+            <meshStandardMaterial color="#444" roughness={0.9} />
+          </mesh>
+          <mesh position={[c.width * 0.15, c.height * 0.9, -c.depth * 0.1]} scale={[0.9, 0.5, 1.1]}>
+            <dodecahedronGeometry args={[c.width * 0.2, 0]} />
+            <meshStandardMaterial color="#3d3d3d" roughness={0.9} />
+          </mesh>
+          {/* Interior light */}
+          <pointLight position={[0, c.height * 0.5, -c.depth * 0.1]} intensity={0.4} color="#4a69bd" distance={c.width * 3} />
         </group>
       ))}
     </>
@@ -264,16 +316,20 @@ function Caves() {
 
 function HydrothermalVents() {
   const vents = useMemo(() =>
-    Array.from({ length: 3 }, () => ({
-      x: (Math.random() - 0.5) * WORLD_SIZE * 0.35,
-      z: (Math.random() - 0.5) * WORLD_SIZE * 0.35,
-      scale: 0.6 + Math.random() * 0.6,
-    })), []);
+    Array.from({ length: 3 }, () => {
+      const x = (Math.random() - 0.5) * WORLD_SIZE * 0.35;
+      const z = (Math.random() - 0.5) * WORLD_SIZE * 0.35;
+      return {
+        x, z,
+        terrainY: getTerrainHeight(x, z),
+        scale: 0.6 + Math.random() * 0.6,
+      };
+    }), []);
 
   return (
     <>
       {vents.map((v, i) => (
-        <group key={i} position={[v.x, OCEAN_FLOOR_Y, v.z]}>
+        <group key={i} position={[v.x, v.terrainY, v.z]}>
           <mesh position={[0, v.scale * 0.5, 0]}>
             <coneGeometry args={[v.scale * 0.5, v.scale, 8]} />
             <meshStandardMaterial color="#2c2c34" roughness={0.9} />
@@ -282,7 +338,7 @@ function HydrothermalVents() {
             <cylinderGeometry args={[v.scale * 0.15, v.scale * 0.25, v.scale * 0.3, 8]} />
             <meshStandardMaterial color="#444" roughness={0.85} />
           </mesh>
-          <VentBubbles x={v.x} z={v.z} baseY={OCEAN_FLOOR_Y + v.scale} scale={v.scale} />
+          <VentBubbles x={v.x} z={v.z} baseY={v.terrainY + v.scale} scale={v.scale} />
           <pointLight position={[0, v.scale * 0.6, 0]} intensity={0.5} color="#ff6b35" distance={v.scale * 4} />
         </group>
       ))}

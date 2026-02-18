@@ -8,7 +8,7 @@ import { getNPCPosition } from '../lib/npcRegistry';
 import { triggerEatEffect } from './EatEffect';
 import { playEatSound, playItemSound } from '../lib/sounds';
 
-const MAX_EAT_RANGE_MULTIPLIER = 8;
+const MAX_EAT_RANGE_MULTIPLIER = 5;
 const MAX_BATCH_EFFECTS = 5;
 const MAX_BATCH_EAT = 15;
 
@@ -48,8 +48,8 @@ export default function CollisionSystem({ playerRef }: { playerRef: React.RefObj
     let eatRangeMultiplier = EAT_RANGE_UPGRADES[upgrades.eatRange - 1]?.multiplier ?? 1.0;
     eatRangeMultiplier *= (1 + perkBonuses.eatRangeBonus);
 
-    if (playerTier >= 6) eatRangeMultiplier *= 1.5;
-    if (playerTier >= 7) eatRangeMultiplier *= 1.5;
+    if (playerTier >= 6) eatRangeMultiplier *= 1.25;
+    if (playerTier >= 7) eatRangeMultiplier *= 1.25;
 
     const { activeSkill } = state;
     const skillActive = activeSkill && now < activeSkill.endTime;

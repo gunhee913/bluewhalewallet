@@ -621,8 +621,11 @@ export default function HUD() {
               🏆
             </button>
           </div>
-          <p className="text-[10px] sm:text-xs text-blue-300/50 mt-4 sm:mt-6 text-center">
-            PC: WASD 이동 + 마우스 시점 + Shift 돌진 | 모바일: 조이스틱 + 터치 + 돌진 | ESC: 일시정지
+          <p className="text-[10px] sm:text-xs text-blue-300/50 mt-4 sm:mt-6 text-center hidden sm:block">
+            WASD 이동 · 마우스 시점 · Shift 돌진 · ESC 일시정지
+          </p>
+          <p className="text-[10px] text-blue-300/50 mt-4 text-center sm:hidden">
+            조이스틱 이동 · 터치 시점 · 돌진 버튼
           </p>
         </div>
         {showRanking && <RankingList onClose={() => setShowRanking(false)} />}
@@ -637,29 +640,30 @@ export default function HUD() {
     <>
       {/* Top bar */}
       <div className="fixed top-0 left-0 right-0 z-40 pointer-events-none">
-        <div className="flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3 gap-1 sm:gap-2">
-          <div className="flex items-center gap-1.5 sm:gap-2 bg-black/40 backdrop-blur-sm rounded-xl px-2 sm:px-4 py-1.5 sm:py-2">
-            <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full" style={{ backgroundColor: stage.color }} />
-            <span className="text-white font-bold text-xs sm:text-sm">{stage.name}</span>
-            <span className="text-white/60 text-[10px] sm:text-xs">T{playerTier}</span>
+        <div className="flex items-center justify-between px-1.5 sm:px-3 py-1 sm:py-1.5 gap-1">
+          <div className="flex items-center gap-1 sm:gap-1.5 bg-black/40 backdrop-blur-sm rounded-lg px-1.5 sm:px-3 py-1 sm:py-1.5">
+            <div className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 rounded-full" style={{ backgroundColor: stage.color }} />
+            <span className="text-white font-bold text-[10px] sm:text-xs">{stage.name}</span>
+            <span className="text-white/50 text-[8px] sm:text-[10px]">T{playerTier}</span>
           </div>
 
-          <div className="flex items-center gap-1 sm:gap-2 flex-1 justify-end">
-            <div className="bg-black/40 backdrop-blur-sm rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 flex items-center gap-1">
-              <span className="text-yellow-400 text-[10px] sm:text-xs">🪙</span>
+          <div className="flex items-center gap-1 flex-1 justify-end">
+            <div className="bg-black/40 backdrop-blur-sm rounded-lg px-1.5 sm:px-2.5 py-1 sm:py-1.5 flex items-center gap-0.5">
+              <span className="text-yellow-400 text-[9px] sm:text-[11px]">🪙</span>
               <span className="text-yellow-300 text-[10px] sm:text-xs font-bold">{gold}</span>
             </div>
             <DashCooldownPC />
-            <div className="bg-black/40 backdrop-blur-sm rounded-xl px-2 sm:px-3 py-1.5 sm:py-2">
-              <span className="text-yellow-300 text-[10px] sm:text-xs font-bold">{score}</span>
+            <div className="bg-black/40 backdrop-blur-sm rounded-lg px-1.5 sm:px-2.5 py-1 sm:py-1.5 flex items-center gap-0.5">
+              <span className="text-red-400 text-[9px] sm:text-[11px]">🎯</span>
+              <span className="text-white text-[10px] sm:text-xs font-bold">{score}</span>
             </div>
             <button onClick={toggleUpgradePanel}
-              className="pointer-events-auto bg-gradient-to-b from-yellow-500/80 to-yellow-600/80 backdrop-blur-sm rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 hover:from-yellow-400/80 hover:to-yellow-500/80 transition-all active:scale-95 border border-yellow-400/30">
-              <span className="text-white text-[10px] sm:text-xs font-bold">⬆</span>
+              className="pointer-events-auto bg-gradient-to-b from-emerald-500/80 to-emerald-700/80 backdrop-blur-sm rounded-lg px-2 sm:px-2.5 py-1 sm:py-1.5 hover:from-emerald-400/80 hover:to-emerald-600/80 transition-all active:scale-95 border border-emerald-400/30">
+              <span className="text-white text-[11px] sm:text-sm">🏪</span>
             </button>
             <button onClick={togglePause}
-              className="pointer-events-auto bg-black/40 backdrop-blur-sm rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 hover:bg-black/60 transition-colors">
-              <span className="text-white text-[10px] sm:text-xs">| |</span>
+              className="pointer-events-auto bg-black/40 backdrop-blur-sm rounded-lg px-1.5 sm:px-2.5 py-1 sm:py-1.5 hover:bg-black/60 transition-colors">
+              <span className="text-white text-[11px] sm:text-sm">⏸</span>
             </button>
           </div>
         </div>

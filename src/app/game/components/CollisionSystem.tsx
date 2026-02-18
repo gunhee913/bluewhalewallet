@@ -101,7 +101,8 @@ export default function CollisionSystem({ playerRef }: { playerRef: React.RefObj
       const dy = playerPos.y - boss.y;
       const dz = playerPos.z - boss.z;
       const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-      if (dist < playerStage.size + 3 && !isInvincible) {
+      const bossHitRange = playerStage.size + 1.5 * (boss.scale ?? 2);
+      if (dist < bossHitRange && !isInvincible) {
         if (useShellDefense()) return;
         setGameOver();
       }

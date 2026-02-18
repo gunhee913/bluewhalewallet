@@ -19,13 +19,13 @@ function getBossDifficulty(score: number, playerTier: number, scoreAtWhale: numb
   }
 
   const whaleScore = Math.max(0, score - scoreAtWhale);
-  const stage = Math.floor(whaleScore / 150);
+  const stage = Math.floor(whaleScore / 100);
   return {
-    speed: Math.min(7 + stage * 1.0, 18),
-    chaseStrength: Math.min(0.35 + stage * 0.06, 1.0),
-    duration: Math.min(20000 + stage * 2500, 45000),
-    interval: Math.max(60000 - stage * 5000, 12000),
-    scale: Math.min(2.0 + stage * 0.12, 3.5),
+    speed: Math.min(8 + stage * 2.0, 35),
+    chaseStrength: Math.min(0.4 + stage * 0.1, 2.0),
+    duration: Math.min(25000 + stage * 3000, 90000),
+    interval: Math.max(45000 - stage * 4000, 5000),
+    scale: Math.min(2.0 + stage * 0.2, 5.0),
   };
 }
 
@@ -91,12 +91,14 @@ export default function BossController() {
           const s = useGameStore.getState();
           if (!s.isStarted || s.isGameOver || s.isCleared) return;
           const half = WORLD_SIZE / 2 - 10;
+          const spawnDiff = getBossDifficulty(s.score, s.playerTier, s.scoreAtWhale);
           s.setBoss({
             x: (Math.random() - 0.5) * half * 2,
             y: OCEAN_FLOOR_Y + 3 + Math.random() * (WORLD_DEPTH - 8),
             z: (Math.random() - 0.5) * half * 2,
             alive: true,
             spawnTime: Date.now(),
+            scale: spawnDiff.scale,
           });
           dirRef.current.set(Math.random() - 0.5, 0, Math.random() - 0.5).normalize();
         }, 2000);

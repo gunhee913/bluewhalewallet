@@ -113,6 +113,7 @@ export interface BossState {
   z: number;
   alive: boolean;
   spawnTime: number;
+  scale: number;
 }
 
 function spawnNPC(tier: number): NPC {

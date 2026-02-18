@@ -396,7 +396,7 @@ function QuestTracker() {
   if (activeQuests.length === 0) return null;
 
   return (
-    <div className="fixed left-2 sm:left-4 bottom-20 sm:bottom-6 z-40 flex flex-col gap-1.5 max-w-[200px] pointer-events-auto">
+    <div className="fixed left-1/2 -translate-x-1/2 bottom-20 sm:bottom-6 z-40 flex flex-col gap-1.5 w-[220px] sm:w-[240px] pointer-events-auto">
       {activeQuests.slice(0, 3).map((qp) => {
         const def = QUEST_POOL.find((q) => q.id === qp.questId);
         if (!def) return null;
@@ -414,7 +414,10 @@ function QuestTracker() {
                 </button>
               )}
             </div>
-            <div className="text-[8px] text-white/50 mb-1">{def.description}</div>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[8px] text-white/50">{def.description}</span>
+              <span className="text-[8px] text-yellow-400/70 flex-shrink-0 ml-1">🪙{def.reward.gold ?? 0}</span>
+            </div>
             <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
               <div
                 className="h-full rounded-full transition-all duration-300"

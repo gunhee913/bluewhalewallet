@@ -539,17 +539,6 @@ function PauseMenu({ togglePause, resetGame, onOpenSettings }: {
   resetGame: () => void;
   onOpenSettings: () => void;
 }) {
-  const [muted, setMuted] = useState(false);
-
-  const toggleMute = () => {
-    const next = !muted;
-    setMuted(next);
-    setSfxVolume(next ? 0 : 0.5);
-    const audio = document.querySelector('audio') as HTMLAudioElement | null;
-    if (audio) audio.volume = next ? 0 : 0.3;
-    window.dispatchEvent(new CustomEvent('bgm-volume', { detail: next ? 0 : 0.3 }));
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/60">
       <h2 className="text-3xl font-bold text-white mb-6">일시정지</h2>
@@ -557,12 +546,6 @@ function PauseMenu({ togglePause, resetGame, onOpenSettings }: {
         <button onClick={togglePause}
           className="py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-semibold transition-colors">
           계속하기
-        </button>
-        <button onClick={toggleMute}
-          className={`py-3 rounded-xl font-semibold transition-colors ${
-            muted ? 'bg-red-500/60 hover:bg-red-500/80 text-white' : 'bg-white/10 hover:bg-white/20 text-white'
-          }`}>
-          {muted ? '🔇 음소거 해제' : '🔊 음소거'}
         </button>
         <button onClick={onOpenSettings}
           className="py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-semibold transition-colors">

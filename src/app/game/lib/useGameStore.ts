@@ -446,10 +446,14 @@ export const useGameStore = create<GameState>((set, get) => ({
       setTimeout(() => set({ levelUpMessage: null }), 2000);
     }
     if (didLevelUp && !get().showPerkSelection) {
-      const choices = rollPerkChoices(ownedPerks, 3);
-      if (choices.length > 0) {
-        set({ perkChoices: choices, showPerkSelection: true, isPaused: true });
-      }
+      const currentPerks = get().ownedPerks;
+      setTimeout(() => {
+        if (get().showPerkSelection || get().isGameOver) return;
+        const choices = rollPerkChoices(currentPerks, 3);
+        if (choices.length > 0) {
+          set({ perkChoices: choices, showPerkSelection: true, isPaused: true });
+        }
+      }, 1500);
     }
   },
 
@@ -732,7 +736,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   claimQuestReward: (questId: string) => {
-    const { quests, gold, completedQuestIds } = get();
+    const { quests, completedQuestIds } = get();
     const qp = quests.find((q) => q.questId === questId);
     if (!qp || !qp.completed || qp.claimed) return;
     const def = QUEST_POOL.find((q) => q.id === questId);
@@ -740,15 +744,17 @@ export const useGameStore = create<GameState>((set, get) => ({
     const rewardGold = def.reward.gold ?? 0;
     const rewardExp = def.reward.exp ?? 0;
     if (rewardExp > 0) get().addExp(rewardExp);
+    const freshGold = get().gold;
+    const freshQuests = get().quests;
     const newCompleted = [...completedQuestIds, questId];
-    const newQuests = quests.map((q) => q.questId === questId ? { ...q, claimed: true } : q);
+    const newQuests = freshQuests.map((q) => q.questId === questId ? { ...q, claimed: true } : q);
     const remaining = newQuests.filter((q) => !q.claimed);
     if (remaining.length < 2) {
       const extra = pickQuests(2, newCompleted, get().playerTier);
       extra.forEach((q) => newQuests.push({ questId: q.id, current: 0, completed: false, claimed: false }));
     }
     set({
-      gold: gold + rewardGold,
+      gold: freshGold + rewardGold,
       quests: newQuests,
       completedQuestIds: newCompleted,
       questRewardPopup: { gold: rewardGold, exp: rewardExp },

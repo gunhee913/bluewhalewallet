@@ -399,6 +399,7 @@ function QuestTracker() {
   const claimQuestReward = useGameStore((s) => s.claimQuestReward);
   const startTime = useGameStore((s) => s.startTime);
   const killCount = useGameStore((s) => s.killCount);
+  const [collapsed, setCollapsed] = useState(false);
   const [, forceUpdate] = useState(0);
 
   useEffect(() => {
@@ -414,11 +415,21 @@ function QuestTracker() {
   }, []);
 
   const activeQuests = quests.filter((q) => !q.claimed);
+  const hasClaimable = activeQuests.some((q) => q.completed && !q.claimed);
   if (activeQuests.length === 0) return null;
 
   return (
     <div className="fixed left-1/2 -translate-x-1/2 bottom-20 sm:bottom-auto sm:left-3 sm:translate-x-0 sm:top-20 z-40 flex flex-col gap-1.5 w-[220px] sm:w-[200px] pointer-events-auto">
-      {activeQuests.slice(0, 3).map((qp) => {
+      <button
+        onClick={() => setCollapsed(!collapsed)}
+        className={`flex items-center justify-between rounded-lg px-2.5 py-1 transition-all ${
+          hasClaimable ? 'bg-yellow-500/20 border border-yellow-400/30' : 'bg-black/50 backdrop-blur-sm'
+        }`}
+      >
+        <span className="text-[10px] text-white/70 font-semibold">📋 퀘스트</span>
+        <span className="text-[10px] text-white/40">{collapsed ? '▼' : '▲'}</span>
+      </button>
+      {!collapsed && activeQuests.slice(0, 3).map((qp) => {
         const def = QUEST_POOL.find((q) => q.id === qp.questId);
         if (!def) return null;
         const pct = Math.min((qp.current / def.target) * 100, 100);
@@ -601,6 +612,7 @@ export default function HUD() {
 
   const [evolveMsg, setEvolveMsg] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [shopTutorialDismissed, setShopTutorialDismissed] = useState(false);
   const prevTierRef = useRef(playerTier);
 
   useEffect(() => {
@@ -616,6 +628,7 @@ export default function HUD() {
   }, [playerTier, isStarted]);
 
   const showUpgradePanel = useGameStore((s) => s.showUpgradePanel);
+  const showPerkSelection = useGameStore((s) => s.showPerkSelection);
 
   const handlePauseKey = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape' && isStarted && !isGameOver && !isCleared) {
@@ -725,10 +738,20 @@ export default function HUD() {
               <span className="text-red-400 text-[9px] sm:text-[11px]">🎯</span>
               <span className="text-white text-[10px] sm:text-xs font-bold">{score}</span>
             </div>
-            <button onClick={toggleUpgradePanel}
-              className="pointer-events-auto bg-gradient-to-b from-emerald-500/80 to-emerald-700/80 backdrop-blur-sm rounded-lg px-2 sm:px-2.5 py-1 sm:py-1.5 hover:from-emerald-400/80 hover:to-emerald-600/80 transition-all active:scale-95 border border-emerald-400/30">
-              <span className="text-white text-[11px] sm:text-sm">🏪</span>
-            </button>
+            <div className="relative">
+              <button onClick={() => { toggleUpgradePanel(); if (!shopTutorialDismissed) setShopTutorialDismissed(true); }}
+                className={`pointer-events-auto bg-gradient-to-b from-emerald-500/80 to-emerald-700/80 backdrop-blur-sm rounded-lg px-2 sm:px-2.5 py-1 sm:py-1.5 hover:from-emerald-400/80 hover:to-emerald-600/80 transition-all active:scale-95 border border-emerald-400/30 ${
+                  gold >= 25 && !shopTutorialDismissed ? 'ring-2 ring-yellow-400 ring-offset-1 ring-offset-transparent' : ''
+                }`}>
+                <span className="text-white text-[11px] sm:text-sm">🏪</span>
+              </button>
+              {gold >= 25 && !shopTutorialDismissed && (
+                <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 pointer-events-none flex flex-col items-center animate-bounce">
+                  <span className="text-yellow-400 text-lg">▲</span>
+                  <span className="bg-yellow-400/90 text-black text-[10px] font-bold px-2 py-0.5 rounded whitespace-nowrap">상점에서 강화!</span>
+                </div>
+              )}
+            </div>
             <button onClick={togglePause}
               className="pointer-events-auto bg-black/40 backdrop-blur-sm rounded-lg px-1.5 sm:px-2.5 py-1 sm:py-1.5 hover:bg-black/60 transition-colors">
               <span className="text-white text-[11px] sm:text-sm">⏸</span>
@@ -747,7 +770,7 @@ export default function HUD() {
       <BossWarning />
 
       {/* Pause overlay */}
-      {isPaused && (
+      {isPaused && !showPerkSelection && (
         <PauseMenu
           togglePause={togglePause}
           resetGame={resetGame}

@@ -67,19 +67,19 @@ function UpgradeRow({ icon, label, sublabel, level, maxLevel, cost, gold, multip
   };
 
   return (
-    <div className={`relative rounded-xl p-3 transition-all duration-200 ${
-      isMaxed ? 'bg-white/5' : canAfford ? 'bg-white/10 hover:bg-white/15' : 'bg-white/5'
+    <div className={`relative rounded-xl p-3.5 transition-all duration-200 border ${
+      isMaxed ? 'bg-white/[0.03] border-white/5' : canAfford ? 'bg-white/[0.08] hover:bg-white/[0.12] border-white/10' : 'bg-white/[0.03] border-white/5'
     } ${shake ? 'animate-[shake_0.3s_ease-in-out]' : ''}`}>
       <GoldFlash show={flash} />
-      <div className="flex items-center gap-3">
-        <div className="text-2xl w-9 text-center flex-shrink-0">{icon}</div>
+      <div className="flex items-center gap-3.5">
+        <div className="text-2xl w-10 h-10 flex items-center justify-center rounded-lg bg-white/5 flex-shrink-0">{icon}</div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-0.5">
             <span className="text-white text-sm font-semibold">{label}</span>
             <span className="text-white/50 text-[10px]">Lv.{level}/{maxLevel}</span>
           </div>
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-white/60 text-xs">{sublabel}</span>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-white/50 text-xs">{sublabel}</span>
             <span className="font-mono text-xs font-bold" style={{ color }}>
               {multiplierLabel ?? `x${multiplier.toFixed(1)}`}
             </span>
@@ -89,7 +89,7 @@ function UpgradeRow({ icon, label, sublabel, level, maxLevel, cost, gold, multip
         <button
           onClick={handleClick}
           disabled={isMaxed}
-          className={`flex-shrink-0 px-3 py-2 rounded-lg text-xs font-bold transition-all duration-200 active:scale-90 ${
+          className={`flex-shrink-0 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 active:scale-90 ${
             isMaxed
               ? 'bg-white/5 text-white/30 cursor-default'
               : canAfford
@@ -155,27 +155,32 @@ export default function UpgradePanel() {
 
   return (
     <div className="fixed inset-0 z-[55] flex items-end sm:items-center justify-center" onClick={toggleUpgradePanel}>
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-md" />
 
       <div
-        className="relative w-full sm:w-[440px] max-h-[85vh] bg-gradient-to-b from-[#0a2f4e] to-[#061e35] rounded-t-3xl sm:rounded-2xl shadow-2xl border border-cyan-500/20 flex flex-col animate-[slideUp_0.3s_ease-out]"
+        className="relative w-full sm:w-[520px] max-h-[90vh] bg-gradient-to-b from-[#0c3a5c] via-[#082d4a] to-[#051c30] rounded-t-3xl sm:rounded-3xl shadow-[0_0_40px_rgba(0,180,255,0.15)] border border-cyan-400/20 flex flex-col animate-[slideUp_0.3s_ease-out]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-5 pt-4 pb-3 border-b border-white/10 bg-gradient-to-r from-cyan-900/30 to-blue-900/30">
+        <div className="px-5 pt-5 pb-4 border-b border-cyan-500/15 bg-gradient-to-r from-cyan-800/20 via-blue-800/20 to-indigo-800/20">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <span className="text-xl">🏪</span>
-              <h2 className="text-white font-bold text-lg">상점</h2>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                <span className="text-xl">🏪</span>
+              </div>
+              <div>
+                <h2 className="text-white font-bold text-xl leading-tight">상점</h2>
+                <p className="text-cyan-300/50 text-[10px]">능력을 강화하세요</p>
+              </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5 bg-yellow-500/20 rounded-lg px-3 py-1.5 border border-yellow-500/20">
-                <span className="text-sm">🪙</span>
-                <span className="text-yellow-300 font-bold text-sm">{gold}</span>
+              <div className="flex items-center gap-2 bg-gradient-to-r from-yellow-500/20 to-amber-500/10 rounded-xl px-4 py-2 border border-yellow-500/25">
+                <span className="text-lg">🪙</span>
+                <span className="text-yellow-300 font-bold text-base">{gold}</span>
               </div>
               <button
                 onClick={toggleUpgradePanel}
-                className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/15 text-white/40 hover:text-white/80 transition-all text-lg"
+                className="w-9 h-9 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/15 text-white/40 hover:text-white transition-all text-lg"
               >
                 ✕
               </button>
@@ -184,35 +189,35 @@ export default function UpgradePanel() {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-2.5 scrollbar-thin scrollbar-thumb-white/10">
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin scrollbar-thumb-white/10">
           {/* Evolution */}
-          <div className={`relative rounded-xl p-3 transition-all duration-200 ${
-            isMaxTier ? 'bg-white/5' : canEvolve ? 'bg-white/10 hover:bg-white/15' : 'bg-white/5'
+          <div className={`relative rounded-xl p-4 transition-all duration-200 border ${
+            isMaxTier ? 'bg-white/[0.03] border-white/5' : canEvolve ? 'bg-gradient-to-r from-green-500/10 to-emerald-500/5 border-green-500/20 hover:border-green-400/30' : 'bg-white/[0.03] border-white/5'
           }`}>
             <GoldFlash show={evolveFlash} />
-            <div className="flex items-center gap-3">
-              <div className="text-2xl w-9 text-center flex-shrink-0">
-                <div className="w-7 h-7 rounded-full mx-auto" style={{ backgroundColor: currentStage.color, boxShadow: `0 0 12px ${currentStage.color}40` }} />
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0">
+                <div className="w-7 h-7 rounded-full" style={{ backgroundColor: currentStage.color, boxShadow: `0 0 12px ${currentStage.color}50` }} />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <span className="text-white text-sm font-semibold">진화</span>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-white text-sm font-bold">진화</span>
                   {!isMaxTier && nextStage && (
                     <span className="text-white/40 text-[10px]">
                       {currentStage.nameKo} → {nextStage.nameKo}
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2">
                   {CREATURE_STAGES.filter(s => s.tier > 0).map((s) => (
                     <div
                       key={s.tier}
-                      className={`w-3.5 h-3.5 rounded-full transition-all duration-300 ${
+                      className={`w-4 h-4 rounded-full transition-all duration-300 ${
                         s.tier <= playerTier ? 'scale-100' : 'scale-75 opacity-30'
                       }`}
                       style={{
                         backgroundColor: s.color,
-                        boxShadow: s.tier <= playerTier ? `0 0 6px ${s.color}60` : 'none',
+                        boxShadow: s.tier <= playerTier ? `0 0 8px ${s.color}60` : 'none',
                       }}
                     />
                   ))}
@@ -221,7 +226,7 @@ export default function UpgradePanel() {
               <button
                 onClick={handleEvolve}
                 disabled={isMaxTier}
-                className={`flex-shrink-0 px-3 py-2 rounded-lg text-xs font-bold transition-all duration-200 active:scale-90 ${
+                className={`flex-shrink-0 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 active:scale-90 ${
                   isMaxTier
                     ? 'bg-white/5 text-white/30 cursor-default'
                     : canEvolve
@@ -308,11 +313,11 @@ export default function UpgradePanel() {
             const canBuy = !owned && !locked && gold >= skill.cost;
             const tierName = getStageByTier(skill.minTier).nameKo;
             return (
-              <div key={skill.id} className={`relative rounded-xl p-3 transition-all ${
-                locked ? 'bg-white/[0.03] opacity-60' : owned ? 'bg-green-500/10' : canBuy ? 'bg-white/10 hover:bg-white/15' : 'bg-white/5'
+              <div key={skill.id} className={`relative rounded-xl p-3.5 transition-all border ${
+                locked ? 'bg-white/[0.02] border-white/5 opacity-60' : owned ? 'bg-green-500/10 border-green-500/20' : canBuy ? 'bg-white/[0.08] border-white/10 hover:bg-white/[0.12]' : 'bg-white/[0.03] border-white/5'
               }`}>
-                <div className="flex items-center gap-3">
-                  <div className={`text-2xl w-9 text-center flex-shrink-0 ${locked ? 'grayscale' : ''}`}>{skill.icon}</div>
+                <div className="flex items-center gap-3.5">
+                  <div className={`text-2xl w-10 h-10 flex items-center justify-center rounded-lg bg-white/5 flex-shrink-0 ${locked ? 'grayscale' : ''}`}>{skill.icon}</div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-0.5">
                       <span className="text-white text-sm font-semibold">{skill.name}</span>
@@ -322,12 +327,12 @@ export default function UpgradePanel() {
                         <span className="text-white/40 text-[10px]">CD {(skill.cooldownMs / 1000).toFixed(0)}초</span>
                       )}
                     </div>
-                    <span className="text-white/60 text-xs">{skill.description}</span>
+                    <span className="text-white/50 text-xs">{skill.description}</span>
                   </div>
                   <button
                     onClick={() => !locked && buySkill(skill.id)}
                     disabled={owned || locked}
-                    className={`flex-shrink-0 px-3 py-2 rounded-lg text-xs font-bold transition-all active:scale-90 ${
+                    className={`flex-shrink-0 px-4 py-2.5 rounded-xl text-xs font-bold transition-all active:scale-90 ${
                       owned
                         ? 'bg-green-500/20 text-green-300 cursor-default'
                         : locked

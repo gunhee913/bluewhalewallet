@@ -109,7 +109,11 @@ function DashButton({ isPortrait, onDash }: { isPortrait: boolean; onDash: () =>
     return () => clearInterval(iv);
   }, [dashCooldownEnd, getDashCooldownMs]);
 
-  if (!isStarted || isGameOver || isCleared) return null;
+  const isPaused = useGameStore((s) => s.isPaused);
+  const showUpgradePanel = useGameStore((s) => s.showUpgradePanel);
+  const showPerkSelection = useGameStore((s) => s.showPerkSelection);
+
+  if (!isStarted || isGameOver || isCleared || isPaused || showUpgradePanel || showPerkSelection) return null;
 
   const size = isPortrait ? 56 : 64;
   const bottom = isPortrait ? 60 : 80;

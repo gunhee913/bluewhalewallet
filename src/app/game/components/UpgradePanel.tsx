@@ -289,44 +289,50 @@ export default function UpgradePanel() {
           />
 
           {/* Skills */}
-          {SKILLS.filter((s) => s.minTier <= playerTier).length > 0 && (
-            <>
-              <div className="pt-2 pb-1">
-                <span className="text-white/40 text-[10px] font-semibold uppercase tracking-wider">액티브 스킬</span>
-              </div>
-              {SKILLS.filter((s) => s.minTier <= playerTier).map((skill) => {
-                const owned = ownedSkills.includes(skill.id);
-                const canBuy = !owned && gold >= skill.cost;
-                return (
-                  <div key={skill.id} className={`relative rounded-xl p-3 transition-all ${owned ? 'bg-green-500/10' : canBuy ? 'bg-white/10 hover:bg-white/15' : 'bg-white/5'}`}>
-                    <div className="flex items-center gap-3">
-                      <div className="text-2xl w-9 text-center flex-shrink-0">{skill.icon}</div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-0.5">
-                          <span className="text-white text-sm font-semibold">{skill.name}</span>
-                          <span className="text-white/40 text-[10px]">CD {(skill.cooldownMs / 1000).toFixed(0)}초</span>
-                        </div>
-                        <span className="text-white/60 text-xs">{skill.description}</span>
-                      </div>
-                      <button
-                        onClick={() => buySkill(skill.id)}
-                        disabled={owned}
-                        className={`flex-shrink-0 px-3 py-2 rounded-lg text-xs font-bold transition-all active:scale-90 ${
-                          owned
-                            ? 'bg-green-500/20 text-green-300 cursor-default'
-                            : canBuy
-                              ? 'bg-gradient-to-b from-purple-400 to-purple-600 text-white hover:from-purple-300 hover:to-purple-500 shadow-lg shadow-purple-500/20'
-                              : 'bg-white/10 text-white/40 cursor-not-allowed'
-                        }`}
-                      >
-                        {owned ? '보유' : `🪙 ${skill.cost}`}
-                      </button>
+          <div className="pt-2 pb-1">
+            <span className="text-white/40 text-[10px] font-semibold uppercase tracking-wider">액티브 스킬</span>
+          </div>
+          {SKILLS.map((skill) => {
+            const owned = ownedSkills.includes(skill.id);
+            const locked = playerTier < skill.minTier;
+            const canBuy = !owned && !locked && gold >= skill.cost;
+            const tierName = getStageByTier(skill.minTier).nameKo;
+            return (
+              <div key={skill.id} className={`relative rounded-xl p-3 transition-all ${
+                locked ? 'bg-white/[0.03] opacity-60' : owned ? 'bg-green-500/10' : canBuy ? 'bg-white/10 hover:bg-white/15' : 'bg-white/5'
+              }`}>
+                <div className="flex items-center gap-3">
+                  <div className={`text-2xl w-9 text-center flex-shrink-0 ${locked ? 'grayscale' : ''}`}>{skill.icon}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-white text-sm font-semibold">{skill.name}</span>
+                      {locked ? (
+                        <span className="text-orange-300/70 text-[10px]">🔒 {tierName} 필요</span>
+                      ) : (
+                        <span className="text-white/40 text-[10px]">CD {(skill.cooldownMs / 1000).toFixed(0)}초</span>
+                      )}
                     </div>
+                    <span className="text-white/60 text-xs">{skill.description}</span>
                   </div>
-                );
-              })}
-            </>
-          )}
+                  <button
+                    onClick={() => !locked && buySkill(skill.id)}
+                    disabled={owned || locked}
+                    className={`flex-shrink-0 px-3 py-2 rounded-lg text-xs font-bold transition-all active:scale-90 ${
+                      owned
+                        ? 'bg-green-500/20 text-green-300 cursor-default'
+                        : locked
+                          ? 'bg-white/5 text-white/20 cursor-not-allowed'
+                          : canBuy
+                            ? 'bg-gradient-to-b from-purple-400 to-purple-600 text-white hover:from-purple-300 hover:to-purple-500 shadow-lg shadow-purple-500/20'
+                            : 'bg-white/10 text-white/40 cursor-not-allowed'
+                    }`}
+                  >
+                    {owned ? '보유' : locked ? '🔒' : `🪙 ${skill.cost}`}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* Bottom hint */}

@@ -10,7 +10,7 @@ const BURN_ADDRESS = '0x000000000000000000000000000000000000dEaD';
 const PUMPSPACE_URL = `https://pumpspace.io/wallet/detail?account=${BURN_ADDRESS}`;
 
 // 추적할 토큰 목록
-const TOKEN_NAMES = ['sBWPM', 'sADOL', 'CLAM', 'PEARL', 'SHELL', 'CORAL', 'AQUA1'];
+const TOKEN_NAMES = ['sBWPM', 'sADOL', 'CLAM', 'PEARL', 'SHELL'];
 
 // 경계선으로 인식할 모든 토큰명 (소각 지갑에 있을 수 있는 토큰들)
 const ALL_TOKEN_NAMES = [

@@ -20,11 +20,9 @@ import {
 const TOKEN_IMAGES: Record<string, string> = {
   'sBWPM': '/sBWPM.svg',
   'sADOL': '/sADOL.svg',
-  'AQUA1': '/AQUA1.svg',
   'CLAM': '/CLAM.svg',
   'PEARL': '/PEARL.svg',
   'SHELL': '/SHELL.svg',
-  'CORAL': '/CORAL.png',
 };
 
 interface HistoryItem {

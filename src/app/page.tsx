@@ -1,27 +1,13 @@
 'use client';
 
 import { Card } from '@/components/ui/card';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Loader2, Flame, ChevronDown } from 'lucide-react';
+import { Loader2, Flame } from 'lucide-react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { useState, useMemo, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useToast } from '@/hooks/use-toast';
-import { SHELL_CLUB_MEMBERS } from '@/constants/shell-club';
 
 const PUMPSPACE_BASE_URL = 'https://pumpspace.io/wallet/detail?account=';
-const BURN_ADDRESS = '0x000000000000000000000000000000000000dEaD';
 
 // 바이백펀드 메인 지갑
 const BUYBACK_MAIN = '0x3654378aa2deb0860c2e5c7906471c8704c44c6f';
@@ -100,11 +86,6 @@ const WALLETS: WalletInfo[] = [
     isAdolTotal: true,
   },
   {
-    name: 'AQUA1 펀드',
-    address: '0xD57423c54F188220862391A069a2942c725ee37B',
-    hasAnalysis: true,
-  },
-  {
     name: 'SHELL 펀드',
     address: '0xfd48a5FFE5127896E93BAA8074CE98c5a999Ea97',
     hasAnalysis: true,
@@ -122,11 +103,6 @@ const WALLETS: WalletInfo[] = [
   {
     name: 'V2 수수료 펀드',
     address: '0x021f53A57F99413A83298187C139f647F95F5133',
-    hasAnalysis: true,
-  },
-  {
-    name: 'V3 수수료 펀드',
-    address: '0x52FB7d3ab53d5a8d348B15ea7E3f7bfE35dD35F1',
     hasAnalysis: true,
   },
   {
@@ -154,15 +130,8 @@ async function fetchTokenBurnData() {
   return response.json();
 }
 
-// 토큰 공급량 데이터 가져오기
-async function fetchTokenSupplyData() {
-  const response = await fetch('/api/token/supply');
-  if (!response.ok) throw new Error('Failed to fetch');
-  return response.json();
-}
-
 // 토큰 목록 (순서만 정의, 총 발행량은 API에서 가져옴)
-const TOKEN_NAMES = ['sBWPM', 'sADOL', 'CLAM', 'PEARL', 'SHELL', 'AQUA1', 'CORAL'];
+const TOKEN_NAMES = ['sBWPM', 'sADOL', 'CLAM', 'PEARL', 'SHELL'];
 
 interface TokenBurnData {
   burned_amount: number;
@@ -183,8 +152,6 @@ const TOKEN_IMAGES: Record<string, string> = {
   'CLAM': '/CLAM.svg',
   'PEARL': '/PEARL.svg',
   'SHELL': '/SHELL.svg',
-  'CORAL': '/CORAL.png',
-  'AQUA1': '/AQUA1.svg',
 };
 
 function TokenCard({ name, burnData }: TokenCardProps) {
@@ -274,23 +241,13 @@ interface BuybackDetails {
   ai: string | null;
 }
 
-interface AquaFairPriceData {
-  fairPrice: number;
-  blueWhaleByback: number;
-  totalSupply: number;
-  burnedAmount: number;
-  circulation: number;
-  currentValue: number;
-}
-
 interface WalletCardProps {
   wallet: WalletInfo;
   totalAssets: string | null;
-  fundDetails?: BuybackDetails; // 바이백/아돌 펀드 메인/AI 분리 표시용
-  aquaFairPrice?: AquaFairPriceData; // 아쿠아1 펀드 적정가격
+  fundDetails?: BuybackDetails;
 }
 
-function WalletCard({ wallet, totalAssets, fundDetails, aquaFairPrice }: WalletCardProps) {
+function WalletCard({ wallet, totalAssets, fundDetails }: WalletCardProps) {
   const formatAssets = (assets: string) => {
     // 소수점 제거: "$1,234.56" -> "$1,234"
     return assets.replace(/\.\d+/, '');
@@ -328,37 +285,6 @@ function WalletCard({ wallet, totalAssets, fundDetails, aquaFairPrice }: WalletC
               </div>
             )}
             
-            {/* 아쿠아1 적정가격 */}
-            {aquaFairPrice && (
-              <div className="mt-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-slate-400">적정가격:</span>
-                  <span className="text-sm text-slate-400">
-                    {aquaFairPrice.fairPrice.toFixed(2)} USDT
-                  </span>
-                  <span className="text-sm text-slate-400">
-                    ({(aquaFairPrice.fairPrice - 1) >= 0 ? '+' : ''}{((aquaFairPrice.fairPrice - 1) * 100).toFixed(1)}%)
-                  </span>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <button className="w-5 h-5 rounded-full bg-slate-600 hover:bg-slate-500 text-xs text-white flex items-center justify-center transition-colors">
-                        ?
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80 bg-slate-800 border-slate-700 text-slate-300 p-4">
-                      <div className="space-y-2 text-xs">
-                        <p className="text-slate-400 font-medium text-sm mb-3">산출 방식</p>
-                        <p>sBWPM바이백 = (총발행량 + 소각량) × 3%</p>
-                        <p className="text-slate-400">= ({Math.round(aquaFairPrice.totalSupply).toLocaleString()} + {Math.round(aquaFairPrice.burnedAmount).toLocaleString()}) × 3% = {Math.round(aquaFairPrice.blueWhaleByback).toLocaleString()}개</p>
-                        <p className="mt-3">적정가격 = (현재 펀드자산 - sBWPM바이백) / Aqua1 유통량</p>
-                        <p className="text-slate-400">= ({Math.round(aquaFairPrice.currentValue).toLocaleString()} - {Math.round(aquaFairPrice.blueWhaleByback).toLocaleString()}) / {Math.round(aquaFairPrice.circulation).toLocaleString()}</p>
-                        <p className="text-slate-300 font-medium mt-2">= {aquaFairPrice.fairPrice.toFixed(2)} USDT</p>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              </div>
-            )}
           </div>
 
           <div className="flex flex-col gap-2">
@@ -388,56 +314,12 @@ function WalletCard({ wallet, totalAssets, fundDetails, aquaFairPrice }: WalletC
 function HomeContent() {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab');
-  const [selectedTab, setSelectedTab] = useState<'wallet' | 'tokenInfo' | 'token' | 'club' | 'lab' | 'game'>('wallet');
-  const [joinDialogOpen, setJoinDialogOpen] = useState(false);
-  const [joinAddress, setJoinAddress] = useState('');
-  const [joinLoading, setJoinLoading] = useState(false);
-  const [sbwpmExpanded, setSbwpmExpanded] = useState(false);
-  const { toast } = useToast();
-
-  // 클럽 가입 신청
-  const handleJoinSubmit = async () => {
-    if (!joinAddress.trim()) {
-      toast({ title: '지갑 주소를 입력해주세요', variant: 'destructive' });
-      return;
-    }
-    if (!/^0x[a-fA-F0-9]{40}$/.test(joinAddress.trim())) {
-      toast({ title: '올바른 지갑 주소 형식이 아닙니다', variant: 'destructive' });
-      return;
-    }
-
-    setJoinLoading(true);
-    try {
-      const response = await fetch('/api/club/shell/apply', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address: joinAddress.trim() }),
-      });
-      const data = await response.json();
-
-      if (data.success) {
-        setJoinDialogOpen(false);
-        setJoinAddress('');
-        toast({ title: '가입 신청 완료', description: '승인 후 멤버로 등록됩니다.', variant: 'success' });
-      } else {
-        toast({ title: data.error || '신청 실패', variant: 'destructive' });
-      }
-    } catch (error) {
-      toast({ title: '오류가 발생했습니다', variant: 'destructive' });
-    } finally {
-      setJoinLoading(false);
-    }
-  };
-
+  const [selectedTab, setSelectedTab] = useState<'wallet' | 'token' | 'lab'>('wallet');
   // 페이지 로드 시 sessionStorage에서 탭 상태 복원
   useEffect(() => {
     // URL 파라미터가 있으면 우선
     if (tabParam === 'token') {
       setSelectedTab('token');
-      return;
-    }
-    if (tabParam === 'club') {
-      setSelectedTab('club');
       return;
     }
     if (tabParam === 'lab') {
@@ -447,13 +329,13 @@ function HomeContent() {
     
     // sessionStorage에서 마지막 탭 상태 복원
     const savedTab = sessionStorage.getItem('lastTab');
-    if (savedTab === 'token' || savedTab === 'tokenInfo' || savedTab === 'wallet' || savedTab === 'club' || savedTab === 'lab' || savedTab === 'game') {
+    if (savedTab === 'token' || savedTab === 'wallet' || savedTab === 'lab') {
       setSelectedTab(savedTab);
     }
   }, [tabParam]);
 
   // 탭 변경 핸들러
-  const handleTabChange = (tab: 'wallet' | 'tokenInfo' | 'token' | 'club' | 'lab' | 'game') => {
+  const handleTabChange = (tab: 'wallet' | 'token' | 'lab') => {
     setSelectedTab(tab);
     sessionStorage.setItem('lastTab', tab);
   };
@@ -489,26 +371,6 @@ function HomeContent() {
     queryKey: ['token-burn'],
     queryFn: fetchTokenBurnData,
     staleTime: 60 * 60 * 1000, // 1시간
-  });
-
-  // 토큰 공급량 데이터 로드
-  const { data: tokenSupplyData } = useQuery({
-    queryKey: ['token-supply'],
-    queryFn: fetchTokenSupplyData,
-    staleTime: 60 * 60 * 1000, // 1시간
-    enabled: selectedTab === 'tokenInfo',
-  });
-
-  // SHELL CLUB 데이터 로드
-  const { data: shellClubData, isLoading: clubLoading } = useQuery({
-    queryKey: ['shell-club'],
-    queryFn: async () => {
-      const response = await fetch('/api/club/shell');
-      if (!response.ok) throw new Error('Failed to fetch');
-      return response.json();
-    },
-    staleTime: 30 * 60 * 1000,
-    enabled: selectedTab === 'club',
   });
 
   const parseAmount = (assets: string | null): number => {
@@ -605,46 +467,7 @@ function HomeContent() {
     return { main: mainAmount, ai: aiAmount };
   };
 
-  // 아쿠아1 적정가격 계산
-  const getAquaFairPrice = (): AquaFairPriceData | undefined => {
-    const aquaAddress = '0xD57423c54F188220862391A069a2942c725ee37B';
-    
-    // 지갑 데이터에서 현재가치 가져오기
-    if (!walletData?.results) return undefined;
-    const walletKey = Object.keys(walletData.results).find(
-      (k) => k.toLowerCase() === aquaAddress.toLowerCase()
-    );
-    const currentValueStr = walletKey ? walletData.results[walletKey] : null;
-    if (!currentValueStr) return undefined;
-    const currentValue = parseAmount(currentValueStr);
-    
-    // 토큰 데이터에서 AQUA1 소각량, 총발행량 가져오기
-    const aquaToken = tokenData?.tokens?.find(
-      (t: { token_name: string }) => t.token_name === 'AQUA1'
-    );
-    if (!aquaToken) return undefined;
-    
-    const totalSupply = aquaToken.total_supply || 207900;
-    const burnedAmount = aquaToken.burned_amount || 0;
-    const circulation = totalSupply - burnedAmount;
-    
-    // 블웨바이백 = (총발행량 + 소각량) × 0.03
-    const blueWhaleByback = (totalSupply + burnedAmount) * 0.03;
-    
-    // 적정가격 = (현재가치 - 블웨바이백) / 유통량
-    const fairPrice = (currentValue - blueWhaleByback) / circulation;
-    
-    return {
-      fairPrice: Math.max(0, fairPrice),
-      blueWhaleByback,
-      totalSupply,
-      burnedAmount,
-      circulation,
-      currentValue,
-    };
-  };
-
-  const isLoading = selectedTab === 'game' ? false : selectedTab === 'wallet' ? walletLoading : tokenLoading;
+  const isLoading = selectedTab === 'wallet' ? walletLoading : selectedTab === 'token' ? tokenLoading : false;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-x-hidden">
@@ -676,16 +499,6 @@ function HomeContent() {
               지갑
             </button>
             <button
-              onClick={() => handleTabChange('tokenInfo')}
-              className={`pb-3 text-base md:text-lg font-medium transition-colors whitespace-nowrap ${
-                selectedTab === 'tokenInfo'
-                  ? 'text-white border-b-2 border-white'
-                  : 'text-slate-500 hover:text-slate-300'
-              }`}
-            >
-              토큰
-            </button>
-            <button
               onClick={() => handleTabChange('token')}
               className={`pb-3 text-base md:text-lg font-medium transition-colors whitespace-nowrap ${
                 selectedTab === 'token'
@@ -696,16 +509,6 @@ function HomeContent() {
               소각
             </button>
             <button
-              onClick={() => handleTabChange('club')}
-              className={`pb-3 text-base md:text-lg font-medium transition-colors whitespace-nowrap ${
-                selectedTab === 'club'
-                  ? 'text-white border-b-2 border-white'
-                  : 'text-slate-500 hover:text-slate-300'
-              }`}
-            >
-              클럽
-            </button>
-            <button
               onClick={() => handleTabChange('lab')}
               className={`pb-3 text-base md:text-lg font-medium transition-colors whitespace-nowrap ${
                 selectedTab === 'lab'
@@ -714,16 +517,6 @@ function HomeContent() {
               }`}
             >
               실험실
-            </button>
-            <button
-              onClick={() => handleTabChange('game')}
-              className={`pb-3 text-base md:text-lg font-medium transition-colors whitespace-nowrap ${
-                selectedTab === 'game'
-                  ? 'text-white border-b-2 border-white'
-                  : 'text-slate-500 hover:text-slate-300'
-              }`}
-            >
-              게임
             </button>
           </div>
         </div>
@@ -749,166 +542,8 @@ function HomeContent() {
                   wallet.isAdolTotal ? getAdolDetails() : 
                   undefined
                 }
-                aquaFairPrice={wallet.name === 'AQUA1 펀드' ? getAquaFairPrice() : undefined}
               />
             ))}
-          </div>
-        )}
-
-        {/* 토큰 탭 - 토큰 정보 */}
-        {selectedTab === 'tokenInfo' && (
-          <div className="space-y-4">
-            {/* 개발 중 안내 배너 */}
-            <div className="bg-amber-500/20 border border-amber-500/50 rounded-lg px-4 py-3 flex items-center gap-2">
-              <span className="text-amber-400">⚠️</span>
-              <span className="text-amber-200 text-sm">개발 중인 기능입니다. 일부 데이터가 정확하지 않을 수 있습니다.</span>
-            </div>
-            
-            {/* sBWPM 카드 */}
-            <Card className="bg-slate-800/50 border-slate-700 p-4">
-              <div className="flex items-center gap-3 mb-4">
-                <img src="/sBWPM.svg" alt="sBWPM" className="w-10 h-10" />
-                <h3 className="text-lg font-semibold text-white">sBWPM</h3>
-              </div>
-              {(() => {
-                const totalSupply = 7000;
-                const sbwpmData = tokenSupplyData?.tokens?.find(
-                  (t: { token_name: string }) => t.token_name === 'sBWPM'
-                );
-                const sbwpmSupply = sbwpmData?.circulating_supply || 0;
-                const avalancheBalance = sbwpmData?.avalanche_balance || 0;
-                const buybackGofun = sbwpmData?.buyback_gofun || 0;
-                const buybackDolfun = sbwpmData?.buyback_dolfun || 0;
-                const buybackGofunKaia = sbwpmData?.buyback_gofun_kaia || 0;
-                const liquidityTotal = sbwpmData?.liquidity_total || 0;
-                const kaiaBalance = sbwpmSupply - avalancheBalance;
-                const burnData = tokenData?.tokens?.find(
-                  (t: { token_name: string }) => t.token_name === 'sBWPM'
-                );
-                const burnedAmount = burnData?.burned_amount || 0;
-                const sbwpmCirculating = sbwpmSupply - burnedAmount;
-                const bwpmNft = totalSupply - sbwpmSupply;
-                
-                const formatNum = (n: number, decimal: boolean = true) => n.toLocaleString(undefined, { minimumFractionDigits: decimal ? 1 : 0, maximumFractionDigits: decimal ? 1 : 0 });
-                
-                const RowItem = ({ label, value, link, decimal = true }: { label: string; value: number; link: string | null; decimal?: boolean }) => (
-                  <div className="flex items-center justify-between bg-slate-700/30 rounded-lg px-4 py-3">
-                    <div className="flex items-center gap-4">
-                      <span className="text-slate-400 text-sm w-20 shrink-0">{label}</span>
-                      <span className="text-white text-sm font-medium">{formatNum(value, decimal)} 개</span>
-                    </div>
-                    {link && (
-                      <Link
-                        href={link}
-                        className="px-4 py-1.5 text-sm bg-slate-600 hover:bg-slate-500 text-white rounded transition-colors whitespace-nowrap shrink-0 ml-2"
-                      >
-                        분석
-                      </Link>
-                    )}
-                  </div>
-                );
-                
-                return (
-                  <div className="space-y-2">
-                    <RowItem label="총 발행량" value={totalSupply} link="#" decimal={false} />
-                    <RowItem label="BWPM NFT" value={bwpmNft} link="#" decimal={false} />
-                    
-                    {/* sBWPM 행 + 분포 테이블 (하나의 블록으로 묶어 space-y gap 1번만 적용) */}
-                    <div>
-                      {/* sBWPM 행 - 클릭하면 펼침/접힘 */}
-                      <div
-                        onClick={() => setSbwpmExpanded(!sbwpmExpanded)}
-                        className="flex items-center justify-between bg-slate-700/30 rounded-lg px-4 py-3 cursor-pointer hover:bg-slate-700/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-4">
-                          <span className="text-slate-400 text-sm w-20 shrink-0">sBWPM</span>
-                          <span className="text-white text-sm font-medium">{formatNum(sbwpmCirculating)} 개</span>
-                          <ChevronDown 
-                            className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${sbwpmExpanded ? 'rotate-180' : ''}`} 
-                          />
-                        </div>
-                        <Link
-                          href="#"
-                          onClick={(e) => e.stopPropagation()}
-                          className="px-4 py-1.5 text-sm bg-slate-600 hover:bg-slate-500 text-white rounded transition-colors whitespace-nowrap shrink-0 ml-2"
-                        >
-                          분석
-                        </Link>
-                      </div>
-                      
-                      {/* sBWPM 분포 테이블 - 펼침/접힘 애니메이션 */}
-                      <div 
-                        className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                          sbwpmExpanded ? 'max-h-[500px] opacity-100 mt-2' : 'max-h-0 opacity-0'
-                        }`}
-                      >
-                        <div className="overflow-x-auto scrollbar-thin ml-4 mr-0 md:ml-6 pb-1">
-                          <table className="w-full min-w-[480px] text-xs table-fixed">
-                            <colgroup>
-                              <col className="w-[12%]" />
-                              <col className="w-[17.6%]" />
-                              <col className="w-[17.6%]" />
-                              <col className="w-[17.6%]" />
-                              <col className="w-[17.6%]" />
-                              <col className="w-[17.6%]" />
-                            </colgroup>
-                            <thead>
-                              <tr className="border-b border-slate-600">
-                                <th className="text-left text-slate-400 font-medium py-2 px-2">구분</th>
-                                <th className="text-right text-slate-400 font-medium py-2 px-2">BWPM 펀드</th>
-                                <th className="text-right text-slate-400 font-medium py-2 px-2">ADOL 펀드</th>
-                                <th className="text-right text-slate-400 font-medium py-2 px-2">유동성</th>
-                                <th className="text-right text-slate-400 font-medium py-2 px-2">지갑보유</th>
-                                <th className="text-right text-slate-400 font-medium py-2 px-2">합계</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {(() => {
-                                // 지갑보유 = 합계 - 바이백(고펀) - 바이백(돌펀) - 유동성
-                                const avaxWalletHolding = avalancheBalance - buybackGofun - buybackDolfun - liquidityTotal;
-                                const kaiaWalletHolding = kaiaBalance - burnedAmount - buybackGofunKaia;
-                                const totalWalletHolding = avaxWalletHolding + kaiaWalletHolding;
-                                
-                                return (
-                                  <>
-                                    <tr className="border-b border-slate-700/50">
-                                      <td className="text-slate-400 py-2 px-2">아발란체</td>
-                                      <td className="text-right text-slate-300 py-2 px-2">{formatNum(buybackGofun)}</td>
-                                      <td className="text-right text-slate-300 py-2 px-2">{formatNum(buybackDolfun)}</td>
-                                      <td className="text-right text-slate-300 py-2 px-2">{formatNum(liquidityTotal)}</td>
-                                      <td className="text-right text-slate-300 py-2 px-2">{formatNum(avaxWalletHolding)}</td>
-                                      <td className="text-right text-slate-300 py-2 px-2">{formatNum(avalancheBalance)}</td>
-                                    </tr>
-                                    <tr className="border-b border-slate-700/50">
-                                      <td className="text-slate-400 py-2 px-2">카이아</td>
-                                      <td className="text-right text-slate-300 py-2 px-2">{formatNum(buybackGofunKaia)}</td>
-                                      <td className="text-right text-slate-500 py-2 px-2">-</td>
-                                      <td className="text-right text-slate-500 py-2 px-2">-</td>
-                                      <td className="text-right text-slate-300 py-2 px-2">{formatNum(kaiaWalletHolding)}</td>
-                                      <td className="text-right text-slate-300 py-2 px-2">{formatNum(kaiaBalance - burnedAmount)}</td>
-                                    </tr>
-                                    <tr className="bg-slate-700/20">
-                                      <td className="text-slate-300 font-medium py-2 px-2">합계</td>
-                                      <td className="text-right text-white font-medium py-2 px-2">{formatNum(buybackGofun + buybackGofunKaia)}</td>
-                                      <td className="text-right text-white font-medium py-2 px-2">{formatNum(buybackDolfun)}</td>
-                                      <td className="text-right text-white font-medium py-2 px-2">{formatNum(liquidityTotal)}</td>
-                                      <td className="text-right text-white font-medium py-2 px-2">{formatNum(totalWalletHolding)}</td>
-                                      <td className="text-right text-white font-medium py-2 px-2">{formatNum(sbwpmCirculating)}</td>
-                                    </tr>
-                                  </>
-                                );
-                              })()}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <RowItem label="소각량" value={burnedAmount} link="/token/sBWPM" />
-                  </div>
-                );
-              })()}
-            </Card>
           </div>
         )}
 
@@ -927,94 +562,6 @@ function HomeContent() {
                 />
               );
             })}
-          </div>
-        )}
-
-        {/* 클럽 탭 */}
-        {selectedTab === 'club' && (
-          <div className="space-y-4">
-            {/* SHELL CLUB 카드 */}
-            <Card className="bg-slate-800/50 border-slate-700/50 hover:bg-slate-800/80 transition-all duration-200 overflow-hidden group">
-              <div className="p-5">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-4">
-                      <img src="/SHELL.svg" alt="SHELL" className="w-10 h-10 rounded-full" />
-                      <div>
-                        <h2 className="text-lg font-semibold text-white">SHELL CLUB</h2>
-                        <p className="text-xs text-slate-400">1억개/10원 목표 쉘 홀더 클럽</p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-slate-400">멤버 보유량:</span>
-                        <span className="text-sm font-medium text-emerald-400">
-                          {clubLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin inline" /> : 
-                           shellClubData?.totalAmount ? 
-                             `${Math.floor(shellClubData.totalAmount).toLocaleString()} SHELL` : '-'}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-slate-400">멤버 보유가치:</span>
-                        <span className="text-sm font-medium text-white">
-                          {clubLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin inline" /> : 
-                           shellClubData?.totalValue ? 
-                             `$${Math.floor(shellClubData.totalValue).toLocaleString()}` : '-'}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-slate-400">멤버 수:</span>
-                        <span className="text-sm font-medium text-white">{SHELL_CLUB_MEMBERS.length}명</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <Link
-                      href="/club/shell"
-                      className="px-6 py-2.5 bg-slate-600 hover:bg-slate-500 text-white rounded-md transition-all duration-200 font-medium text-center"
-                    >
-                      분석
-                    </Link>
-                    <Dialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen}>
-                      <DialogTrigger asChild>
-                        <button className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-md transition-all duration-200 font-medium text-center">
-                          가입
-                        </button>
-                      </DialogTrigger>
-                      <DialogContent className="bg-slate-800 border-slate-700 top-[20%] translate-y-0">
-                        <DialogHeader>
-                          <DialogTitle className="text-white">SHELL CLUB 가입</DialogTitle>
-                          <DialogDescription className="text-slate-400">
-                            1억개/10원 목표 쉘 홀더 클럽에 가입하세요
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4 pt-4">
-                          <div>
-                            <label className="text-sm text-slate-400 mb-2 block">지갑 주소</label>
-                            <Input
-                              placeholder="0x..."
-                              value={joinAddress}
-                              onChange={(e) => setJoinAddress(e.target.value)}
-                              className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-base"
-                            />
-                          </div>
-                          <Button
-                            onClick={handleJoinSubmit}
-                            disabled={joinLoading}
-                            className="w-full bg-emerald-600 hover:bg-emerald-500"
-                          >
-                            {joinLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                            {joinLoading ? '신청 중...' : '가입 신청'}
-                          </Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                </div>
-              </div>
-            </Card>
           </div>
         )}
 
@@ -1468,30 +1015,6 @@ function HomeContent() {
           </div>
         )}
 
-        {/* 게임 탭 */}
-        {selectedTab === 'game' && (
-          <div className="space-y-4">
-            <Link href="/game" className="block">
-              <Card className="bg-slate-800/50 border-slate-700/50 hover:bg-slate-800/80 transition-all duration-200 overflow-hidden group cursor-pointer">
-                <div className="p-5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-xl">
-                          🐋
-                        </div>
-                        <h2 className="text-lg font-semibold text-white">고래키우기</h2>
-                      </div>
-                    </div>
-                    <div className="px-6 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-all duration-200 font-medium text-center shrink-0">
-                      시작
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            </Link>
-          </div>
-        )}
       </main>
 
       {/* Footer */}
